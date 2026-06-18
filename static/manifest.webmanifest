@@ -1,0 +1,15 @@
+{
+	"name": "Alex & Katie — Wedding",
+	"short_name": "Alex & Katie",
+	"description": "Wedding planning & RSVP for Alex & Katie · 2 April 2027 · The Tithe Barn, Bolton Abbey",
+	"start_url": "/",
+	"scope": "/",
+	"display": "standalone",
+	"orientation": "portrait",
+	"background_color": "#fbfaf6",
+	"theme_color": "#6f7d59",
+	"icons": [
+		{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+		{ "src": "/icon-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+	]
+}

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#fbfaf6"/>
+  <g stroke="#9aa685" stroke-width="5" stroke-linecap="round" fill="none">
+    <path d="M 96 420 C 180 380, 250 320, 360 200"/>
+    <ellipse cx="150" cy="395" rx="12" ry="32" fill="#9aa685" stroke="none" transform="rotate(42 150 395)"/>
+    <ellipse cx="210" cy="360" rx="12" ry="32" fill="#9aa685" stroke="none" transform="rotate(42 210 360)"/>
+    <ellipse cx="270" cy="320" rx="12" ry="32" fill="#9aa685" stroke="none" transform="rotate(34 270 320)"/>
+  </g>
+  <g stroke="#9aa685" stroke-width="5" stroke-linecap="round" fill="none" transform="translate(512 0) scale(-1 1)">
+    <path d="M 96 420 C 180 380, 250 320, 360 200"/>
+    <ellipse cx="150" cy="395" rx="12" ry="32" fill="#9aa685" stroke="none" transform="rotate(42 150 395)"/>
+    <ellipse cx="210" cy="360" rx="12" ry="32" fill="#9aa685" stroke="none" transform="rotate(42 210 360)"/>
+    <ellipse cx="270" cy="320" rx="12" ry="32" fill="#9aa685" stroke="none" transform="rotate(34 270 320)"/>
+  </g>
+  <text x="256" y="310" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-style="italic" font-weight="600" font-size="200" fill="#6f7d59" letter-spacing="-4">A&amp;K</text>
+  <text x="256" y="380" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="500" font-size="26" letter-spacing="12" fill="#9a968a">02 · 04 · 2027</text>
+</svg>
