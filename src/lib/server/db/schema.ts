@@ -4,7 +4,12 @@ export const inviteGroups = sqliteTable('invite_groups', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   name: text('name').notNull(),
   token: text('token').notNull().unique(),
+  // Note FROM guests TO couple — written via the RSVP page.
   message: text('message'),
+  // Note FROM couple TO this household — shown at the top of their RSVP page.
+  personalMessage: text('personal_message'),
+  // Household-level allergies / dietary notes captured under the menu section.
+  allergiesNote: text('allergies_note'),
   respondedAt: integer('responded_at', { mode: 'timestamp' })
 });
 
@@ -18,6 +23,8 @@ export const guests = sqliteTable('guests', {
   role: text('role'),
   attendanceType: text('attendance_type', { enum: ['day', 'evening'] }).notNull(),
   isChild: integer('is_child', { mode: 'boolean' }).notNull().default(false),
+  // True for unnamed "+1" placeholder rows — the host fills in the actual name on the RSVP page.
+  isPlusOne: integer('is_plus_one', { mode: 'boolean' }).notNull().default(false),
   rsvpStatus: text('rsvp_status', { enum: ['pending', 'yes', 'no'] }).notNull().default('pending'),
   meal: text('meal', { enum: ['veg', 'non-veg'] }),
   dietaryNotes: text('dietary_notes')

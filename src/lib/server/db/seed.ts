@@ -61,6 +61,7 @@ export async function seed(): Promise<void> {
       role: guest.role ?? null,
       attendanceType: guest.attendanceType,
       isChild: guest.isChild ?? false,
+      isPlusOne: guest.isPlusOne ?? false,
       meal: guest.meal ?? null,
       dietaryNotes: guest.dietaryNotes ?? null
     });

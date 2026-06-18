@@ -15,6 +15,7 @@ export interface SeedGuest {
   meal?: 'veg' | 'non-veg'; // pre-known dietary from source
   dietaryNotes?: string; // for non-veg/non-toggle dietary like pescatarian
   isChild?: boolean;
+  isPlusOne?: boolean; // placeholder slot to be named on the RSVP page
   inviteGroup: string; // household key — guests sharing this get ONE QR
 }
 
@@ -86,7 +87,7 @@ export const SEED_GUESTS: SeedGuest[] = [
   { name: 'David Sherdley', side: 'B', relationshipGroup: B_FAM, relation: "Katie's uncle", attendanceType: 'day', inviteGroup: 'david-wendy-sherdley' },
   { name: 'Wendy Sherdley', side: 'B', relationshipGroup: B_FAM, relation: "Katie's auntie", attendanceType: 'day', inviteGroup: 'david-wendy-sherdley' },
   { name: 'Joshua Sherdley', side: 'B', relationshipGroup: B_FAM, relation: "Katie's cousin", attendanceType: 'day', inviteGroup: 'joshua-sherdley' },
-  { name: 'Joshua +1', side: 'B', relationshipGroup: B_FAM, relation: "Joshua's guest", attendanceType: 'day', inviteGroup: 'joshua-sherdley' },
+  { name: 'Joshua +1', side: 'B', relationshipGroup: B_FAM, relation: "Joshua's guest", attendanceType: 'day', isPlusOne: true, inviteGroup: 'joshua-sherdley' },
   { name: 'Liam Sherdley', side: 'B', relationshipGroup: B_FAM, relation: "Katie's cousin", attendanceType: 'day', inviteGroup: 'liam-sherdley' },
   { name: 'Kathryn Smith', side: 'B', relationshipGroup: B_FAM, relation: "Katie's great-aunt", attendanceType: 'day', inviteGroup: 'kathryn-peter-smith' },
   { name: 'Peter Smith', side: 'B', relationshipGroup: B_FAM, relation: "Katie's great-uncle", attendanceType: 'day', inviteGroup: 'kathryn-peter-smith' },
@@ -105,13 +106,13 @@ export const SEED_GUESTS: SeedGuest[] = [
   { name: 'Stephen McCarroll', side: 'G', relationshipGroup: G_FR, relation: "Alex's friend", attendanceType: 'day', inviteGroup: 'stephen-mccarroll-alice-barrel' },
   { name: 'Alice Barrel', side: 'G', relationshipGroup: G_FR, relation: "Stephen's partner", attendanceType: 'day', inviteGroup: 'stephen-mccarroll-alice-barrel' },
   { name: 'Samuel Rycroft', side: 'G', relationshipGroup: G_FR, relation: "Alex's friend (Mule)", attendanceType: 'day', inviteGroup: 'samuel-rycroft' },
-  { name: 'Mule Plus One', side: 'G', relationshipGroup: G_FR, relation: "Samuel's guest", attendanceType: 'day', inviteGroup: 'samuel-rycroft' },
+  { name: 'Mule Plus One', side: 'G', relationshipGroup: G_FR, relation: "Samuel's guest", attendanceType: 'day', isPlusOne: true, inviteGroup: 'samuel-rycroft' },
   { name: 'Jade', side: 'G', relationshipGroup: G_FR, relation: "Alex's friend", attendanceType: 'day', inviteGroup: 'jade-tom' },
   { name: 'Tom', side: 'G', relationshipGroup: G_FR, relation: "Jade's partner", attendanceType: 'day', inviteGroup: 'jade-tom' },
   { name: 'Dan Grady', side: 'G', relationshipGroup: G_FR, relation: "Alex's friend", attendanceType: 'day', inviteGroup: 'dan-zoe-grady' },
   { name: 'Zoe Grady', side: 'G', relationshipGroup: G_FR, relation: "Dan's partner", attendanceType: 'day', inviteGroup: 'dan-zoe-grady' },
   { name: 'Nicholas Finch', side: 'G', relationshipGroup: G_FR, relation: "Alex's friend", attendanceType: 'day', inviteGroup: 'nicholas-finch' },
-  { name: 'Nick Partner', side: 'G', relationshipGroup: G_FR, relation: "Nick's partner", attendanceType: 'day', inviteGroup: 'nicholas-finch' },
+  { name: 'Nick Partner', side: 'G', relationshipGroup: G_FR, relation: "Nick's partner", attendanceType: 'day', isPlusOne: true, inviteGroup: 'nicholas-finch' },
   { name: "Sam (Oliver's brother)", side: 'G', relationshipGroup: G_FR, relation: "Oliver's brother · Alex's friend · Kieran's partner", meal: 'veg', attendanceType: 'day', inviteGroup: 'sam-kieran' },
   { name: 'Kieran', side: 'G', relationshipGroup: G_FR, relation: "Sam's partner", attendanceType: 'day', inviteGroup: 'sam-kieran' },
   { name: 'Jamie-Leigh', side: 'G', relationshipGroup: G_FR, relation: "Kieran's sister · friend", attendanceType: 'day', inviteGroup: 'jamie-leigh' },
@@ -310,6 +311,10 @@ export const SEED_BUDGET: SeedBudgetLine[] = [
   { category: 'Wedding rings', section: 'Essentials', budgeted: 240, confirmed: 240, paid: 240, status: 'Paid' },
   { category: 'Ceremony & notice fees', section: 'Essentials', budgeted: 134, confirmed: 134, paid: 50, status: 'Deposit' },
   { category: 'Wedding insurance', section: 'Essentials', budgeted: 80, confirmed: 0, paid: 0, status: 'Estimate' },
+  { category: "Bride's dress & accessories", section: 'Essentials', budgeted: 1500, confirmed: 0, paid: 0, status: 'Estimate' },
+  { category: 'Groom & groomsmen attire', section: 'Essentials', budgeted: 800, confirmed: 0, paid: 0, status: 'Estimate' },
+  { category: 'Bridesmaid dresses', section: 'Essentials', budgeted: 600, confirmed: 0, paid: 0, status: 'Estimate' },
+  { category: 'Hair & makeup', section: 'Essentials', budgeted: 600, confirmed: 0, paid: 0, status: 'Estimate' },
 
   { category: 'Florist & flowers', section: 'Décor & flowers', budgeted: 1500, confirmed: 0, paid: 0, status: 'Estimate' },
   { category: 'Décor & styling', section: 'Décor & flowers', budgeted: 800, confirmed: 0, paid: 0, status: 'Estimate' },
@@ -319,17 +324,12 @@ export const SEED_BUDGET: SeedBudgetLine[] = [
 
   { category: 'Favours', section: 'Favours', budgeted: 200, confirmed: 0, paid: 0, status: 'Estimate' },
 
-  { category: "Bride's dress & accessories", section: 'Everything else', budgeted: 1500, confirmed: 0, paid: 0, status: 'Estimate' },
-  { category: 'Groom & groomsmen attire', section: 'Everything else', budgeted: 800, confirmed: 0, paid: 0, status: 'Estimate' },
-  { category: 'Bridesmaid dresses', section: 'Everything else', budgeted: 600, confirmed: 0, paid: 0, status: 'Estimate' },
-  { category: 'Hair & makeup', section: 'Everything else', budgeted: 600, confirmed: 0, paid: 0, status: 'Estimate' },
   { category: 'Music / DJ', section: 'Everything else', budgeted: 600, confirmed: 0, paid: 0, status: 'Estimate' },
   { category: 'Cake', section: 'Everything else', budgeted: 350, confirmed: 0, paid: 0, status: 'Estimate' },
   { category: 'Magician', section: 'Everything else', budgeted: 400, confirmed: 0, paid: 0, status: 'Estimate' },
   { category: 'Dog handler (Bodie)', section: 'Everything else', budgeted: 250, confirmed: 0, paid: 0, status: 'Estimate' },
   { category: 'Transport', section: 'Everything else', budgeted: 400, confirmed: 0, paid: 0, status: 'Estimate' },
   { category: "Couple's accommodation", section: 'Everything else', budgeted: 400, confirmed: 0, paid: 0, status: 'Estimate' },
-  { category: 'Honeymoon', section: 'Everything else', budgeted: 3000, confirmed: 0, paid: 0, status: 'Estimate' },
   { category: 'Contingency (~5%)', section: 'Everything else', budgeted: 1500, confirmed: 0, paid: 0, status: 'Estimate' }
 ];
 

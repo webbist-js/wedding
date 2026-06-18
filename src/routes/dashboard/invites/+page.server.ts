@@ -15,7 +15,16 @@ export const load: PageServerLoad = async () => {
 			const url = `${base}/rsvp/${g.token}`;
 			const qr = await QRCode.toString(url, { type: 'svg', margin: 1, width: 160 });
 			const responded = members.filter((m) => m.rsvpStatus !== 'pending').length;
-			return { id: g.id, name: g.name, url, qr, members, responded, total: members.length };
+			return {
+				id: g.id,
+				name: g.name,
+				personalMessage: g.personalMessage ?? '',
+				url,
+				qr,
+				members,
+				responded,
+				total: members.length
+			};
 		})
 	);
 	return { rows };

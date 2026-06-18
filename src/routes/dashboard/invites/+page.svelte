@@ -2,13 +2,21 @@
 	import SectionHeading from '$lib/components/SectionHeading.svelte';
 	import Rule from '$lib/components/Rule.svelte';
 	let { data } = $props();
+
+	async function saveMessage(id: number, message: string) {
+		await fetch('/dashboard/invites/message', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ id, message })
+		});
+	}
 </script>
 
 <div class="noprint">
 	<SectionHeading>Invites &amp; QR codes</SectionHeading><Rule />
 	<p class="hint">
-		One card per household. Print this page to slip QR cards into your invitations. Each code opens
-		that household's RSVP page.
+		One card per household. Add a personal note for each (it shows at the top of their RSVP page).
+		Print this page to slip QR cards into your invitations.
 	</p>
 	<button onclick={() => window.print()}>Print all</button>
 </div>
@@ -16,16 +24,27 @@
 <div class="cards">
 	{#each data.rows as r (r.id)}
 		<div class="invite">
-			<div class="qr">{@html r.qr}</div>
-			<div class="who">
-				<p class="eyebrow">Alex &amp; Katie · 2 April 2027</p>
-				<h3 class="script">{r.name}</h3>
-				<p class="members">{r.members.map((m) => m.name).join(' · ')}</p>
-				<p class="status noprint">
-					<span class="dot" class:done={r.responded === r.total} class:partial={r.responded > 0 && r.responded < r.total}></span>
-					<span class="status-text">{r.responded}/{r.total} replied</span>
-				</p>
+			<div class="top">
+				<div class="qr">{@html r.qr}</div>
+				<div class="who">
+					<p class="eyebrow">Alex &amp; Katie · 2 April 2027</p>
+					<h3 class="script">{r.name}</h3>
+					<p class="members">{r.members.map((m) => m.name).join(' · ')}</p>
+					<p class="status noprint">
+						<span class="dot" class:done={r.responded === r.total} class:partial={r.responded > 0 && r.responded < r.total}></span>
+						<span class="status-text">{r.responded}/{r.total} replied</span>
+					</p>
+				</div>
 			</div>
+			<label class="msg noprint">
+				<span>Personal message (optional — shown at the top of their RSVP page)</span>
+				<textarea
+					rows="2"
+					placeholder="A line just for them…"
+					value={r.personalMessage}
+					onchange={(e) => saveMessage(r.id, (e.target as HTMLTextAreaElement).value)}
+				></textarea>
+			</label>
 		</div>
 	{/each}
 </div>
@@ -53,15 +72,40 @@
 		gap: 20px;
 	}
 	.invite {
-		display: grid;
-		grid-template-columns: 150px 1fr;
-		gap: 22px;
-		align-items: center;
 		background: var(--card);
 		border: 1px solid var(--line);
 		border-radius: 16px;
 		padding: 24px 26px;
 		break-inside: avoid;
+	}
+	.invite .top {
+		display: grid;
+		grid-template-columns: 150px 1fr;
+		gap: 22px;
+		align-items: center;
+	}
+	.msg {
+		display: grid;
+		gap: 6px;
+		margin-top: 18px;
+		padding-top: 16px;
+		border-top: 1px solid var(--line2);
+		font-size: 10.5px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--muted);
+	}
+	.msg textarea {
+		font: inherit;
+		font-size: 13.5px;
+		text-transform: none;
+		letter-spacing: normal;
+		color: var(--ink);
+		border: 1px solid var(--line);
+		border-radius: 8px;
+		padding: 10px 12px;
+		resize: vertical;
+		min-height: 56px;
 	}
 	.qr {
 		width: 150px;
@@ -112,7 +156,8 @@
 	.dot.done { background: var(--sage); }
 
 	@media print {
-		.noprint {
+		.noprint,
+		.msg {
 			display: none !important;
 		}
 		.cards {

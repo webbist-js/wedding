@@ -15,6 +15,27 @@
       "when": 1781816412116,
       "tag": "0001_blushing_spot",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1781821960968,
+      "tag": "0002_gifted_prima",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1781822205405,
+      "tag": "0003_stiff_gorgon",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1781822361466,
+      "tag": "0004_faithful_cannonball",
+      "breakpoints": true
     }
   ]
 }

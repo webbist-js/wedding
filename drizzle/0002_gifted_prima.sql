@@ -1,0 +1,1 @@
+ALTER TABLE `invite_groups` ADD `personal_message` text;
