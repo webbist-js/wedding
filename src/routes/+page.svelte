@@ -1,3 +1,9 @@
+<script lang="ts">
+	import Flora from '$lib/components/Flora.svelte';
+</script>
+
+<Flora placement="top" />
+
 <main class="landing">
 	<p class="eyebrow">Together with their families</p>
 	<h1 class="script">Alex &amp; Katie</h1>
@@ -8,12 +14,16 @@
 	</p>
 </main>
 
+<Flora placement="bottom" />
+
 <style>
 	.landing {
 		max-width: 620px;
 		margin: 0 auto;
-		padding: 16vh 24px;
+		padding: 18vh 24px;
 		text-align: center;
+		position: relative;
+		z-index: 1;
 	}
 	.landing h1 {
 		font-size: clamp(64px, 16vw, 120px);

@@ -12,7 +12,8 @@ export const WEDDING = {
 	// requirement — set ~10 weeks before so the couple has time to chase
 	// non-responders before confirming to the venue.
 	rsvpDeadline: 'Friday 22 January 2027',
-	dressCode: 'Formal wedding attire',
+	dressNote:
+		'As our day will be professionally photographed, we kindly ask guests to avoid wearing jeans and casual sneakers.',
 	mapEmbed:
 		'https://www.openstreetmap.org/export/embed.html?bbox=-1.910%2C53.978%2C-1.872%2C53.992&layer=mapnik&marker=53.984%2C-1.891',
 	mapLink: 'https://www.google.com/maps?q=The+Tithe+Barn+Bolton+Abbey+BD23+6EX',
@@ -43,7 +44,7 @@ export const MENU = {
 	sides: ['Tender stem broccoli, chilli & garlic', 'Gratin dauphinoise'],
 	dessert: 'Treacle sponge, custard',
 	teaCoffee: 'Tea & coffee with petits fours',
-	evening: 'Baz & Fred wood-fired pizza',
+	evening: 'Baz & Fred wood-fired pizza, handmade on site — served to everyone in the evening',
 	drinks: 'Welcome prosecco · bottled beers · full bar',
 	kids: "A children's menu (with a vegetarian option) will be served — let us know any allergies on your RSVP"
 };

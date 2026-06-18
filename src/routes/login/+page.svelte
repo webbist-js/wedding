@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Flora from '$lib/components/Flora.svelte';
 	let { form } = $props();
 </script>
+
+<Flora placement="top" density="sparse" />
 
 <main class="login">
 	<p class="eyebrow">Alex &amp; Katie</p>
@@ -17,9 +20,11 @@
 <style>
 	.login {
 		max-width: 360px;
-		margin: 14vh auto;
+		margin: 16vh auto;
 		text-align: center;
 		padding: 0 24px;
+		position: relative;
+		z-index: 1;
 	}
 	form {
 		display: grid;

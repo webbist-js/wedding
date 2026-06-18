@@ -9,11 +9,15 @@
 		TRAVEL,
 		GIFTS
 	} from '$lib/wedding-info';
+	import Flora from '$lib/components/Flora.svelte';
+	import { reveal } from '$lib/actions/reveal';
 	let { data, form } = $props();
 </script>
 
+<Flora placement="top" />
+
 <main class="rsvp">
-	<header class="hero">
+	<header class="hero" use:reveal>
 		<p class="eyebrow">You are invited to the wedding of</p>
 		<h1 class="script">{WEDDING.coupleName}</h1>
 		<p class="when">
@@ -23,26 +27,26 @@
 	</header>
 
 	{#if data.group.personalMessage}
-		<section class="personal">
+		<section class="personal" use:reveal>
 			<p>{data.group.personalMessage}</p>
 		</section>
 	{/if}
 
-	<section class="card">
+	<section class="card" use:reveal>
 		<h2 class="kick">The day</h2>
 		<ul class="timetable">
 			{#each CEREMONY_TIMETABLE as row}
 				<li><span class="t">{row.time}</span><span class="w">{row.what}</span></li>
 			{/each}
 		</ul>
-		<p class="fine">Dress code · <b>{WEDDING.dressCode}</b></p>
+		<p class="dress">{WEDDING.dressNote}</p>
 	</section>
 
 	{#if form?.saved}
-		<div class="thanks">Thank you — your reply is saved. You can change it any time from this link.</div>
+		<div class="thanks" use:reveal>Thank you — your reply is saved. You can change it any time from this link.</div>
 	{/if}
 
-	<section class="card rsvp-form">
+	<section class="card rsvp-form" use:reveal>
 		<h2 class="kick">Please reply</h2>
 		<p class="deadline">Kindly RSVP by <b>{WEDDING.rsvpDeadline}</b>.</p>
 		<form method="POST" use:enhance>
@@ -77,8 +81,8 @@
 					</div>
 					{#if m.attendanceType === 'evening'}
 						<p class="pizza">
-							In the evening we'll be serving <b>Baz &amp; Fred</b> wood-fired pizza,
-							made by hand on site.
+							You'll be joining us for <b>Baz &amp; Fred</b> wood-fired pizza,
+							handmade on site — served to everyone in the evening.
 						</p>
 						<label class="field">
 							Allergies / dietary notes
@@ -151,14 +155,14 @@
 		</form>
 	</section>
 
-	<section class="card">
+	<section class="card" use:reveal>
 		<h2 class="kick">Gifts</h2>
 		<p class="lead">{GIFTS.headline}</p>
 		<p>{GIFTS.body}</p>
 		<a class="paypal" href={WEDDING.paypalLink} target="_blank" rel="noopener">Contribute via PayPal →</a>
 	</section>
 
-	<section class="card">
+	<section class="card" use:reveal>
 		<h2 class="kick">Getting there</h2>
 		<p><b>Address</b><br />{WEDDING.venueName}, Bolton Abbey, {WEDDING.venuePostcode}</p>
 		<p><b>Parking</b><br />{TRAVEL.parking}</p>
@@ -185,7 +189,7 @@
 		</div>
 	</section>
 
-	<section class="card">
+	<section class="card" use:reveal>
 		<h2 class="kick">Where to stay</h2>
 		<ul class="accom">
 			{#each ACCOMMODATION as a}
@@ -198,10 +202,12 @@
 		</ul>
 	</section>
 
-	<footer class="foot">
+	<footer class="foot" use:reveal>
 		<p class="script">With love · A &amp; K</p>
 	</footer>
 </main>
+
+<Flora placement="bottom" />
 
 <style>
 	.rsvp {
@@ -209,10 +215,12 @@
 		margin: 0 auto;
 		padding: 6vh 22px 60px;
 		color: var(--body);
+		position: relative;
+		z-index: 1;
 	}
 	.hero {
 		text-align: center;
-		padding-bottom: 8px;
+		padding: 80px 0 8px;
 	}
 	.hero h1 {
 		font-size: clamp(58px, 14vw, 96px);
@@ -298,6 +306,15 @@
 		font-size: 13px;
 		color: var(--muted);
 		letter-spacing: 0.04em;
+	}
+	.dress {
+		margin: 18px 0 0;
+		padding: 12px 16px;
+		background: var(--sage-soft);
+		color: var(--sage-deep);
+		border-radius: 10px;
+		font-size: 13.5px;
+		line-height: 1.55;
 	}
 
 	.thanks {

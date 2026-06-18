@@ -14,6 +14,19 @@ export const load: PageServerLoad = async () => {
 			const members = allGuests.filter((m) => m.groupId === g.id);
 			const url = `${base}/rsvp/${g.token}`;
 			const qr = await QRCode.toString(url, { type: 'svg', margin: 1, width: 160 });
+			// Higher-resolution PNG for the download button (print-ready).
+			const qrPng = await QRCode.toDataURL(url, {
+				width: 1024,
+				margin: 1,
+				errorCorrectionLevel: 'M'
+			});
+			const slug =
+				g.name
+					.toLowerCase()
+					.normalize('NFKD')
+					.replace(/[^\w\s-]/g, '')
+					.trim()
+					.replace(/\s+/g, '-') || `group-${g.id}`;
 			const responded = members.filter((m) => m.rsvpStatus !== 'pending').length;
 			return {
 				id: g.id,
@@ -21,6 +34,8 @@ export const load: PageServerLoad = async () => {
 				personalMessage: g.personalMessage ?? '',
 				url,
 				qr,
+				qrPng,
+				slug,
 				members,
 				responded,
 				total: members.length
