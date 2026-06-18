@@ -26,6 +26,7 @@ export const guests = sqliteTable('guests', {
 export const budgetLines = sqliteTable('budget_lines', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   category: text('category').notNull(),
+  section: text('section').notNull().default('Everything else'),
   budgeted: real('budgeted').notNull().default(0),
   confirmed: real('confirmed').notNull().default(0),
   paid: real('paid').notNull().default(0),

@@ -1,0 +1,1 @@
+ALTER TABLE `budget_lines` ADD `section` text DEFAULT 'Everything else' NOT NULL;

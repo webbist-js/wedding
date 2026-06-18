@@ -8,6 +8,13 @@
       "when": 1781789554349,
       "tag": "0000_next_speed",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1781816412116,
+      "tag": "0001_blushing_spot",
+      "breakpoints": true
     }
   ]
 }

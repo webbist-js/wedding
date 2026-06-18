@@ -12,7 +12,7 @@
     '£' + n.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   async function saveLine(line: any, field: 'price' | 'qty') {
-    await fetch('/dashboard/costs/quote', {
+    await fetch('/dashboard/venue/quote', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ id: line.id, field, value: line[field] })
@@ -20,7 +20,7 @@
   }
 
   async function saveSetting(setting: 'dayGuests' | 'eveGuests' | 'minSpend', value: number) {
-    await fetch('/dashboard/costs/quote', {
+    await fetch('/dashboard/venue/quote', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ setting, value })

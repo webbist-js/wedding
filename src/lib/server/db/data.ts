@@ -43,8 +43,19 @@ export interface SeedPhase {
   items: { label: string; done: boolean }[];
 }
 
+export type BudgetSection = 'Essentials' | 'Décor & flowers' | 'Stationery' | 'Favours' | 'Everything else';
+
+export const BUDGET_SECTIONS: BudgetSection[] = [
+  'Essentials',
+  'Décor & flowers',
+  'Stationery',
+  'Favours',
+  'Everything else'
+];
+
 export interface SeedBudgetLine {
   category: string;
+  section: BudgetSection;
   budgeted: number;
   confirmed: number;
   paid: number;
@@ -57,10 +68,10 @@ const B_FAM = "Bride's family";
 const G_FR = "Groom's party & friends";
 const G_WK = "Groom's work";
 const B_FR = "Bride's friends";
-const B_WKF = "Bride's work friends";
-const B_WK = "Bride's work colleagues";
+const B_WKF = "Bride's work";
+const B_WK = "Bride's work";
 const NB = 'Neighbours';
-const EVE = "Evening — Bride's work";
+const EVE = 'Evening guests';
 
 export const SEED_GUESTS: SeedGuest[] = [
   // --- Groom's family ---
@@ -291,29 +302,35 @@ export const SEED_TIMELINE: SeedPhase[] = [
 // Budget — figures from BUDGET_DEFAULT. Status derived from the source's
 // bStatus(confirmed, paid): paid>=confirmed&&confirmed>0 -> Paid;
 // confirmed>0&&paid>0 -> Deposit; confirmed>0 -> Booked; else -> Estimate.
+export const VENUE_BUDGET_CATEGORY = 'Venue & catering';
+
 export const SEED_BUDGET: SeedBudgetLine[] = [
-  { category: 'Venue & catering', budgeted: 17320, confirmed: 17319.4, paid: 0, status: 'Booked' },
-  { category: 'Photography — Adam Lowndes', budgeted: 2750, confirmed: 2750, paid: 400, status: 'Deposit' },
-  { category: 'Wedding rings', budgeted: 240, confirmed: 240, paid: 240, status: 'Paid' },
-  { category: 'Ceremony & notice fees', budgeted: 134, confirmed: 134, paid: 50, status: 'Deposit' },
-  { category: 'Florist & flowers', budgeted: 1500, confirmed: 0, paid: 0, status: 'Estimate' },
-  { category: 'Music / DJ', budgeted: 600, confirmed: 0, paid: 0, status: 'Estimate' },
-  { category: 'Hair & makeup', budgeted: 600, confirmed: 0, paid: 0, status: 'Estimate' },
-  { category: "Bride's dress & accessories", budgeted: 1500, confirmed: 0, paid: 0, status: 'Estimate' },
-  { category: 'Groom & groomsmen attire', budgeted: 800, confirmed: 0, paid: 0, status: 'Estimate' },
-  { category: 'Bridesmaid dresses', budgeted: 600, confirmed: 0, paid: 0, status: 'Estimate' },
-  { category: 'Cake', budgeted: 350, confirmed: 0, paid: 0, status: 'Estimate' },
-  { category: 'Transport', budgeted: 400, confirmed: 0, paid: 0, status: 'Estimate' },
-  { category: 'Stationery', budgeted: 500, confirmed: 0, paid: 0, status: 'Estimate' },
-  { category: 'Décor & styling', budgeted: 800, confirmed: 0, paid: 0, status: 'Estimate' },
-  { category: 'Favours', budgeted: 200, confirmed: 0, paid: 0, status: 'Estimate' },
-  { category: 'Confetti (fresh petals)', budgeted: 80, confirmed: 0, paid: 0, status: 'Estimate' },
-  { category: "Couple's accommodation", budgeted: 400, confirmed: 0, paid: 0, status: 'Estimate' },
-  { category: 'Dog handler (Bodie)', budgeted: 250, confirmed: 0, paid: 0, status: 'Estimate' },
-  { category: 'Magician', budgeted: 400, confirmed: 0, paid: 0, status: 'Estimate' },
-  { category: 'Wedding insurance', budgeted: 80, confirmed: 0, paid: 0, status: 'Estimate' },
-  { category: 'Honeymoon', budgeted: 3000, confirmed: 0, paid: 0, status: 'Estimate' },
-  { category: 'Contingency (~5%)', budgeted: 1500, confirmed: 0, paid: 0, status: 'Estimate' }
+  { category: VENUE_BUDGET_CATEGORY, section: 'Essentials', budgeted: 17320, confirmed: 17319.4, paid: 0, status: 'Booked' },
+  { category: 'Photography — Adam Lowndes', section: 'Essentials', budgeted: 2750, confirmed: 2750, paid: 400, status: 'Deposit' },
+  { category: 'Wedding rings', section: 'Essentials', budgeted: 240, confirmed: 240, paid: 240, status: 'Paid' },
+  { category: 'Ceremony & notice fees', section: 'Essentials', budgeted: 134, confirmed: 134, paid: 50, status: 'Deposit' },
+  { category: 'Wedding insurance', section: 'Essentials', budgeted: 80, confirmed: 0, paid: 0, status: 'Estimate' },
+
+  { category: 'Florist & flowers', section: 'Décor & flowers', budgeted: 1500, confirmed: 0, paid: 0, status: 'Estimate' },
+  { category: 'Décor & styling', section: 'Décor & flowers', budgeted: 800, confirmed: 0, paid: 0, status: 'Estimate' },
+  { category: 'Confetti (fresh petals)', section: 'Décor & flowers', budgeted: 80, confirmed: 0, paid: 0, status: 'Estimate' },
+
+  { category: 'Stationery', section: 'Stationery', budgeted: 500, confirmed: 0, paid: 0, status: 'Estimate' },
+
+  { category: 'Favours', section: 'Favours', budgeted: 200, confirmed: 0, paid: 0, status: 'Estimate' },
+
+  { category: "Bride's dress & accessories", section: 'Everything else', budgeted: 1500, confirmed: 0, paid: 0, status: 'Estimate' },
+  { category: 'Groom & groomsmen attire', section: 'Everything else', budgeted: 800, confirmed: 0, paid: 0, status: 'Estimate' },
+  { category: 'Bridesmaid dresses', section: 'Everything else', budgeted: 600, confirmed: 0, paid: 0, status: 'Estimate' },
+  { category: 'Hair & makeup', section: 'Everything else', budgeted: 600, confirmed: 0, paid: 0, status: 'Estimate' },
+  { category: 'Music / DJ', section: 'Everything else', budgeted: 600, confirmed: 0, paid: 0, status: 'Estimate' },
+  { category: 'Cake', section: 'Everything else', budgeted: 350, confirmed: 0, paid: 0, status: 'Estimate' },
+  { category: 'Magician', section: 'Everything else', budgeted: 400, confirmed: 0, paid: 0, status: 'Estimate' },
+  { category: 'Dog handler (Bodie)', section: 'Everything else', budgeted: 250, confirmed: 0, paid: 0, status: 'Estimate' },
+  { category: 'Transport', section: 'Everything else', budgeted: 400, confirmed: 0, paid: 0, status: 'Estimate' },
+  { category: "Couple's accommodation", section: 'Everything else', budgeted: 400, confirmed: 0, paid: 0, status: 'Estimate' },
+  { category: 'Honeymoon', section: 'Everything else', budgeted: 3000, confirmed: 0, paid: 0, status: 'Estimate' },
+  { category: 'Contingency (~5%)', section: 'Everything else', budgeted: 1500, confirmed: 0, paid: 0, status: 'Estimate' }
 ];
 
 export const SEED_STATIONERY: string[] = [

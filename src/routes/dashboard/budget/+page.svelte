@@ -1,83 +1,369 @@
 <script lang="ts">
-  import SectionHeading from '$lib/components/SectionHeading.svelte';
-  import Rule from '$lib/components/Rule.svelte';
-  import Card from '$lib/components/Card.svelte';
-  import Stat from '$lib/components/Stat.svelte';
-  import { enhance } from '$app/forms';
-  let { data } = $props();
-  const gbp = (n: number) => '£' + n.toLocaleString('en-GB', { maximumFractionDigits: 0 });
-  let earmark = $derived(data.lines.reduce((a, l) => a + l.budgeted, 0));
-  let confirmed = $derived(data.lines.reduce((a, l) => a + l.confirmed, 0));
-  let paid = $derived(data.lines.reduce((a, l) => a + l.paid, 0));
+	import SectionHeading from '$lib/components/SectionHeading.svelte';
+	import Rule from '$lib/components/Rule.svelte';
+	import Pill from '$lib/components/Pill.svelte';
+	import { enhance } from '$app/forms';
+	let { data } = $props();
+	const gbp = (n: number) => '£' + n.toLocaleString('en-GB', { maximumFractionDigits: 0 });
 
-  async function toggleStatio(item: any, checked: boolean) {
-    await fetch('/dashboard/stationery', { method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ id: item.id, done: checked }) });
-  }
+	let earmark = $derived(data.lines.reduce((a, l) => a + l.budgeted, 0));
+	let confirmed = $derived(data.lines.reduce((a, l) => a + l.confirmed, 0));
+	let paid = $derived(data.lines.reduce((a, l) => a + l.paid, 0));
+
+	async function saveField(id: number, field: string, value: string | number) {
+		await fetch('/dashboard/budget/line', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ id, field, value })
+		});
+	}
+	async function toggleStatio(id: number, done: boolean) {
+		await fetch('/dashboard/stationery', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ id, done })
+		});
+	}
+
+	const statusOptions = ['Estimate', 'To book', 'Booked', 'Deposit', 'Paid', 'Optional'];
 </script>
 
 <SectionHeading>Budget</SectionHeading><Rule />
-<div class="grid">
-  <form method="POST" action="?/setTarget" use:enhance class="stat-form">
-    <label>Target £ <input name="target" type="number" value={data.target} /></label>
-    <button>Save</button>
-  </form>
-  <Stat value={gbp(earmark)} label="Total earmarked" />
-  <Stat value={gbp(confirmed)} label="Confirmed costs" />
-  <Stat value={gbp(paid)} label="Paid to date" accent />
+
+<div class="stats">
+	<form method="POST" action="?/setTarget" use:enhance class="stat target">
+		<span class="l">Target £</span>
+		<input
+			name="target"
+			type="number"
+			value={data.target}
+			onchange={(e) => (e.currentTarget.form as HTMLFormElement).requestSubmit()}
+		/>
+	</form>
+	<div class="stat"><div class="v">{gbp(earmark)}</div><div class="l">Total earmarked</div></div>
+	<div class="stat"><div class="v">{gbp(confirmed)}</div><div class="l">Confirmed costs</div></div>
+	<div class="stat"><div class="v accent">{gbp(paid)}</div><div class="l">Paid to date</div></div>
 </div>
 
-<div class="card">
-  <table>
-    <thead><tr><th>Category</th><th class="r">Budgeted</th><th class="r">Confirmed</th><th class="r">Paid</th><th>Status</th><th></th></tr></thead>
-    <tbody>
-      {#each data.lines as line (line.id)}
-        <tr>
-          <td colspan="6" class="rowcell">
-            <form method="POST" action="?/update" use:enhance class="rowform">
-              <input type="hidden" name="id" value={line.id} />
-              <input name="category" value={line.category} class="cat" />
-              <input name="budgeted" type="number" value={line.budgeted} class="num" />
-              <input name="confirmed" type="number" value={line.confirmed} class="num" />
-              <input name="paid" type="number" value={line.paid} class="num" />
-              <select name="status" value={line.status}><option value="todo">To do</option><option value="booked">Booked</option><option value="paid">Paid</option></select>
-              <button class="save">Save</button>
-            </form>
-            <form method="POST" action="?/remove" use:enhance class="rm"><input type="hidden" name="id" value={line.id} /><button>×</button></form>
-          </td>
-        </tr>
-      {/each}
-    </tbody>
-  </table>
-  <form method="POST" action="?/add" use:enhance class="addrow">
-    <input name="category" placeholder="New budget line…" />
-    <button>+ Add line</button>
-  </form>
-</div>
+{#each data.sections as section}
+	{@const sectionLines = data.lines.filter((l) => l.section === section)}
+	<section class="bsection">
+		<h3 class="ktitle">{section}</h3>
+		<div class="card">
+			<div class="row head">
+				<span>Category</span>
+				<span class="r">Budgeted £</span>
+				<span class="r">Confirmed £</span>
+				<span class="r">Paid £</span>
+				<span>Status</span>
+				<span>Section</span>
+				<span></span>
+			</div>
 
-<Card kicker="Stationery — what you'll need">
-  {#each data.statio as item}
-    <label class="statio"><input type="checkbox" checked={item.done} onchange={(e) => toggleStatio(item, (e.target as HTMLInputElement).checked)} /> {item.label}</label>
-  {/each}
-</Card>
+			{#each sectionLines as line (line.id)}
+				<div class="row" class:venue={line.isVenue}>
+					{#if line.isVenue}
+						<span class="cat venue-cat">{line.category} <Pill tone="green">Synced</Pill></span>
+						<input
+							class="num"
+							type="number"
+							value={line.budgeted}
+							onchange={(e) => saveField(line.id, 'budgeted', e.currentTarget.value)}
+						/>
+						<span class="readonly num">{gbp(line.confirmed)}</span>
+						<input
+							class="num"
+							type="number"
+							value={line.paid}
+							onchange={(e) => saveField(line.id, 'paid', e.currentTarget.value)}
+						/>
+						<select
+							onchange={(e) => saveField(line.id, 'status', e.currentTarget.value)}
+							value={line.status}
+						>
+							{#each statusOptions as opt}
+								<option value={opt} selected={opt === line.status}>{opt}</option>
+							{/each}
+						</select>
+						<span class="locked">Essentials</span>
+						<span></span>
+					{:else}
+						<input
+							class="cat"
+							value={line.category}
+							onchange={(e) => saveField(line.id, 'category', e.currentTarget.value)}
+						/>
+						<input
+							class="num"
+							type="number"
+							value={line.budgeted}
+							onchange={(e) => saveField(line.id, 'budgeted', e.currentTarget.value)}
+						/>
+						<input
+							class="num"
+							type="number"
+							value={line.confirmed}
+							onchange={(e) => saveField(line.id, 'confirmed', e.currentTarget.value)}
+						/>
+						<input
+							class="num"
+							type="number"
+							value={line.paid}
+							onchange={(e) => saveField(line.id, 'paid', e.currentTarget.value)}
+						/>
+						<select
+							onchange={(e) => saveField(line.id, 'status', e.currentTarget.value)}
+							value={line.status}
+						>
+							{#each statusOptions as opt}
+								<option value={opt} selected={opt === line.status}>{opt}</option>
+							{/each}
+						</select>
+						<select
+							onchange={(e) => saveField(line.id, 'section', e.currentTarget.value)}
+							value={line.section}
+						>
+							{#each data.sections as s}
+								<option value={s} selected={s === line.section}>{s}</option>
+							{/each}
+						</select>
+						<form method="POST" action="?/remove" use:enhance class="rmf">
+							<input type="hidden" name="id" value={line.id} />
+							<button type="submit" title="Remove" aria-label="Remove">×</button>
+						</form>
+					{/if}
+				</div>
+			{/each}
+
+			<form method="POST" action="?/add" use:enhance class="addrow">
+				<input type="hidden" name="section" value={section} />
+				<input name="category" placeholder={`Add a line in ${section}…`} />
+				<button>+ Add</button>
+			</form>
+
+			{#if section === 'Stationery'}
+				<div class="statio">
+					<p class="sublabel">What you'll need (tick as you go)</p>
+					<div class="statio-grid">
+						{#each data.statio as item}
+							<label class="statio-item">
+								<input
+									type="checkbox"
+									checked={item.done}
+									onchange={(e) =>
+										toggleStatio(item.id, (e.target as HTMLInputElement).checked)}
+								/>
+								{item.label}
+							</label>
+						{/each}
+					</div>
+				</div>
+			{/if}
+		</div>
+	</section>
+{/each}
 
 <style>
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 22px; }
-  .stat-form { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; display: grid; gap: 8px; }
-  .stat-form label { font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); display: grid; gap: 6px; }
-  .stat-form input { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font: inherit; font-size: 18px; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px 18px; margin-bottom: 18px; }
-  table { width: 100%; }
-  th { text-align: left; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); padding: 8px; }
-  th.r { text-align: right; }
-  .rowform { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 6px 0; }
-  .rowform .cat { flex: 1 1 180px; }
-  .rowform input, .rowform select { border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font: inherit; font-size: 13px; }
-  .rowform .num { width: 90px; text-align: right; }
-  .rowcell { display: flex; gap: 10px; align-items: center; border-bottom: 1px solid var(--line2); }
-  .save, .addrow button { background: var(--sage); color: #fff; border: 0; border-radius: 6px; padding: 6px 12px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
-  .rm button { background: none; border: 0; color: var(--faint); font-size: 18px; cursor: pointer; }
-  .addrow { display: flex; gap: 10px; margin-top: 12px; }
-  .addrow input { flex: 1; border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; font: inherit; }
-  .statio { display: block; padding: 5px 0; font-size: 14px; }
+	.stats {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+		gap: 14px;
+		margin-bottom: 32px;
+	}
+	.stat {
+		background: var(--card);
+		border: 1px solid var(--line);
+		border-radius: 14px;
+		padding: 18px 22px;
+	}
+	.stat .v {
+		font-family: var(--serif);
+		font-weight: 600;
+		font-size: 30px;
+		color: var(--ink);
+		line-height: 1;
+	}
+	.stat .v.accent {
+		color: var(--sage);
+	}
+	.stat .l {
+		font-weight: 500;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		font-size: 10.5px;
+		color: var(--muted);
+		margin-top: 8px;
+	}
+	.stat.target {
+		display: grid;
+		gap: 8px;
+	}
+	.stat.target .l {
+		margin-top: 0;
+	}
+	.stat.target input {
+		border: 1px solid var(--line);
+		border-radius: 8px;
+		padding: 4px 10px;
+		font-family: var(--serif);
+		font-weight: 600;
+		font-size: 28px;
+		color: var(--ink);
+		line-height: 1.1;
+	}
+
+	.bsection {
+		margin-bottom: 28px;
+	}
+	.ktitle {
+		font-family: var(--sans);
+		font-weight: 600;
+		letter-spacing: 0.22em;
+		text-transform: uppercase;
+		font-size: 11.5px;
+		color: var(--sage);
+		margin: 0 0 12px 4px;
+	}
+	.card {
+		background: var(--card);
+		border: 1px solid var(--line);
+		border-radius: 16px;
+		padding: 12px 16px;
+	}
+
+	.row {
+		display: grid;
+		grid-template-columns: minmax(180px, 1.8fr) 100px 100px 100px 120px 140px 28px;
+		gap: 10px;
+		align-items: center;
+		padding: 8px 4px;
+		border-bottom: 1px solid var(--line2);
+	}
+	.row:last-of-type {
+		border-bottom: 0;
+	}
+	.row.head {
+		color: var(--muted);
+		font-size: 10px;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		padding-bottom: 10px;
+		border-bottom: 1px solid var(--line);
+	}
+	.row.head .r {
+		text-align: right;
+	}
+	.row input,
+	.row select {
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		padding: 6px 8px;
+		font: inherit;
+		font-size: 13px;
+		background: #fff;
+		min-width: 0;
+	}
+	.row input.cat {
+		font-weight: 500;
+		color: var(--ink);
+	}
+	.row input.num {
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+	}
+	.row .readonly {
+		color: var(--body);
+		font-variant-numeric: tabular-nums;
+		padding-right: 8px;
+		text-align: right;
+	}
+	.row .locked {
+		color: var(--faint);
+		font-size: 12px;
+		font-style: italic;
+	}
+	.row.venue .venue-cat {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		font-weight: 600;
+		color: var(--ink);
+	}
+	.rmf {
+		margin: 0;
+	}
+	.rmf button {
+		background: none;
+		border: 0;
+		color: var(--faint);
+		font-size: 18px;
+		cursor: pointer;
+		padding: 0;
+	}
+	.rmf button:hover {
+		color: var(--terra);
+	}
+
+	.addrow {
+		display: flex;
+		gap: 10px;
+		margin: 12px 4px 4px;
+	}
+	.addrow input {
+		flex: 1;
+		border: 1px solid var(--line);
+		border-radius: 8px;
+		padding: 8px 12px;
+		font: inherit;
+		font-size: 13px;
+	}
+	.addrow button {
+		background: var(--sage);
+		color: #fff;
+		border: 0;
+		border-radius: 8px;
+		padding: 8px 14px;
+		cursor: pointer;
+		font-size: 11px;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		font-weight: 500;
+	}
+
+	.statio {
+		margin-top: 18px;
+		padding: 18px 4px 4px;
+		border-top: 1px solid var(--line2);
+	}
+	.sublabel {
+		font-weight: 500;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		font-size: 10.5px;
+		color: var(--muted);
+		margin: 0 0 12px;
+	}
+	.statio-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+		gap: 6px 16px;
+	}
+	.statio-item {
+		font-size: 13.5px;
+		color: var(--body);
+		padding: 3px 0;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	@media (max-width: 800px) {
+		.row {
+			grid-template-columns: 1fr 1fr 1fr;
+			gap: 6px;
+		}
+		.row.head {
+			display: none;
+		}
+	}
 </style>

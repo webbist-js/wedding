@@ -113,6 +113,7 @@ export async function seed(): Promise<void> {
   for (const [i, b] of SEED_BUDGET.entries()) {
     await db.insert(budgetLines).values({
       category: b.category,
+      section: b.section,
       budgeted: b.budgeted,
       confirmed: b.confirmed,
       paid: b.paid,
