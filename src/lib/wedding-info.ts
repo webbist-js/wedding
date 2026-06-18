@@ -40,7 +40,7 @@ export const MENU = {
 	],
 	starter: 'Leek & potato soup, Cashel blue',
 	main: 'Buttermilk chicken, herb butter & tarragon cream',
-	mainVeg: 'A seasonal vegetarian alternative — let us know on your RSVP',
+	mainVeg: 'Roasted squash, ricotta, chilli, pesto',
 	sides: ['Tender stem broccoli, chilli & garlic', 'Gratin dauphinoise'],
 	dessert: 'Treacle sponge, custard',
 	teaCoffee: 'Tea & coffee with petits fours',
@@ -66,6 +66,12 @@ export const ACCOMMODATION = [
 		name: 'Holiday cottages on the estate',
 		note: 'Meadowcroft (sleeps 8) and Norwood Cottage (sleeps 4) are 1–2 miles away — good for families or groups.',
 		url: 'https://boltonabbey.com/stay/'
+	},
+	{
+		name: 'Premier Inn Skipton North (Gargrave)',
+		note: 'Chain budget hotel a 15-minute drive away, just outside Skipton in Gargrave.',
+		phone: '0871 527 8980',
+		url: 'https://www.premierinn.com/gb/en/hotels/england/north-yorkshire/skipton/skipton-north-gargrave.html'
 	}
 ];
 
