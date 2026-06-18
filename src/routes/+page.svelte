@@ -2,7 +2,7 @@
 	<p class="eyebrow">Together with their families</p>
 	<h1 class="script">Alex &amp; Katie</h1>
 	<p class="date">are getting married</p>
-	<p class="meta">Thursday 2 April 2027 · The Tithe Barn, Bolton Abbey</p>
+	<p class="meta">Friday 2 April 2027 · The Tithe Barn, Bolton Abbey</p>
 	<p class="note">
 		If you've received an invitation, please use the QR code or personal link to RSVP.
 	</p>

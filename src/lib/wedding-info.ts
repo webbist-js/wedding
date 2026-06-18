@@ -2,7 +2,7 @@
 
 export const WEDDING = {
 	coupleName: 'Alex & Katie',
-	dateLong: 'Thursday 2 April 2027',
+	dateLong: 'Friday 2 April 2027',
 	ceremonyTime: '2.30pm',
 	venueName: 'The Tithe Barn',
 	venueArea: 'Bolton Abbey · Yorkshire Dales',

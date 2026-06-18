@@ -13,7 +13,7 @@
 <header class="top">
   <p class="eyebrow">The Tithe Barn · Bolton Abbey</p>
   <h1 class="script">Alex &amp; Katie</h1>
-  <div class="meta">Thursday 2 April 2027 · 2.30pm</div>
+  <div class="meta">Friday 2 April 2027 · 2.30pm</div>
 </header>
 <nav>
   {#each tabs as [href, label]}

@@ -75,7 +75,16 @@
 							Regretfully declines
 						</label>
 					</div>
-					{#if m.isChild}
+					{#if m.attendanceType === 'evening'}
+						<p class="pizza">
+							In the evening we'll be serving <b>Baz &amp; Fred</b> wood-fired pizza,
+							made by hand on site.
+						</p>
+						<label class="field">
+							Allergies / dietary notes
+							<input name="diet_{m.id}" value={m.dietaryNotes ?? ''} />
+						</label>
+					{:else if m.isChild}
 						<p class="kids">Children are served from our <b>kids' menu</b>.</p>
 						<label class="field">
 							Allergies / dietary notes
@@ -355,6 +364,13 @@
 		font-size: 13.5px;
 		color: var(--body);
 		background: var(--rose-bg);
+		padding: 8px 12px;
+		border-radius: 8px;
+	}
+	.pizza {
+		font-size: 13.5px;
+		color: var(--body);
+		background: var(--sage-soft);
 		padding: 8px 12px;
 		border-radius: 8px;
 	}
