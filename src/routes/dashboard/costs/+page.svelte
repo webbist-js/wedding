@@ -18,13 +18,21 @@
       body: JSON.stringify({ id: line.id, field, value: line[field] })
     });
   }
+
+  async function saveSetting(setting: 'dayGuests' | 'eveGuests' | 'minSpend', value: number) {
+    await fetch('/dashboard/costs/quote', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ setting, value })
+    });
+  }
 </script>
 
 <SectionHeading>Venue quote</SectionHeading><Rule />
 <div class="ctrls">
-  <label>Day guests <input type="number" bind:value={day} /></label>
-  <label>Evening guests <input type="number" bind:value={eve} /></label>
-  <label>Min spend £ <input type="number" bind:value={min} /></label>
+  <label>Day guests <input type="number" bind:value={day} onchange={() => saveSetting('dayGuests', day)} /></label>
+  <label>Evening guests <input type="number" bind:value={eve} onchange={() => saveSetting('eveGuests', eve)} /></label>
+  <label>Min spend £ <input type="number" bind:value={min} onchange={() => saveSetting('minSpend', min)} /></label>
 </div>
 
 <div class="card">
