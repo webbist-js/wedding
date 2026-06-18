@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeQuote } from '../src/lib/server/quote';
+import { computeQuote } from '../src/lib/quote';
 
 const lines = [
   { scope: 'day', price: 50, qty: null, bond: false },

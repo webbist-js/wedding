@@ -1,7 +1,7 @@
 <script lang="ts">
   import SectionHeading from '$lib/components/SectionHeading.svelte';
   import Rule from '$lib/components/Rule.svelte';
-  import { computeQuote } from '$lib/server/quote';
+  import { computeQuote } from '$lib/quote';
   let { data } = $props();
   let day = $state(data.day),
     eve = $state(data.eve),
