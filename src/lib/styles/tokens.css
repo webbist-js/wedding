@@ -1,0 +1,10 @@
+:root {
+  --bg: #fbfaf6; --ink: #211f1a; --body: #4a473f; --muted: #9a968a; --faint: #a8a496;
+  --line: #e8e3d6; --line2: #f1ecdf; --card: #ffffff;
+  --sage: #6f7d59; --sage-deep: #51603f; --sage-soft: #eef1e7;
+  --terra: #b05c3f; --terra-bg: #faf0ea; --tan: #c2a18a; --rule: #cbbd9e;
+  --rose: #c08a86; --rose-bg: #f6ecea;
+  --serif: 'Cormorant Garamond', Georgia, serif;
+  --sans: 'Inter', system-ui, sans-serif;
+  --script: 'Style Script', cursive;
+}
