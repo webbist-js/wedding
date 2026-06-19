@@ -10,6 +10,11 @@
 	let earmark = $derived(data.lines.reduce((a, l) => a + l.budgeted, 0));
 	let confirmed = $derived(data.lines.reduce((a, l) => a + l.confirmed, 0));
 	let paid = $derived(data.lines.reduce((a, l) => a + l.paid, 0));
+	let remaining = $derived(data.target - confirmed);
+	let overBudget = $derived(remaining < 0);
+	let pctOfTarget = $derived(
+		data.target > 0 ? Math.min(100, (confirmed / data.target) * 100) : 0
+	);
 
 	async function saveField(id: number, field: string, value: string | number) {
 		await fetch('/dashboard/budget/line', {
@@ -67,10 +72,6 @@
 </script>
 
 <SectionHeading>Budget</SectionHeading><Rule />
-
-{@const remaining = data.target - confirmed}
-{@const overBudget = remaining < 0}
-{@const pctOfTarget = data.target > 0 ? Math.min(100, (confirmed / data.target) * 100) : 0}
 
 <div class="stats">
 	<form method="POST" action="?/setTarget" use:enhance class="stat stat-edit">
