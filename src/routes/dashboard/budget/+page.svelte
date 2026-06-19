@@ -79,9 +79,15 @@
 			<span class="prefix">£</span>
 			<input
 				name="target"
-				type="number"
-				value={data.target}
-				onchange={(e) => (e.currentTarget.form as HTMLFormElement).requestSubmit()}
+				type="text"
+				inputmode="numeric"
+				value={data.target.toLocaleString('en-GB')}
+				onchange={(e) => {
+					const raw = e.currentTarget.value.replace(/[^\d]/g, '');
+					const n = Number(raw) || 0;
+					e.currentTarget.value = n.toLocaleString('en-GB');
+					(e.currentTarget.form as HTMLFormElement).requestSubmit();
+				}}
 			/>
 		</div>
 		<div class="l">Target</div>
@@ -282,21 +288,18 @@
 		color: var(--muted);
 		margin-top: 8px;
 	}
-	.stat-edit {
-		border: 0;
-		padding: 0;
-		margin: 0;
-		display: block;
-	}
+	/* Editable Target stat — keeps the same card chrome as the other stats,
+	   but the input itself is borderless and uses the serif display font so
+	   it reads as the stat value. */
 	.stat-edit .v {
-		gap: 2px;
+		gap: 0;
 	}
 	.stat-edit .prefix {
 		font-family: var(--serif);
 		font-weight: 600;
 		font-size: 30px;
 		color: var(--ink);
-		margin-right: 2px;
+		line-height: 1;
 	}
 	.stat-edit input {
 		border: 0;
@@ -310,13 +313,6 @@
 		line-height: 1;
 		width: 100%;
 		min-width: 0;
-		-moz-appearance: textfield;
-		appearance: textfield;
-	}
-	.stat-edit input::-webkit-outer-spin-button,
-	.stat-edit input::-webkit-inner-spin-button {
-		-webkit-appearance: none;
-		margin: 0;
 	}
 	.stat-edit input:focus {
 		outline: none;

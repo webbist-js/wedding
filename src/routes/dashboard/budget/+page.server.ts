@@ -57,9 +57,12 @@ export const actions: Actions = {
 	},
 	setTarget: async ({ request }) => {
 		const f = await request.formData();
+		// Strip thousands separators (commas, spaces) the input renders for display
+		const raw = String(f.get('target') ?? '').replace(/[^\d.]/g, '');
+		const num = Number(raw) || 0;
 		await db
 			.update(settings)
-			.set({ value: String(Number(f.get('target')) || 0) })
+			.set({ value: String(num) })
 			.where(eq(settings.key, 'target'));
 	}
 };
