@@ -42,10 +42,10 @@ export const CEREMONY_TIMETABLE = [
 	{ time: '3.00 pm', what: 'Drinks reception & canapés' },
 	{ time: '5.00 pm', what: 'Wedding breakfast' },
 	{ time: '7.30 pm', what: 'Speeches & cake' },
-	{ time: '8.00 pm', what: 'Evening guests arrive · Baz & Fred pizza' },
-	{ time: '9.00 pm', what: 'First dance · dancing' },
-	{ time: '12.30 am', what: 'Last orders' },
-	{ time: '1.00 am', what: 'Carriages' }
+	{ time: '8.00 pm', what: 'Evening guests arrive · Baz & Fred pizza', evening: true },
+	{ time: '9.00 pm', what: 'First dance · dancing', evening: true },
+	{ time: '12.30 am', what: 'Last orders', evening: true },
+	{ time: '1.00 am', what: 'Carriages', evening: true }
 ];
 
 export const MENU = {

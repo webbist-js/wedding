@@ -37,6 +37,11 @@
 	// song-request field visibility.
 	let anyAttending = $derived(Object.values(attending).some((s) => s === 'yes'));
 
+	// Households where every member is evening-only get a tailored, shorter
+	// page: timetable starts at 8pm, formalities drop the unplugged-ceremony
+	// copy, and the menu collapses to evening food + drinks.
+	const isEveningOnly = data.members.every((m) => m.attendanceType === 'evening');
+
 	// Personal-message modal — show once per device per group on first open.
 	let showPersonalMsg = $state(false);
 	$effect(() => {
@@ -157,7 +162,7 @@
 		<h2 class="card-title script">The Day</h2>
 		<img src="/flora/layer-13.png" class="card-sprig" alt="" aria-hidden="true" />
 		<ul class="timetable">
-			{#each CEREMONY_TIMETABLE as row}
+			{#each CEREMONY_TIMETABLE.filter((row) => !isEveningOnly || row.evening) as row}
 				<li>
 					<span class="t">{row.time}</span>
 					<span class="d"></span>
@@ -178,13 +183,15 @@
 			<p class="body">{WEDDING.formalities.dressCode.body}</p>
 		</div>
 
-		<div class="formality-divider" aria-hidden="true"></div>
+		{#if !isEveningOnly}
+			<div class="formality-divider" aria-hidden="true"></div>
 
-		<div class="formality">
-			<p class="micro">{WEDDING.formalities.unplugged.label}</p>
-			<p class="lead">{WEDDING.formalities.unplugged.headline}</p>
-			<p class="body">{WEDDING.formalities.unplugged.body}</p>
-		</div>
+			<div class="formality">
+				<p class="micro">{WEDDING.formalities.unplugged.label}</p>
+				<p class="lead">{WEDDING.formalities.unplugged.headline}</p>
+				<p class="body">{WEDDING.formalities.unplugged.body}</p>
+			</div>
+		{/if}
 	</section>
 
 	{#if form?.saved}
@@ -385,30 +392,34 @@
 			></video>
 		</div>
 		<dl class="menu">
-			<dt>Canapés</dt>
-			<dd>
-				{#each MENU.canapes as c, i}{c}{#if i < MENU.canapes.length - 1}<br />{/if}{/each}
-			</dd>
-			<dt>Starter</dt>
-			<dd>{MENU.starter}</dd>
-			<dt>Main</dt>
-			<dd>{MENU.main}</dd>
-			<dt>Vegetarian main</dt>
-			<dd>{MENU.mainVeg}</dd>
-			<dt>Sides</dt>
-			<dd>
-				{#each MENU.sides as s, i}{s}{#if i < MENU.sides.length - 1}<br />{/if}{/each}
-			</dd>
-			<dt>Dessert</dt>
-			<dd>{MENU.dessert}</dd>
-			<dt>Tea &amp; coffee</dt>
-			<dd>{MENU.teaCoffee}</dd>
-			<dt>In the evening</dt>
+			{#if !isEveningOnly}
+				<dt>Canapés</dt>
+				<dd>
+					{#each MENU.canapes as c, i}{c}{#if i < MENU.canapes.length - 1}<br />{/if}{/each}
+				</dd>
+				<dt>Starter</dt>
+				<dd>{MENU.starter}</dd>
+				<dt>Main</dt>
+				<dd>{MENU.main}</dd>
+				<dt>Vegetarian main</dt>
+				<dd>{MENU.mainVeg}</dd>
+				<dt>Sides</dt>
+				<dd>
+					{#each MENU.sides as s, i}{s}{#if i < MENU.sides.length - 1}<br />{/if}{/each}
+				</dd>
+				<dt>Dessert</dt>
+				<dd>{MENU.dessert}</dd>
+				<dt>Tea &amp; coffee</dt>
+				<dd>{MENU.teaCoffee}</dd>
+			{/if}
+			<dt>{isEveningOnly ? 'Evening food' : 'In the evening'}</dt>
 			<dd>{MENU.evening}</dd>
 			<dt>Drinks</dt>
 			<dd>{MENU.drinks}</dd>
-			<dt>Children</dt>
-			<dd>{MENU.kids}</dd>
+			{#if !isEveningOnly}
+				<dt>Children</dt>
+				<dd>{MENU.kids}</dd>
+			{/if}
 		</dl>
 	</section>
 
