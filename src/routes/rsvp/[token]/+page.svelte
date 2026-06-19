@@ -77,18 +77,28 @@
 		</video>
 		<div class="hero-overlay" aria-hidden="true"></div>
 		<div class="hero-content">
-			<p class="eyebrow">You are invited to the wedding of</p>
-			<h1 class="script">{WEDDING.coupleName}</h1>
-			<img src="/flora/layer-13.png" class="title-sprig" alt="" aria-hidden="true" />
-			<p class="when">{WEDDING.dateLong}</p>
-			<p class="where">{WEDDING.venueName} · Bolton Abbey · Yorkshire Dales</p>
+			<p class="eyebrow fade-in">You are invited to the wedding of</p>
+			<svg
+				class="title-svg"
+				viewBox="0 0 700 220"
+				preserveAspectRatio="xMidYMid meet"
+				role="img"
+				aria-label={WEDDING.coupleName}
+			>
+				<text class="title-text" x="50%" y="50%" text-anchor="middle" dominant-baseline="middle">
+					{WEDDING.coupleName}
+				</text>
+			</svg>
+			<img src="/flora/layer-13.png" class="title-sprig fade-in" alt="" aria-hidden="true" />
+			<p class="when fade-in">{WEDDING.dateLong}</p>
+			<p class="where fade-in">{WEDDING.venueName} · Bolton Abbey · Yorkshire Dales</p>
 			{#if daysToGo !== null}
-				<p class="countdown">
+				<p class="countdown fade-in">
 					<span class="cd-num">{daysToGo}</span>
 					<span class="cd-label">{daysToGo === 1 ? 'day' : 'days'} to go</span>
 				</p>
 			{/if}
-			<MusicBanner />
+			<div class="fade-in"><MusicBanner /></div>
 		</div>
 	</header>
 
@@ -489,6 +499,75 @@
 		line-height: 1;
 		color: #fbfaf6;
 		text-shadow: 0 2px 22px rgba(0, 0, 0, 0.25);
+	}
+
+	/* SVG draw-in title — strokes the script letterforms first, then fills.
+	   Other hero items wait for the draw to finish before fading in. */
+	.title-svg {
+		display: block;
+		width: min(680px, 92%);
+		margin: 6px auto 8px;
+		filter: drop-shadow(0 2px 22px rgba(0, 0, 0, 0.25));
+	}
+	.title-text {
+		font-family: var(--script);
+		font-size: 168px;
+		fill: #fbfaf6;
+		fill-opacity: 0;
+		stroke: #fbfaf6;
+		stroke-width: 1.1;
+		stroke-linejoin: round;
+		stroke-linecap: round;
+		stroke-dasharray: 2800;
+		stroke-dashoffset: 2800;
+		animation: titleWrite 2.2s cubic-bezier(0.4, 0, 0.3, 1) 0.25s forwards;
+	}
+	@keyframes titleWrite {
+		0% {
+			stroke-dashoffset: 2800;
+			fill-opacity: 0;
+		}
+		70% {
+			stroke-dashoffset: 0;
+			fill-opacity: 0;
+		}
+		100% {
+			stroke-dashoffset: 0;
+			fill-opacity: 1;
+		}
+	}
+
+	/* The eyebrow, sprig, date, venue, countdown and music banner wait until
+	   the title finishes drawing, then ease in. */
+	.fade-in {
+		opacity: 0;
+		transform: translateY(8px);
+		animation: heroFadeIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) 2s forwards;
+	}
+	.fade-in:nth-child(1) { animation-delay: 2.05s; }
+	.fade-in:nth-child(n + 3) { animation-delay: 2.25s; }
+	.fade-in:nth-child(n + 4) { animation-delay: 2.35s; }
+	.fade-in:nth-child(n + 5) { animation-delay: 2.45s; }
+	.fade-in:nth-child(n + 6) { animation-delay: 2.55s; }
+	.fade-in:nth-child(n + 7) { animation-delay: 2.7s; }
+	@keyframes heroFadeIn {
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.title-text {
+			animation: none;
+			stroke-dashoffset: 0;
+			fill-opacity: 1;
+		}
+		.fade-in {
+			animation: none;
+			opacity: 1;
+			transform: none;
+		}
 	}
 	.hero-content .when {
 		color: #fbfaf6;

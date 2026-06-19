@@ -13,17 +13,23 @@
 </script>
 
 <div class="flora-frame" data-density={density} data-side={side} aria-hidden="true">
-	<!-- left edge -->
+	<!-- left edge — six sprigs, each rotated 45° clockwise around their bottom-left
+	     corner so the base sits on the panel edge and the foliage grows up-and-right
+	     into the page. -->
 	<img src="/flora/layer-11.png" alt="" class="l1" />
 	<img src="/flora/layer-9.png" alt="" class="l2" />
-	<img src="/flora/layer-14.png" alt="" class="l3" />
-	<img src="/flora/layer-17.png" alt="" class="l4" />
+	<img src="/flora/layer-15.png" alt="" class="l3" />
+	<img src="/flora/layer-18.png" alt="" class="l4" />
+	<img src="/flora/layer-10.png" alt="" class="l5" />
+	<img src="/flora/layer-13.png" alt="" class="l6" />
 	{#if side === 'both'}
-		<!-- right edge -->
+		<!-- right edge — mirrored -->
 		<img src="/flora/layer-12.png" alt="" class="r1" />
-		<img src="/flora/layer-18.png" alt="" class="r2" />
+		<img src="/flora/layer-14-1.png" alt="" class="r2" />
 		<img src="/flora/layer-16.png" alt="" class="r3" />
-		<img src="/flora/layer-15.png" alt="" class="r4" />
+		<img src="/flora/layer-17.png" alt="" class="r4" />
+		<img src="/flora/layer-11-1.png" alt="" class="r5" />
+		<img src="/flora/layer-9-1.png" alt="" class="r6" />
 	{/if}
 </div>
 
@@ -44,51 +50,35 @@
 		opacity: 0.4;
 	}
 
-	/* Left edge — vertical scatter, native sizes */
-	.l1 {
+	/* Left edge — six sprigs at 50% of their native size, rotated 45° so they look
+	   like they're growing out of the panel edge into the page. */
+	.flora-frame [class^='l'] {
 		left: 0;
-		top: 2vh;
+		transform-origin: 0 100%;
+		transform: rotate(45deg);
 	}
-	.l2 {
-		left: 0;
-		top: 32vh;
-	}
-	.l3 {
-		left: 0;
-		top: 60vh;
-	}
-	.l4 {
-		left: 0;
-		bottom: 4vh;
-	}
+	.l1 { top: 4vh;  width: 135px; }
+	.l2 { top: 20vh; width: 88px;  }
+	.l3 { top: 38vh; width: 118px; }
+	.l4 { top: 56vh; width: 118px; }
+	.l5 { top: 74vh; width: 103px; }
+	.l6 { top: 90vh; width: 104px; }
 
-	/* Right edge */
-	.r1 {
+	/* Right edge — mirrored: anchored at bottom-right, rotated -45° */
+	.flora-frame [class^='r'] {
 		right: 0;
-		top: 4vh;
+		transform-origin: 100% 100%;
+		transform: rotate(-45deg);
 	}
-	.r2 {
-		right: 0;
-		top: 28vh;
-	}
-	.r3 {
-		right: 0;
-		top: 58vh;
-	}
-	.r4 {
-		right: 0;
-		bottom: 6vh;
-	}
+	.r1 { top: 4vh;  width: 94px;  }
+	.r2 { top: 20vh; width: 100px; }
+	.r3 { top: 38vh; width: 111px; }
+	.r4 { top: 56vh; width: 94px;  }
+	.r5 { top: 74vh; width: 66px;  }
+	.r6 { top: 90vh; width: 86px;  }
 
 	@media (max-width: 640px) {
-		.l2,
-		.r2,
-		.l3,
-		.r3 {
-			display: none;
-		}
-		.flora-frame img {
-			opacity: 0.4;
-		}
+		.l2, .l4, .l6, .r2, .r4, .r6 { display: none; }
+		.flora-frame img { opacity: 0.4; }
 	}
 </style>
