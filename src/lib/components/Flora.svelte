@@ -23,13 +23,13 @@
 	<img src="/flora/layer-10.png" alt="" class="l5" />
 	<img src="/flora/layer-13.png" alt="" class="l6" />
 	{#if side === 'both'}
-		<!-- right edge — mirrored -->
-		<img src="/flora/layer-12.png" alt="" class="r1" />
-		<img src="/flora/layer-14-1.png" alt="" class="r2" />
-		<img src="/flora/layer-16.png" alt="" class="r3" />
-		<img src="/flora/layer-17.png" alt="" class="r4" />
-		<img src="/flora/layer-11-1.png" alt="" class="r5" />
-		<img src="/flora/layer-9-1.png" alt="" class="r6" />
+		<!-- right edge — mirrored, drawn from the same 8-image set -->
+		<img src="/flora/layer-16.png" alt="" class="r1" />
+		<img src="/flora/layer-18.png" alt="" class="r2" />
+		<img src="/flora/layer-9-1.png" alt="" class="r3" />
+		<img src="/flora/layer-9.png" alt="" class="r4" />
+		<img src="/flora/layer-10.png" alt="" class="r5" />
+		<img src="/flora/layer-15.png" alt="" class="r6" />
 	{/if}
 </div>
 
@@ -70,12 +70,12 @@
 		transform-origin: 100% 100%;
 		transform: rotate(-45deg);
 	}
-	.r1 { top: 4vh;  width: 94px;  }
-	.r2 { top: 20vh; width: 100px; }
-	.r3 { top: 38vh; width: 111px; }
-	.r4 { top: 56vh; width: 94px;  }
-	.r5 { top: 74vh; width: 66px;  }
-	.r6 { top: 90vh; width: 86px;  }
+	.r1 { top: 4vh;  width: 111px; }
+	.r2 { top: 20vh; width: 118px; }
+	.r3 { top: 38vh; width: 86px;  }
+	.r4 { top: 56vh; width: 88px;  }
+	.r5 { top: 74vh; width: 103px; }
+	.r6 { top: 90vh; width: 118px; }
 
 	@media (max-width: 640px) {
 		.l2, .l4, .l6, .r2, .r4, .r6 { display: none; }
