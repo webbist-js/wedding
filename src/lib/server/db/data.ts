@@ -129,7 +129,7 @@ export const SEED_GUESTS: SeedGuest[] = [
 
   // --- Groom's work ---
   { name: 'Rosie (Strapi)', side: 'G', relationshipGroup: G_WK, relation: "Alex's work colleague", attendanceType: 'day', inviteGroup: 'rosie-fran' },
-  { name: "Fran (Rosie's +1)", side: 'G', relationshipGroup: G_WK, relation: "Rosie's partner", attendanceType: 'day', inviteGroup: 'rosie-fran' },
+  { name: 'Francesco Lorusso', side: 'G', relationshipGroup: G_WK, relation: "Rosie's partner", attendanceType: 'day', inviteGroup: 'rosie-fran' },
   { name: 'Kellan (Strapi)', side: 'G', relationshipGroup: G_WK, relation: "Alex's work colleague", attendanceType: 'day', inviteGroup: 'kellan' },
 
   // --- Bride's friends ---
