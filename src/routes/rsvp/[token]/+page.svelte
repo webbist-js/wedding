@@ -65,7 +65,7 @@
 	}
 </script>
 
-<Flora />
+<Flora side="left" />
 
 <main class="rsvp">
 	<!-- Full-width hero banner with the Tithe Barn video behind it. -->

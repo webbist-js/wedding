@@ -1,22 +1,29 @@
 <script lang="ts">
-	// Side-edge botanical frame — sprigs scattered along the left and right margins
-	// at varying heights, naturally oriented (no flips). Fixed to the viewport so
-	// the framing rides along as guests scroll the info card; pointer-events: none
-	// so it never blocks interaction.
-	let { density = 'normal' as 'sparse' | 'normal' } = $props();
+	// Side-edge botanical frame — sprigs scattered along the page margins, naturally
+	// oriented (no flips). Fixed to the viewport so the framing rides along as
+	// guests scroll; pointer-events: none so it never blocks interaction.
+	//
+	// `side`: 'both' (default) frames both edges; 'left' is used by the RSVP page
+	// so sprigs never bleed into the right-hand form panel.
+	let {
+		density = 'normal' as 'sparse' | 'normal',
+		side = 'both' as 'both' | 'left'
+	} = $props();
 </script>
 
-<div class="flora-frame" data-density={density} aria-hidden="true">
+<div class="flora-frame" data-density={density} data-side={side} aria-hidden="true">
 	<!-- left edge -->
 	<img src="/flora/layer-11.png" alt="" class="l1" />
 	<img src="/flora/layer-9.png" alt="" class="l2" />
 	<img src="/flora/layer-14.png" alt="" class="l3" />
 	<img src="/flora/layer-17.png" alt="" class="l4" />
-	<!-- right edge -->
-	<img src="/flora/layer-12.png" alt="" class="r1" />
-	<img src="/flora/layer-18.png" alt="" class="r2" />
-	<img src="/flora/layer-16.png" alt="" class="r3" />
-	<img src="/flora/layer-15.png" alt="" class="r4" />
+	{#if side === 'both'}
+		<!-- right edge -->
+		<img src="/flora/layer-12.png" alt="" class="r1" />
+		<img src="/flora/layer-18.png" alt="" class="r2" />
+		<img src="/flora/layer-16.png" alt="" class="r3" />
+		<img src="/flora/layer-15.png" alt="" class="r4" />
+	{/if}
 </div>
 
 <style>
