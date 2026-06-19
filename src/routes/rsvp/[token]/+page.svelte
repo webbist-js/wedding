@@ -450,8 +450,8 @@
 	.hero-overlay {
 		position: absolute;
 		inset: 0;
-		/* Warm cream wash so brand text stays legible while the venue video shows through */
-		background: linear-gradient(180deg, rgba(251, 250, 246, 0.86), rgba(251, 250, 246, 0.78) 60%, rgba(251, 250, 246, 0.9));
+		/* Light cream wash — keeps brand legibility but lets the venue video read through */
+		background: linear-gradient(180deg, rgba(251, 250, 246, 0.32), rgba(251, 250, 246, 0.22) 55%, rgba(251, 250, 246, 0.45));
 		z-index: -1;
 	}
 	.hero-content {
