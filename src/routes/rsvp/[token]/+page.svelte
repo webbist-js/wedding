@@ -501,8 +501,11 @@
 		text-shadow: 0 2px 22px rgba(0, 0, 0, 0.25);
 	}
 
-	/* SVG draw-in title — strokes the script letterforms first, then fills.
-	   Other hero items wait for the draw to finish before fading in. */
+	/* Script-title flourish:
+	   * Stroke (the "pen tip") draws the cursive across the canvas.
+	   * Fill (the "ink") flows in progressively alongside the stroke instead of
+	     waiting until the end, so the letters never look like a hollow outline.
+	   * Stroke fades out as the fill reaches full opacity — finishes as solid script. */
 	.title-svg {
 		display: block;
 		width: min(680px, 92%);
@@ -515,41 +518,49 @@
 		fill: #fbfaf6;
 		fill-opacity: 0;
 		stroke: #fbfaf6;
-		stroke-width: 1.1;
+		stroke-width: 1.6;
+		stroke-opacity: 1;
 		stroke-linejoin: round;
 		stroke-linecap: round;
-		stroke-dasharray: 2800;
-		stroke-dashoffset: 2800;
-		animation: titleWrite 2.2s cubic-bezier(0.4, 0, 0.3, 1) 0.25s forwards;
+		stroke-dasharray: 8000;
+		stroke-dashoffset: 8000;
+		animation: titleWrite 1.9s cubic-bezier(0.42, 0, 0.2, 1) 0.15s forwards;
 	}
 	@keyframes titleWrite {
 		0% {
-			stroke-dashoffset: 2800;
+			stroke-dashoffset: 8000;
 			fill-opacity: 0;
+			stroke-opacity: 1;
+		}
+		35% {
+			fill-opacity: 0.15;
 		}
 		70% {
 			stroke-dashoffset: 0;
-			fill-opacity: 0;
+			fill-opacity: 0.75;
+			stroke-opacity: 0.85;
 		}
 		100% {
 			stroke-dashoffset: 0;
 			fill-opacity: 1;
+			stroke-opacity: 0;
 		}
 	}
 
-	/* The eyebrow, sprig, date, venue, countdown and music banner wait until
-	   the title finishes drawing, then ease in. */
+	/* Rest of the hero fades in over the second half of the title flourish —
+	   no awkward pause between the title finishing and the eyebrow / date /
+	   music banner appearing. */
 	.fade-in {
 		opacity: 0;
-		transform: translateY(8px);
-		animation: heroFadeIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) 2s forwards;
+		transform: translateY(10px);
+		animation: heroFadeIn 0.95s cubic-bezier(0.16, 1, 0.3, 1) 1.1s forwards;
 	}
-	.fade-in:nth-child(1) { animation-delay: 2.05s; }
-	.fade-in:nth-child(n + 3) { animation-delay: 2.25s; }
-	.fade-in:nth-child(n + 4) { animation-delay: 2.35s; }
-	.fade-in:nth-child(n + 5) { animation-delay: 2.45s; }
-	.fade-in:nth-child(n + 6) { animation-delay: 2.55s; }
-	.fade-in:nth-child(n + 7) { animation-delay: 2.7s; }
+	.fade-in:nth-child(1) { animation-delay: 1.1s; }
+	.fade-in:nth-child(n + 3) { animation-delay: 1.3s; }
+	.fade-in:nth-child(n + 4) { animation-delay: 1.45s; }
+	.fade-in:nth-child(n + 5) { animation-delay: 1.6s; }
+	.fade-in:nth-child(n + 6) { animation-delay: 1.75s; }
+	.fade-in:nth-child(n + 7) { animation-delay: 1.9s; }
 	@keyframes heroFadeIn {
 		to {
 			opacity: 1;
