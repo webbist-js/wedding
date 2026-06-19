@@ -77,6 +77,17 @@
 	.r5 { top: 74vh; width: 103px; }
 	.r6 { top: 90vh; width: 118px; }
 
+	/* Desktop: nudge the sprigs 45px further out from each edge so only the
+	   leading foliage peeks back into the panel. */
+	@media (min-width: 960px) {
+		.flora-frame [class^='l'] {
+			transform: translate(-45px, 0) rotate(45deg);
+		}
+		.flora-frame [class^='r'] {
+			transform: translate(45px, 0) rotate(-45deg);
+		}
+	}
+
 	@media (max-width: 640px) {
 		.l2, .l4, .l6, .r2, .r4, .r6 { display: none; }
 		.flora-frame img { opacity: 0.4; }
