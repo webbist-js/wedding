@@ -1,145 +1,39 @@
 <script lang="ts">
-	import { onDestroy, onMount } from 'svelte';
+	import { onMount } from 'svelte';
+	import { attachAudio, toggleMusic, music } from '$lib/music.svelte';
 
 	let {
+		variant = 'chip' as 'chip' | 'host',
 		src = '/audio/good-for-me-acoustic.mp3',
 		title = 'Good For Me · Above & Beyond (Acoustic)'
 	} = $props();
 
 	let audio = $state<HTMLAudioElement | null>(null);
-	let playing = $state(false);
-	let available = $state(true);
-	const KEY = 'wedding-music';
-
-	// User-gesture fallback when the browser blocks programmatic play().
-	// We listen for the first interaction on the document and then start.
-	const triggerEvents = ['pointerdown', 'keydown', 'touchstart'] as const;
-	let pendingTrigger = false;
-
-	function armGestureTrigger() {
-		if (pendingTrigger) return;
-		pendingTrigger = true;
-		const start = () => {
-			if (!pendingTrigger) return;
-			pendingTrigger = false;
-			for (const ev of triggerEvents) document.removeEventListener(ev, start);
-			audio
-				?.play()
-				.then(() => (playing = true))
-				.catch(() => {
-					/* still blocked; user can use the button */
-				});
-		};
-		for (const ev of triggerEvents) {
-			document.addEventListener(ev, start, { passive: true });
-		}
-	}
-
-	function disarmGestureTrigger() {
-		if (!pendingTrigger) return;
-		pendingTrigger = false;
-	}
 
 	onMount(() => {
-		if (!audio) return;
-		audio.volume = 0.5;
-
-		const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(KEY) : null;
-		// Default to playing unless the user explicitly muted it last time.
-		if (stored === 'off') return;
-
-		audio
-			.play()
-			.then(() => (playing = true))
-			.catch(() => {
-				// Autoplay was blocked — wait for the first interaction.
-				armGestureTrigger();
-			});
+		if (audio) attachAudio(audio);
 	});
-
-	onDestroy(() => {
-		disarmGestureTrigger();
-	});
-
-	function toggle() {
-		if (!audio) return;
-		if (playing) {
-			audio.pause();
-			playing = false;
-			try {
-				localStorage.setItem(KEY, 'off');
-			} catch {
-				/* private mode */
-			}
-			disarmGestureTrigger();
-		} else {
-			audio
-				.play()
-				.then(() => {
-					playing = true;
-					try {
-						localStorage.setItem(KEY, 'on');
-					} catch {
-						/* private mode */
-					}
-				})
-				.catch(() => {
-					available = false;
-				});
-		}
-	}
-
-	function onError() {
-		available = false;
-	}
 </script>
 
-<audio
-	bind:this={audio}
-	{src}
-	loop
-	preload="auto"
-	onerror={onError}
-	aria-hidden="true"
-></audio>
+<audio bind:this={audio} {src} loop preload="auto" aria-hidden="true"></audio>
 
-{#if available}
+{#if variant === 'chip' && music.available}
 	<button
 		type="button"
 		class="player"
-		class:on={playing}
-		onclick={toggle}
-		aria-label={playing ? 'Mute music' : 'Play music'}
-		title={playing ? `Mute · ${title}` : `Play · ${title}`}
+		class:on={music.playing}
+		onclick={toggleMusic}
+		aria-label={music.playing ? 'Mute music' : 'Play music'}
+		title={music.playing ? `Mute · ${title}` : `Play · ${title}`}
 	>
-		{#if playing}
-			<svg
-				viewBox="0 0 24 24"
-				width="18"
-				height="18"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="1.8"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				aria-hidden="true"
-			>
+		{#if music.playing}
+			<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 				<path d="M9 18V5l12-2v13" />
 				<circle cx="6" cy="18" r="3" />
 				<circle cx="18" cy="16" r="3" />
 			</svg>
 		{:else}
-			<svg
-				viewBox="0 0 24 24"
-				width="18"
-				height="18"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="1.8"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				aria-hidden="true"
-			>
+			<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 				<path d="M9 18V5l12-2v13" opacity=".4" />
 				<circle cx="6" cy="18" r="3" opacity=".4" />
 				<circle cx="18" cy="16" r="3" opacity=".4" />

@@ -10,6 +10,7 @@
 		GIFTS
 	} from '$lib/wedding-info';
 	import Flora from '$lib/components/Flora.svelte';
+	import MusicBanner from '$lib/components/MusicBanner.svelte';
 	import { reveal } from '$lib/actions/reveal';
 	let { data, form } = $props();
 
@@ -24,6 +25,44 @@
 			])
 		)
 	);
+
+	// Days to go — recomputed client-side so SSR-cached pages don't show a stale figure.
+	let daysToGo = $state<number | null>(null);
+	$effect(() => {
+		const weddingMs = new Date('2027-04-02T14:30:00').getTime();
+		daysToGo = Math.max(0, Math.ceil((weddingMs - Date.now()) / 86400000));
+	});
+
+	// Fire confetti once on success, but only if at least one person is attending.
+	$effect(() => {
+		if (!form?.saved) return;
+		const anyAttending = data.members.some((m) => m.rsvpStatus === 'yes');
+		if (!anyAttending) return;
+		import('canvas-confetti').then(({ default: confetti }) => {
+			const sage = ['#6f7d59', '#9aa685', '#c08a86', '#e8dec6'];
+			confetti({ particleCount: 110, spread: 90, startVelocity: 35, origin: { y: 0.65 }, colors: sage });
+			setTimeout(
+				() =>
+					confetti({
+						particleCount: 70,
+						spread: 110,
+						startVelocity: 28,
+						origin: { y: 0.7 },
+						colors: sage,
+						scalar: 0.85
+					}),
+				260
+			);
+		});
+	});
+
+	function mealLabel(m: { isChild: boolean; attendanceType: string; meal: string | null }) {
+		if (m.isChild) return "Kids' menu";
+		if (m.attendanceType === 'evening') return 'Evening · Baz & Fred pizza';
+		if (m.meal === 'veg') return 'Vegetarian';
+		if (m.meal === 'non-veg') return 'Standard menu';
+		return '';
+	}
 </script>
 
 <Flora />
@@ -35,6 +74,13 @@
 		<img src="/flora/layer-13.png" class="title-sprig" alt="" aria-hidden="true" />
 		<p class="when">{WEDDING.dateLong}</p>
 		<p class="where">{WEDDING.venueName} · Bolton Abbey · Yorkshire Dales</p>
+		{#if daysToGo !== null}
+			<p class="countdown">
+				<span class="cd-num">{daysToGo}</span>
+				<span class="cd-label">{daysToGo === 1 ? 'day' : 'days'} to go</span>
+			</p>
+		{/if}
+		<MusicBanner />
 	</header>
 
 	{#if data.group.personalMessage}
@@ -67,11 +113,40 @@
 	</section>
 
 	{#if form?.saved}
-		<div class="thanks" use:reveal>
-			Thank you — your reply is saved. You can change it any time from this link.
-		</div>
-	{/if}
-
+		<!-- Submission summary — replaces the form entirely on success. -->
+		<section class="card center success-card" use:reveal>
+			<h2 class="card-title script">We look forward to seeing you!</h2>
+			<img src="/flora/layer-13.png" class="card-sprig" alt="" aria-hidden="true" />
+			<p class="body">Your reply is saved. You can update it any time from this link.</p>
+			<ul class="summary">
+				{#each data.members as m (m.id)}
+					<li class="srow" class:declined={m.rsvpStatus === 'no'}>
+						<span class="s-name">{m.name}</span>
+						<span class="s-status">
+							{#if m.rsvpStatus === 'yes'}Joyfully attending
+							{:else if m.rsvpStatus === 'no'}Sending regrets
+							{:else}—{/if}
+						</span>
+						{#if m.rsvpStatus === 'yes'}
+							{#if mealLabel(m)}
+								<span class="s-meal">{mealLabel(m)}</span>
+							{/if}
+							{#if m.dietaryNotes}
+								<span class="s-diet">"{m.dietaryNotes}"</span>
+							{/if}
+						{/if}
+					</li>
+				{/each}
+			</ul>
+			{#if data.group.allergiesNote}
+				<p class="note"><b>Note to us:</b> {data.group.allergiesNote}</p>
+			{/if}
+			{#if data.group.message}
+				<p class="msg"><em>"{data.group.message}"</em></p>
+			{/if}
+			<a class="update-link" href={`/rsvp/${data.group.token}`}>Need to change something? Reload to edit →</a>
+		</section>
+	{:else}
 	<!-- Please Reply -->
 	<section class="card rsvp-form" use:reveal>
 		<h2 class="card-title script">Please Reply</h2>
@@ -198,11 +273,23 @@
 			<button type="submit" class="primary">Send our reply</button>
 		</form>
 	</section>
+	{/if}
 
 	<!-- The Menu -->
 	<section class="card menu-card" use:reveal>
 		<h2 class="card-title script">The Menu</h2>
 		<img src="/flora/layer-13.png" class="card-sprig" alt="" aria-hidden="true" />
+		<div class="menu-video">
+			<!-- svelte-ignore a11y_media_has_caption -->
+			<video
+				src="/video/cripps-food.webm"
+				autoplay
+				muted
+				loop
+				playsinline
+				preload="metadata"
+			></video>
+		</div>
 		<dl class="menu">
 			<dt>Canapés</dt>
 			<dd>
@@ -365,6 +452,28 @@
 		font-size: 10.5px;
 		color: var(--muted);
 		margin: 8px 0 0;
+	}
+	.countdown {
+		display: inline-flex;
+		align-items: baseline;
+		gap: 10px;
+		margin: 22px auto 0;
+		padding: 7px 18px;
+		border: 1px solid var(--line);
+		border-radius: 999px;
+		background: var(--card);
+	}
+	.cd-num {
+		font-family: var(--serif);
+		font-weight: 600;
+		font-size: 22px;
+		color: var(--sage-deep);
+	}
+	.cd-label {
+		font-size: 10.5px;
+		letter-spacing: 0.24em;
+		text-transform: uppercase;
+		color: var(--muted);
 	}
 
 	.personal {
@@ -669,6 +778,22 @@
 	}
 
 	/* ---- Menu ---- */
+	.menu-video {
+		max-width: 460px;
+		margin: 0 auto 24px;
+		border-radius: 14px;
+		overflow: hidden;
+		border: 1px solid #e8dec6;
+		background: #1a1a1a;
+		aspect-ratio: 16 / 9;
+	}
+	.menu-video video {
+		width: 100%;
+		height: 100%;
+		display: block;
+		object-fit: cover;
+	}
+
 	.menu {
 		max-width: 460px;
 		margin: 0 auto;
@@ -837,6 +962,85 @@
 		font-size: 13.5px;
 		color: var(--body);
 		line-height: 1.5;
+	}
+
+	/* ---- Success summary (replaces form on submit) ---- */
+	.success-card {
+		background: var(--sage-soft);
+		border-color: var(--sage);
+	}
+	.summary {
+		list-style: none;
+		margin: 18px 0 0;
+		padding: 0;
+		text-align: left;
+	}
+	.srow {
+		display: grid;
+		grid-template-columns: 1fr auto;
+		grid-template-areas:
+			'name status'
+			'meal meal'
+			'diet diet';
+		row-gap: 2px;
+		column-gap: 12px;
+		padding: 14px 0;
+		border-bottom: 1px solid rgba(81, 96, 63, 0.18);
+	}
+	.srow:last-child {
+		border-bottom: 0;
+	}
+	.s-name {
+		grid-area: name;
+		font-family: var(--serif);
+		font-size: 18px;
+		color: var(--ink);
+		font-weight: 600;
+	}
+	.s-status {
+		grid-area: status;
+		font-size: 10.5px;
+		letter-spacing: 0.18em;
+		text-transform: uppercase;
+		color: var(--sage-deep);
+		font-weight: 600;
+		align-self: center;
+	}
+	.declined .s-status {
+		color: var(--muted);
+	}
+	.s-meal {
+		grid-area: meal;
+		font-size: 13px;
+		color: var(--body);
+	}
+	.s-diet {
+		grid-area: diet;
+		font-size: 12.5px;
+		color: var(--muted);
+		font-style: italic;
+	}
+	.success-card .note,
+	.success-card .msg {
+		margin-top: 16px;
+		font-size: 13.5px;
+		color: var(--ink);
+	}
+	.success-card .msg {
+		font-family: var(--serif);
+		font-size: 16px;
+		font-style: italic;
+	}
+	.update-link {
+		display: inline-block;
+		margin-top: 22px;
+		font-size: 12.5px;
+		color: var(--sage-deep);
+		text-decoration: none;
+		border-bottom: 1px solid transparent;
+	}
+	.update-link:hover {
+		border-bottom-color: var(--sage);
 	}
 
 	/* ---- Contact card ---- */
