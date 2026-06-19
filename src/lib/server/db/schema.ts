@@ -59,6 +59,12 @@ export const timelineItems = sqliteTable('timeline_items', {
   phaseId: integer('phase_id').notNull().references(() => timelinePhases.id),
   label: text('label').notNull(),
   done: integer('done', { mode: 'boolean' }).notNull().default(false),
+  // ISO date string (YYYY-MM-DD). When set, the daily scheduler fires Slack
+  // reminders one week before, the day before, on the day, and once overdue.
+  dueDate: text('due_date'),
+  // Comma-separated list of which thresholds we've already notified about
+  // ('week' | 'day' | 'day-of' | 'overdue'). Resets when due_date changes.
+  notificationsSent: text('notifications_sent').notNull().default(''),
   sort: integer('sort').notNull().default(0)
 });
 

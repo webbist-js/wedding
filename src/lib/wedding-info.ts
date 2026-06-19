@@ -60,7 +60,7 @@ export const ACCOMMODATION = [
 		name: 'The Devonshire Fell',
 		note: 'Sister hotel on the estate, a short drive away.',
 		phone: '01756 729000',
-		url: 'https://thedevonshirefell.co.uk/'
+		url: 'https://boltonabbeyescapes.co.uk/fell-hotel/'
 	},
 	{
 		name: 'Holiday cottages on the estate',

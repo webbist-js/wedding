@@ -13,6 +13,16 @@
       <div class="item" class:done={item.done}>
         <form method="POST" action="?/toggle" use:enhance><input type="hidden" name="id" value={item.id} /><button class="dot" class:on={item.done} aria-label="toggle"></button></form>
         <span class="x">{item.label}</span>
+        <form method="POST" action="?/setDueDate" use:enhance class="due">
+          <input type="hidden" name="id" value={item.id} />
+          <input
+            type="date"
+            name="dueDate"
+            value={item.dueDate ?? ''}
+            onchange={(e) => (e.currentTarget.form as HTMLFormElement).requestSubmit()}
+            title="Due date (Slack reminders fire 1 week / 1 day / day-of / overdue)"
+          />
+        </form>
         <form method="POST" action="?/removeItem" use:enhance><input type="hidden" name="id" value={item.id} /><button class="rm">×</button></form>
       </div>
     {/each}
@@ -37,6 +47,8 @@
   .dot { width: 12px; height: 12px; border-radius: 50%; border: 1px solid var(--rule); background: transparent; cursor: pointer; padding: 0; }
   .dot.on { background: var(--sage); border-color: var(--sage); }
   .rm { background: none; border: 0; color: var(--faint); font-size: 16px; cursor: pointer; }
+  .due input { border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; font: inherit; font-size: 12px; color: var(--body); background: #fff; }
+  .due input:hover { border-color: var(--sage); }
   .additem { display: flex; gap: 8px; margin-top: 8px; }
   .additem input { flex: 1; border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; font: inherit; }
   .additem button, .addphase button { background: var(--sage); color: #fff; border: 0; border-radius: 6px; padding: 7px 12px; cursor: pointer; }

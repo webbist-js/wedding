@@ -27,5 +27,16 @@ export const actions: Actions = {
   addPhase: async ({ request }) => {
     const f = await request.formData();
     await db.insert(timelinePhases).values({ title: String(f.get('title') ?? 'New phase'), window: String(f.get('window') ?? ''), sort: 999 });
+  },
+  setDueDate: async ({ request }) => {
+    const f = await request.formData();
+    const id = Number(f.get('id'));
+    const raw = String(f.get('dueDate') ?? '').trim();
+    // YYYY-MM-DD; empty clears the date and the sent-reminders log.
+    const value = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : null;
+    await db
+      .update(timelineItems)
+      .set({ dueDate: value, notificationsSent: '' })
+      .where(eq(timelineItems.id, id));
   }
 };

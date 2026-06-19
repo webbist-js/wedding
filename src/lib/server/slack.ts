@@ -103,6 +103,88 @@ export async function notifyRSVP(payload: RsvpNotifyPayload): Promise<void> {
 	}
 }
 
+export type TimelineKind = 'week' | 'day' | 'day-of' | 'overdue';
+
+export interface TimelineNotifyPayload {
+	kind: TimelineKind;
+	label: string;
+	dueDateISO: string;
+	phaseTitle: string;
+	dashboardUrl?: string;
+}
+
+const HEADINGS: Record<TimelineKind, string> = {
+	week: '📅 One week to go',
+	day: '⏰ Due tomorrow',
+	'day-of': '🌿 Due today',
+	overdue: '🔴 Overdue'
+};
+
+export async function notifyTimelineItem(p: TimelineNotifyPayload): Promise<void> {
+	const webhook = env.SLACK_WEBHOOK_URL;
+	if (!webhook) return;
+
+	let dueFormatted = p.dueDateISO;
+	try {
+		dueFormatted = new Date(p.dueDateISO + 'T00:00:00').toLocaleDateString('en-GB', {
+			weekday: 'long',
+			day: 'numeric',
+			month: 'long',
+			year: 'numeric'
+		});
+	} catch {
+		/* keep ISO fallback */
+	}
+
+	const blocks: unknown[] = [
+		{
+			type: 'header',
+			text: { type: 'plain_text', text: HEADINGS[p.kind], emoji: true }
+		},
+		{
+			type: 'section',
+			text: { type: 'mrkdwn', text: `*${esc(p.label)}*` }
+		},
+		{
+			type: 'context',
+			elements: [
+				{
+					type: 'mrkdwn',
+					text:
+						p.kind === 'overdue'
+							? `Was due ${dueFormatted}${p.phaseTitle ? ` · ${esc(p.phaseTitle)}` : ''}`
+							: `Due ${dueFormatted}${p.phaseTitle ? ` · ${esc(p.phaseTitle)}` : ''}`
+				}
+			]
+		}
+	];
+
+	if (p.dashboardUrl) {
+		blocks.push({
+			type: 'context',
+			elements: [{ type: 'mrkdwn', text: `<${p.dashboardUrl}|Open the timeline →>` }]
+		});
+	}
+
+	const ac = new AbortController();
+	const timer = setTimeout(() => ac.abort(), 4000);
+	try {
+		await fetch(webhook, {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({
+				text: `${HEADINGS[p.kind]}: ${p.label}`,
+				blocks
+			}),
+			signal: ac.signal
+		});
+	} catch (err) {
+		console.error('Slack timeline notify failed:', err);
+	} finally {
+		clearTimeout(timer);
+	}
+}
+
 function esc(s: string): string {
 	return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
