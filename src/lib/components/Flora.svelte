@@ -1,7 +1,8 @@
 <script lang="ts">
-	// Side-edge botanical frame — sprigs scattered along the page margins, naturally
-	// oriented (no flips). Fixed to the viewport so the framing rides along as
-	// guests scroll; pointer-events: none so it never blocks interaction.
+	// Side-edge botanical frame — sprigs scattered along the page margins, rendered
+	// at their native exported sizes (no widths or rotations applied). Fixed to the
+	// viewport so the framing rides along as guests scroll; pointer-events: none
+	// so it never blocks interaction.
 	//
 	// `side`: 'both' (default) frames both edges; 'left' is used by the RSVP page
 	// so sprigs never bleed into the right-hand form panel.
@@ -43,65 +44,42 @@
 		opacity: 0.4;
 	}
 
-	/* Left edge — vertical scatter, slight outward tilts */
+	/* Left edge — vertical scatter, native sizes */
 	.l1 {
-		left: 1%;
+		left: 0;
 		top: 2vh;
-		width: 110px;
-		transform: rotate(-10deg);
 	}
 	.l2 {
-		left: 0%;
+		left: 0;
 		top: 32vh;
-		width: 110px;
-		transform: rotate(-18deg);
 	}
 	.l3 {
-		left: 2%;
+		left: 0;
 		top: 60vh;
-		width: 80px;
-		transform: rotate(12deg);
 	}
 	.l4 {
-		left: 0%;
+		left: 0;
 		bottom: 4vh;
-		width: 110px;
-		transform: rotate(-8deg);
 	}
 
-	/* Right edge — mirrored */
+	/* Right edge */
 	.r1 {
-		right: 1%;
+		right: 0;
 		top: 4vh;
-		width: 100px;
-		transform: scaleX(-1) rotate(-8deg);
 	}
 	.r2 {
-		right: 1%;
+		right: 0;
 		top: 28vh;
-		width: 110px;
-		transform: scaleX(-1) rotate(-12deg);
 	}
 	.r3 {
-		right: 2%;
+		right: 0;
 		top: 58vh;
-		width: 100px;
-		transform: scaleX(-1) rotate(10deg);
 	}
 	.r4 {
-		right: 0%;
+		right: 0;
 		bottom: 6vh;
-		width: 100px;
-		transform: scaleX(-1) rotate(-10deg);
 	}
 
-	/* Hide on narrow viewports so flora doesn't crowd the content */
-	@media (max-width: 900px) {
-		.flora-frame img {
-			width: 80px !important;
-			opacity: 0.4;
-		}
-	}
 	@media (max-width: 640px) {
 		.l2,
 		.r2,
@@ -110,8 +88,7 @@
 			display: none;
 		}
 		.flora-frame img {
-			width: 70px !important;
-			opacity: 0.38;
+			opacity: 0.4;
 		}
 	}
 </style>
