@@ -421,34 +421,56 @@
 		z-index: 1;
 	}
 
-	/* Desktop: two-column layout with the form card pinned to the right.
-	   Mobile keeps the existing single-column source order. */
+	/* Desktop: full-width 50/50 split with a sage-tinted right panel.
+	   The whole .rsvp is the grid, and a hard-stop linear-gradient gives the
+	   right half its panel background — so the form sits inside a visually
+	   distinct half-screen and stays sticky as the info on the left scrolls.
+	   Mobile (<960px) keeps the existing single-column source order. */
 	@media (min-width: 960px) {
 		.rsvp {
-			max-width: 1180px;
+			max-width: none;
+			margin: 0;
+			padding: 0 0 80px;
 			display: grid;
 			grid-template-columns: 1fr 1fr;
-			column-gap: 40px;
-			row-gap: 26px;
+			column-gap: 0;
 			align-items: start;
-			padding-top: 6vh;
+			background: linear-gradient(
+				to right,
+				var(--bg) 0,
+				var(--bg) 50%,
+				var(--sage-soft) 50%,
+				var(--sage-soft) 100%
+			);
 		}
+
+		/* Left-column items: centered within their half with comfortable side gutters */
 		.rsvp > * {
-			margin-top: 0;
 			grid-column: 1;
+			width: min(580px, calc(100% - 48px));
+			margin: 0 auto;
 			min-width: 0;
 		}
+		.rsvp > .card,
+		.rsvp > .personal,
+		.rsvp > .foot,
+		.rsvp > .thanks {
+			margin-top: 26px;
+		}
+		.rsvp > .hero {
+			padding-top: 60px;
+			margin-top: 0;
+		}
+
+		/* Right column: form card sticky within the sage panel */
 		.rsvp > .col-right {
 			grid-column: 2;
-			/* Span the full grid so position: sticky has room to stick across
-			   the page scroll rather than the cell's natural height. */
 			grid-row: 1 / -1;
+			width: min(480px, calc(100% - 48px));
+			margin: 60px auto;
 			align-self: start;
 			position: sticky;
 			top: 24px;
-		}
-		.hero {
-			padding-top: 30px;
 		}
 	}
 
