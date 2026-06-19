@@ -66,6 +66,7 @@
 </script>
 
 <Flora side="left" />
+<div class="form-panel-bg" aria-hidden="true"></div>
 
 <main class="rsvp">
 	<!-- Full-width hero banner with the Tithe Barn video behind it. -->
@@ -428,6 +429,25 @@
 		z-index: 1;
 	}
 
+	/* Fixed sage panel covering only the right half of the viewport on desktop —
+	   leaves the left half untouched so the cream body bg + flora show through. */
+	.form-panel-bg {
+		display: none;
+	}
+	@media (min-width: 960px) {
+		.form-panel-bg {
+			display: block;
+			position: fixed;
+			top: 0;
+			right: 0;
+			width: 50vw;
+			height: 100vh;
+			background: var(--sage-soft);
+			z-index: 0;
+			pointer-events: none;
+		}
+	}
+
 	/* ---- Hero banner (above the split) ---- */
 	.hero-banner {
 		position: relative;
@@ -513,13 +533,8 @@
 			column-gap: 0;
 			row-gap: 0;
 			align-items: start;
-			background: linear-gradient(
-				to right,
-				var(--bg) 0,
-				var(--bg) 50%,
-				var(--sage-soft) 50%,
-				var(--sage-soft) 100%
-			);
+			/* No background here — left half shows the body cream + flora behind,
+			   right half is painted by the fixed .form-panel-bg below. */
 		}
 		.rsvp-grid > * {
 			grid-column: 1;
