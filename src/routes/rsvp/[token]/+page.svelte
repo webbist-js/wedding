@@ -507,7 +507,7 @@
 
 		.rsvp-grid {
 			max-width: none;
-			padding: 0 0 80px;
+			padding: 0 0 120px;
 			display: grid;
 			grid-template-columns: 1fr 1fr;
 			column-gap: 0;
@@ -528,10 +528,10 @@
 			min-width: 0;
 		}
 		.rsvp-grid > * + * {
-			margin-top: 24px !important;
+			margin-top: 28px !important;
 		}
 		.rsvp-grid > :first-child {
-			margin-top: 40px !important;
+			margin-top: 96px !important;
 		}
 
 		/* Wider cards on desktop so content fills the column more */
@@ -544,10 +544,10 @@
 			grid-column: 2;
 			grid-row: 1 / span 99;
 			width: min(600px, calc(100% - 48px));
-			margin: 40px auto !important;
+			margin: 96px auto !important;
 			align-self: start;
 			position: sticky;
-			top: 24px;
+			top: 32px;
 		}
 
 		/* Universal font bump on desktop */
