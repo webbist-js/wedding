@@ -12,11 +12,19 @@ export const WEDDING = {
 	// requirement — set ~10 weeks before so the couple has time to chase
 	// non-responders before confirming to the venue.
 	rsvpDeadline: 'Friday 22 January 2027',
-	// Phrased as a direct request rather than a "gentle note" — guests respond
-	// better to a clear ask than a soft suggestion.
-	dressCode: {
-		headline: 'Wear your wedding best',
-		body: 'We\'d love to see everyone in smart, formal attire. Since our day will be professionally photographed, please leave the jeans and casual trainers at home.'
+	// Phrased as direct asks rather than soft suggestions — guests respond better
+	// to a clear request than a polite hint.
+	formalities: {
+		dressCode: {
+			label: 'Dress Code',
+			headline: 'Wear your wedding best',
+			body: "We'd love to see everyone in smart, formal attire — leave the jeans and casual trainers at home."
+		},
+		unplugged: {
+			label: 'An unplugged ceremony',
+			headline: 'Be present with us',
+			body: "We've hired a wonderful professional photographer to capture every moment, so please tuck phones and cameras away during the ceremony. We'd love to see your faces — not your screens — when we say I do."
+		}
 	},
 	contact: {
 		email: 'hello@alexandkatie.wedding',

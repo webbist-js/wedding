@@ -167,12 +167,24 @@
 		</ul>
 	</section>
 
-	<!-- Dress Code -->
-	<section class="card center" use:reveal>
-		<h2 class="card-title script">Dress Code</h2>
+	<!-- The Formalities — dress code + unplugged ceremony -->
+	<section class="card center formalities" use:reveal>
+		<h2 class="card-title script">The Formalities</h2>
 		<img src="/flora/layer-13.png" class="card-sprig" alt="" aria-hidden="true" />
-		<p class="lead">{WEDDING.dressCode.headline}</p>
-		<p class="body">{WEDDING.dressCode.body}</p>
+
+		<div class="formality">
+			<p class="micro">{WEDDING.formalities.dressCode.label}</p>
+			<p class="lead">{WEDDING.formalities.dressCode.headline}</p>
+			<p class="body">{WEDDING.formalities.dressCode.body}</p>
+		</div>
+
+		<div class="formality-divider" aria-hidden="true"></div>
+
+		<div class="formality">
+			<p class="micro">{WEDDING.formalities.unplugged.label}</p>
+			<p class="lead">{WEDDING.formalities.unplugged.headline}</p>
+			<p class="body">{WEDDING.formalities.unplugged.body}</p>
+		</div>
 	</section>
 
 	{#if form?.saved}
@@ -1235,6 +1247,33 @@
 		font-size: 22px;
 		color: var(--ink);
 		margin: 0 0 14px;
+	}
+
+	/* Two-part formalities card */
+	.formality + .formality-divider + .formality {
+		margin-top: 0;
+	}
+	.formality .micro {
+		font-family: var(--sans);
+		font-weight: 600;
+		letter-spacing: 0.22em;
+		text-transform: uppercase;
+		font-size: 10px;
+		color: var(--sage-deep);
+		margin: 0 0 10px;
+	}
+	.formality .lead {
+		margin: 0 0 10px;
+	}
+	.formality .body {
+		margin: 0 auto;
+	}
+	.formality-divider {
+		max-width: 80px;
+		height: 1px;
+		background: var(--rule);
+		margin: 24px auto;
+		opacity: 0.55;
 	}
 	.body {
 		max-width: 560px;
