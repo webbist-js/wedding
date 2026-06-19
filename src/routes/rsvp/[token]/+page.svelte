@@ -518,49 +518,42 @@
 		fill: #fbfaf6;
 		fill-opacity: 0;
 		stroke: #fbfaf6;
-		stroke-width: 1.6;
+		stroke-width: 1.4;
 		stroke-opacity: 1;
 		stroke-linejoin: round;
 		stroke-linecap: round;
 		stroke-dasharray: 8000;
 		stroke-dashoffset: 8000;
-		animation: titleWrite 1.9s cubic-bezier(0.42, 0, 0.2, 1) 0.15s forwards;
+		/* Three parallel animations — same easing on each so pen, ink and stroke-out
+		   all share a single continuous rhythm with no intermediate keyframe pauses. */
+		animation:
+			drawStroke 1.3s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards,
+			fillIn 1.3s cubic-bezier(0.4, 0, 0.6, 1) 0.1s forwards,
+			fadeStroke 0.45s cubic-bezier(0.4, 0, 0.6, 1) 1.25s forwards;
 	}
-	@keyframes titleWrite {
-		0% {
-			stroke-dashoffset: 8000;
-			fill-opacity: 0;
-			stroke-opacity: 1;
-		}
-		35% {
-			fill-opacity: 0.15;
-		}
-		70% {
-			stroke-dashoffset: 0;
-			fill-opacity: 0.75;
-			stroke-opacity: 0.85;
-		}
-		100% {
-			stroke-dashoffset: 0;
-			fill-opacity: 1;
-			stroke-opacity: 0;
-		}
+	@keyframes drawStroke {
+		to { stroke-dashoffset: 0; }
+	}
+	@keyframes fillIn {
+		to { fill-opacity: 1; }
+	}
+	@keyframes fadeStroke {
+		to { stroke-opacity: 0; }
 	}
 
-	/* Rest of the hero fades in over the second half of the title flourish —
-	   no awkward pause between the title finishing and the eyebrow / date /
-	   music banner appearing. */
+	/* Hero items start appearing mid-flourish so the composition reveals
+	   continuously — no perceptible gap between phases. */
 	.fade-in {
 		opacity: 0;
 		transform: translateY(10px);
-		animation: heroFadeIn 0.95s cubic-bezier(0.16, 1, 0.3, 1) 1.1s forwards;
+		animation: heroFadeIn 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 	}
-	.fade-in:nth-child(1) { animation-delay: 1.1s; }
-	.fade-in:nth-child(n + 3) { animation-delay: 1.3s; }
-	.fade-in:nth-child(n + 4) { animation-delay: 1.45s; }
-	.fade-in:nth-child(n + 5) { animation-delay: 1.6s; }
-	.fade-in:nth-child(n + 6) { animation-delay: 1.75s; }
-	.fade-in:nth-child(n + 7) { animation-delay: 1.9s; }
+	.fade-in:nth-child(1) { animation-delay: 0.45s; }
+	.fade-in:nth-child(n + 3) { animation-delay: 0.7s; }
+	.fade-in:nth-child(n + 4) { animation-delay: 0.85s; }
+	.fade-in:nth-child(n + 5) { animation-delay: 1.0s; }
+	.fade-in:nth-child(n + 6) { animation-delay: 1.15s; }
+	.fade-in:nth-child(n + 7) { animation-delay: 1.3s; }
 	@keyframes heroFadeIn {
 		to {
 			opacity: 1;
