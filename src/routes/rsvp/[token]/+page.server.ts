@@ -1,10 +1,12 @@
 import type { PageServerLoad, Actions } from './$types';
 import { error } from '@sveltejs/kit';
+import { env } from '$env/dynamic/private';
 import { groupWithMembers } from '$lib/server/queries';
 import { parseRsvp } from '$lib/server/rsvp';
 import { db } from '$lib/server/db/index';
 import { guests, inviteGroups } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
+import { notifyRSVP } from '$lib/server/slack';
 
 export const load: PageServerLoad = async ({ params }) => {
   const data = await groupWithMembers(params.token);
@@ -41,6 +43,33 @@ export const actions: Actions = {
       allergiesNote: allergies,
       respondedAt: new Date()
     }).where(eq(inviteGroups.id, data.group.id));
+
+    // Notify the wedding Slack channel with the final saved state.
+    // Best-effort: slack.ts swallows errors and times out after 4s.
+    try {
+      const refreshed = await groupWithMembers(params.token);
+      if (refreshed) {
+        const base = env.PUBLIC_BASE_URL ?? '';
+        await notifyRSVP({
+          groupName: refreshed.group.name,
+          members: refreshed.members.map((m) => ({
+            name: m.name,
+            isChild: m.isChild,
+            isPlusOne: m.isPlusOne,
+            rsvpStatus: m.rsvpStatus,
+            meal: m.meal,
+            dietaryNotes: m.dietaryNotes,
+            attendanceType: m.attendanceType
+          })),
+          message: refreshed.group.message,
+          allergiesNote: refreshed.group.allergiesNote,
+          rsvpUrl: base ? `${base}/rsvp/${params.token}` : undefined
+        });
+      }
+    } catch (err) {
+      console.error('RSVP notify chain failed:', err);
+    }
+
     return { saved: true };
   }
 };

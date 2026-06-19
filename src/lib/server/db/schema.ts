@@ -2,6 +2,10 @@ import { sqliteTable, integer, text, real } from 'drizzle-orm/sqlite-core';
 
 export const inviteGroups = sqliteTable('invite_groups', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  // Stable key derived from the seed source — lets reseeds match existing rows
+  // by identity rather than wiping & re-creating (which would regenerate tokens
+  // and lose RSVP data). Nullable so older rows can be backfilled.
+  seedKey: text('seed_key').unique(),
   name: text('name').notNull(),
   token: text('token').notNull().unique(),
   // Note FROM guests TO couple — written via the RSVP page.
@@ -16,6 +20,8 @@ export const inviteGroups = sqliteTable('invite_groups', {
 export const guests = sqliteTable('guests', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   groupId: integer('group_id').notNull().references(() => inviteGroups.id),
+  // Stable seed identity — see inviteGroups.seedKey.
+  seedKey: text('seed_key').unique(),
   name: text('name').notNull(),
   side: text('side', { enum: ['G', 'B', 'X'] }).notNull(),
   relationshipGroup: text('relationship_group').notNull(),

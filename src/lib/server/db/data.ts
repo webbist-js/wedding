@@ -79,6 +79,7 @@ export const SEED_GUESTS: SeedGuest[] = [
   { name: 'Janet Bennett', side: 'G', relationshipGroup: G_FAM, relation: "Alex's mother", attendanceType: 'day', inviteGroup: 'janet-bennett' },
   { name: 'Chris Bennett', side: 'G', relationshipGroup: G_FAM, relation: "Alex's brother", role: 'Best Man', attendanceType: 'day', inviteGroup: 'chris-hayley-bennett' },
   { name: 'Hayley Bennett', side: 'G', relationshipGroup: G_FAM, relation: "Chris's wife", role: 'Bridesmaid', attendanceType: 'day', inviteGroup: 'chris-hayley-bennett' },
+  { name: 'Theo', side: 'G', relationshipGroup: G_FAM, relation: "Chris & Hayley's baby", attendanceType: 'day', isChild: true, inviteGroup: 'chris-hayley-bennett' },
 
   // --- Bride's family ---
   { name: 'Malcolm Jones', side: 'B', relationshipGroup: B_FAM, relation: "Katie's father figure", attendanceType: 'day', inviteGroup: 'malcolm-monica' },
@@ -105,6 +106,7 @@ export const SEED_GUESTS: SeedGuest[] = [
   { name: 'Jen Todd', side: 'G', relationshipGroup: G_FR, relation: "Chris Todd's wife", role: 'Bridesmaid', attendanceType: 'day', inviteGroup: 'chris-jen-todd' },
   { name: 'Stephen McCarroll', side: 'G', relationshipGroup: G_FR, relation: "Alex's friend", attendanceType: 'day', inviteGroup: 'stephen-mccarroll-alice-barrel' },
   { name: 'Alice Barrel', side: 'G', relationshipGroup: G_FR, relation: "Stephen's partner", attendanceType: 'day', inviteGroup: 'stephen-mccarroll-alice-barrel' },
+  { name: 'Arlo', side: 'G', relationshipGroup: G_FR, relation: "Stephen & Alice's son", attendanceType: 'day', isChild: true, inviteGroup: 'stephen-mccarroll-alice-barrel' },
   { name: 'Sam Rycroft', side: 'G', relationshipGroup: G_FR, relation: "Alex's friend", attendanceType: 'day', inviteGroup: 'sam-rycroft' },
   { name: "Sam's Plus One", side: 'G', relationshipGroup: G_FR, relation: "Sam's guest", attendanceType: 'day', isPlusOne: true, inviteGroup: 'sam-rycroft' },
   { name: 'Jade', side: 'G', relationshipGroup: G_FR, relation: "Alex's friend", attendanceType: 'day', inviteGroup: 'jade-tom' },
@@ -119,6 +121,7 @@ export const SEED_GUESTS: SeedGuest[] = [
   { name: 'Alistar Brierley', side: 'G', relationshipGroup: G_FR, relation: "Alex's friend (Brierley)", meal: 'veg', attendanceType: 'day', inviteGroup: 'alistar-raya' },
   { name: 'Raya', side: 'G', relationshipGroup: G_FR, relation: "Alistar's partner", attendanceType: 'day', inviteGroup: 'alistar-raya' },
   { name: 'Helena', side: 'G', relationshipGroup: G_FR, relation: "Brierley sibling · Alex's friend", attendanceType: 'day', inviteGroup: 'helena' },
+  { name: "Helena's Plus One", side: 'G', relationshipGroup: G_FR, relation: "Helena's guest", attendanceType: 'day', isPlusOne: true, inviteGroup: 'helena' },
   { name: 'Allison', side: 'G', relationshipGroup: G_FR, relation: "Brierleys' mum · friend of Alex & Janet", dietaryNotes: 'Pescatarian', attendanceType: 'day', inviteGroup: 'allison' },
   { name: 'Suma', side: 'G', relationshipGroup: G_FR, relation: "Kiran's mum · Alex's friend", attendanceType: 'day', inviteGroup: 'suma' },
   { name: 'Kevin Philips', side: 'G', relationshipGroup: G_FR, relation: "Kiran's brother", attendanceType: 'day', inviteGroup: 'kevin-philips-anna-b' },
@@ -141,7 +144,7 @@ export const SEED_GUESTS: SeedGuest[] = [
 
   // --- Bride's work friends ---
   { name: 'Karma Hirst', side: 'B', relationshipGroup: B_WKF, relation: "Katie's work friend", attendanceType: 'day', inviteGroup: 'karma-hirst' },
-  { name: 'Connor', side: 'B', relationshipGroup: B_WKF, relation: "Katie's work friend", attendanceType: 'day', inviteGroup: 'connor' },
+  { name: 'Connor', side: 'B', relationshipGroup: B_WKF, relation: "Karma's partner", attendanceType: 'day', inviteGroup: 'karma-hirst' },
   { name: 'Dom Doherty', side: 'B', relationshipGroup: B_WKF, relation: "Katie's work friend", attendanceType: 'day', inviteGroup: 'dom-doherty' },
   { name: 'Mairi', side: 'B', relationshipGroup: B_WKF, relation: "Katie's work friend", attendanceType: 'day', inviteGroup: 'mairi' },
   { name: 'Sharon Kirk', side: 'B', relationshipGroup: B_WKF, relation: "Katie's work friend", attendanceType: 'day', inviteGroup: 'sharon-kirk' },

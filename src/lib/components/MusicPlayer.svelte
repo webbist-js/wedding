@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 
 	let {
 		src = '/audio/good-for-me-acoustic.mp3',
@@ -11,20 +11,54 @@
 	let available = $state(true);
 	const KEY = 'wedding-music';
 
-	// Try to honour the user's last choice. Autoplay is heavily restricted —
-	// if the browser blocks us we silently stay paused and wait for a tap.
+	// User-gesture fallback when the browser blocks programmatic play().
+	// We listen for the first interaction on the document and then start.
+	const triggerEvents = ['pointerdown', 'keydown', 'touchstart'] as const;
+	let pendingTrigger = false;
+
+	function armGestureTrigger() {
+		if (pendingTrigger) return;
+		pendingTrigger = true;
+		const start = () => {
+			if (!pendingTrigger) return;
+			pendingTrigger = false;
+			for (const ev of triggerEvents) document.removeEventListener(ev, start);
+			audio
+				?.play()
+				.then(() => (playing = true))
+				.catch(() => {
+					/* still blocked; user can use the button */
+				});
+		};
+		for (const ev of triggerEvents) {
+			document.addEventListener(ev, start, { passive: true });
+		}
+	}
+
+	function disarmGestureTrigger() {
+		if (!pendingTrigger) return;
+		pendingTrigger = false;
+	}
+
 	onMount(() => {
 		if (!audio) return;
 		audio.volume = 0.5;
+
 		const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(KEY) : null;
-		if (stored === 'on') {
-			audio
-				.play()
-				.then(() => (playing = true))
-				.catch(() => {
-					// blocked — user will need to tap the button
-				});
-		}
+		// Default to playing unless the user explicitly muted it last time.
+		if (stored === 'off') return;
+
+		audio
+			.play()
+			.then(() => (playing = true))
+			.catch(() => {
+				// Autoplay was blocked — wait for the first interaction.
+				armGestureTrigger();
+			});
+	});
+
+	onDestroy(() => {
+		disarmGestureTrigger();
 	});
 
 	function toggle() {
@@ -37,6 +71,7 @@
 			} catch {
 				/* private mode */
 			}
+			disarmGestureTrigger();
 		} else {
 			audio
 				.play()
@@ -78,17 +113,37 @@
 		title={playing ? `Mute · ${title}` : `Play · ${title}`}
 	>
 		{#if playing}
-			<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-				<path d="M9 18V5l12-2v13"/>
-				<circle cx="6" cy="18" r="3"/>
-				<circle cx="18" cy="16" r="3"/>
+			<svg
+				viewBox="0 0 24 24"
+				width="18"
+				height="18"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="1.8"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				aria-hidden="true"
+			>
+				<path d="M9 18V5l12-2v13" />
+				<circle cx="6" cy="18" r="3" />
+				<circle cx="18" cy="16" r="3" />
 			</svg>
 		{:else}
-			<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-				<path d="M9 18V5l12-2v13" opacity=".4"/>
-				<circle cx="6" cy="18" r="3" opacity=".4"/>
-				<circle cx="18" cy="16" r="3" opacity=".4"/>
-				<line x1="3" y1="3" x2="21" y2="21"/>
+			<svg
+				viewBox="0 0 24 24"
+				width="18"
+				height="18"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="1.8"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				aria-hidden="true"
+			>
+				<path d="M9 18V5l12-2v13" opacity=".4" />
+				<circle cx="6" cy="18" r="3" opacity=".4" />
+				<circle cx="18" cy="16" r="3" opacity=".4" />
+				<line x1="3" y1="3" x2="21" y2="21" />
 			</svg>
 		{/if}
 	</button>

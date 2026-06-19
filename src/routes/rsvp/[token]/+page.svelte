@@ -10,13 +10,11 @@
 		GIFTS
 	} from '$lib/wedding-info';
 	import Flora from '$lib/components/Flora.svelte';
-	import MusicPlayer from '$lib/components/MusicPlayer.svelte';
 	import { reveal } from '$lib/actions/reveal';
 	let { data, form } = $props();
 </script>
 
 <Flora />
-<MusicPlayer />
 
 <main class="rsvp">
 	<header class="hero" use:reveal>
@@ -66,12 +64,24 @@
 
 		<form method="POST" use:enhance>
 			{#each data.members as m (m.id)}
-				<fieldset class:plusone={m.isPlusOne}>
+				<fieldset class:plusone={m.isPlusOne} class:kid={m.isChild}>
 					<legend>
-						<span class="member-name script">{m.isPlusOne ? 'Your plus one' : m.name}</span>
+						<span class="member-name script">
+							{#if m.isChild}
+								Will little {m.name.split(' ')[0]} be joining us?
+							{:else if m.isPlusOne}
+								Your plus one
+							{:else}
+								{m.name}
+							{/if}
+						</span>
 						<span class="type">
 							·
-							{m.attendanceType === 'day' ? 'Day & evening' : 'Evening reception'}
+							{#if m.isChild}
+								Child
+							{:else}
+								{m.attendanceType === 'day' ? 'Day & evening' : 'Evening reception'}
+							{/if}
 						</span>
 					</legend>
 

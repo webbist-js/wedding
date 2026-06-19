@@ -1,10 +1,8 @@
 <script lang="ts">
 	import Flora from '$lib/components/Flora.svelte';
-	import MusicPlayer from '$lib/components/MusicPlayer.svelte';
 </script>
 
 <Flora />
-<MusicPlayer />
 
 <main class="landing">
 	<p class="eyebrow">Together with their families</p>
