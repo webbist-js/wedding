@@ -450,20 +450,34 @@
 	.hero-overlay {
 		position: absolute;
 		inset: 0;
-		/* Light cream wash — keeps brand legibility but lets the venue video read through */
-		background: linear-gradient(180deg, rgba(251, 250, 246, 0.32), rgba(251, 250, 246, 0.22) 55%, rgba(251, 250, 246, 0.45));
+		/* Soft dark wash for richness — paired with light text below */
+		background: linear-gradient(180deg, rgba(20, 19, 16, 0.45), rgba(20, 19, 16, 0.35) 55%, rgba(20, 19, 16, 0.55));
 		z-index: -1;
 	}
 	.hero-content {
 		max-width: 900px;
 		margin: 0 auto;
 		width: 100%;
+		color: var(--bg);
+	}
+	.hero-content .eyebrow {
+		color: rgba(251, 250, 246, 0.85);
 	}
 	.hero-content h1 {
 		font-size: clamp(64px, 14vw, 110px);
 		margin: 6px 0 8px;
 		line-height: 1;
-		color: var(--ink);
+		color: #fbfaf6;
+		text-shadow: 0 2px 22px rgba(0, 0, 0, 0.25);
+	}
+	.hero-content .when {
+		color: #fbfaf6;
+	}
+	.hero-content .where {
+		color: rgba(251, 250, 246, 0.78);
+	}
+	.hero-content .title-sprig {
+		filter: brightness(0) invert(1) opacity(0.7);
 	}
 
 	/* ---- Grid below the hero ---- */
