@@ -15,6 +15,7 @@ export interface RsvpNotifyPayload {
 	members: RsvpNotifyMember[];
 	message: string | null;
 	allergiesNote: string | null;
+	songRequest?: string | null;
 	rsvpUrl?: string;
 }
 
@@ -75,6 +76,12 @@ export async function notifyRSVP(payload: RsvpNotifyPayload): Promise<void> {
 		blocks.push({
 			type: 'context',
 			elements: [{ type: 'mrkdwn', text: `📝 ${esc(payload.allergiesNote.trim())}` }]
+		});
+	}
+	if (payload.songRequest?.trim()) {
+		blocks.push({
+			type: 'context',
+			elements: [{ type: 'mrkdwn', text: `🎵 *Song request:* ${esc(payload.songRequest.trim())}` }]
 		});
 	}
 	if (payload.rsvpUrl) {

@@ -21,7 +21,6 @@
 	<img src="/flora/layer-15.png" alt="" class="l3" />
 	<img src="/flora/layer-18.png" alt="" class="l4" />
 	<img src="/flora/layer-10.png" alt="" class="l5" />
-	<img src="/flora/layer-13.png" alt="" class="l6" />
 	{#if side === 'both'}
 		<!-- right edge — mirrored, drawn from the same 8-image set -->
 		<img src="/flora/layer-16.png" alt="" class="r1" />
@@ -58,11 +57,10 @@
 		transform: rotate(45deg);
 	}
 	.l1 { top: 4vh;  width: 135px; }
-	.l2 { top: 20vh; width: 88px;  }
-	.l3 { top: 38vh; width: 118px; }
-	.l4 { top: 56vh; width: 118px; }
-	.l5 { top: 74vh; width: 103px; }
-	.l6 { top: 90vh; width: 104px; }
+	.l2 { top: 22vh; width: 88px;  }
+	.l3 { top: 42vh; width: 118px; }
+	.l4 { top: 62vh; width: 118px; }
+	.l5 { top: 82vh; width: 103px; }
 
 	/* Right edge — mirrored: anchored at bottom-right, rotated -45° */
 	.flora-frame [class^='r'] {
@@ -89,7 +87,7 @@
 	}
 
 	@media (max-width: 640px) {
-		.l2, .l4, .l6, .r2, .r4, .r6 { display: none; }
+		.l2, .l4, .r2, .r4, .r6 { display: none; }
 		.flora-frame img { opacity: 0.4; }
 	}
 </style>

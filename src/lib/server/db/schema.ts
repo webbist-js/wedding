@@ -14,6 +14,8 @@ export const inviteGroups = sqliteTable('invite_groups', {
   personalMessage: text('personal_message'),
   // Household-level allergies / dietary notes captured under the menu section.
   allergiesNote: text('allergies_note'),
+  // Optional song request from the household — passed on to the DJ.
+  songRequest: text('song_request'),
   respondedAt: integer('responded_at', { mode: 'timestamp' })
 });
 

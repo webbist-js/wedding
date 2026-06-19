@@ -38,9 +38,11 @@ export const actions: Actions = {
       await db.update(guests).set(update).where(eq(guests.id, g.id));
     }
     const allergies = String(fd.get('allergies') ?? '').trim() || null;
+    const songRequest = String(fd.get('song_request') ?? '').trim() || null;
     await db.update(inviteGroups).set({
       message: parsed.message,
       allergiesNote: allergies,
+      songRequest,
       respondedAt: new Date()
     }).where(eq(inviteGroups.id, data.group.id));
 
@@ -63,6 +65,7 @@ export const actions: Actions = {
           })),
           message: refreshed.group.message,
           allergiesNote: refreshed.group.allergiesNote,
+          songRequest: refreshed.group.songRequest,
           rsvpUrl: base ? `${base}/rsvp/${params.token}` : undefined
         });
       }

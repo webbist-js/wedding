@@ -33,6 +33,35 @@
 		daysToGo = Math.max(0, Math.ceil((weddingMs - Date.now()) / 86400000));
 	});
 
+	// Whether any household member is set to attending right now — drives the
+	// song-request field visibility.
+	let anyAttending = $derived(Object.values(attending).some((s) => s === 'yes'));
+
+	// Personal-message modal — show once per device per group on first open.
+	let showPersonalMsg = $state(false);
+	$effect(() => {
+		if (!data.group.personalMessage) return;
+		try {
+			const key = `wedding-msg-seen-${data.group.token}`;
+			if (!localStorage.getItem(key)) {
+				showPersonalMsg = true;
+			}
+		} catch {
+			showPersonalMsg = true;
+		}
+	});
+	function dismissPersonalMsg() {
+		showPersonalMsg = false;
+		try {
+			localStorage.setItem(`wedding-msg-seen-${data.group.token}`, '1');
+		} catch {
+			/* private mode */
+		}
+	}
+	function onKey(e: KeyboardEvent) {
+		if (e.key === 'Escape' && showPersonalMsg) dismissPersonalMsg();
+	}
+
 	// Fire confetti once on success, but only if at least one person is attending.
 	$effect(() => {
 		if (!form?.saved) return;
@@ -65,8 +94,22 @@
 	}
 </script>
 
+<svelte:window onkeydown={onKey} />
+
 <Flora side="left" />
 <div class="form-panel-bg" aria-hidden="true"></div>
+
+{#if showPersonalMsg && data.group.personalMessage}
+	<div class="msg-modal" role="dialog" aria-modal="true" aria-labelledby="msg-modal-title">
+		<button type="button" class="msg-modal-backdrop" aria-label="Close" onclick={dismissPersonalMsg}></button>
+		<div class="msg-modal-card">
+			<p id="msg-modal-title" class="msg-modal-eyebrow">A note from Alex &amp; Katie</p>
+			<img src="/flora/layer-13.png" class="msg-modal-sprig" alt="" aria-hidden="true" />
+			<p class="msg-modal-body">{data.group.personalMessage}</p>
+			<button type="button" class="msg-modal-close" onclick={dismissPersonalMsg}>Continue</button>
+		</div>
+	</div>
+{/if}
 
 <main class="rsvp">
 	<!-- Full-width hero banner with the Tithe Barn video behind it. -->
@@ -160,6 +203,9 @@
 			</ul>
 			{#if data.group.allergiesNote}
 				<p class="note"><b>Note to us:</b> {data.group.allergiesNote}</p>
+			{/if}
+			{#if data.group.songRequest}
+				<p class="note"><b>🎵 Song request:</b> {data.group.songRequest}</p>
 			{/if}
 			{#if data.group.message}
 				<p class="msg"><em>"{data.group.message}"</em></p>
@@ -284,6 +330,22 @@
 					>{data.group.allergiesNote ?? ''}</textarea
 				>
 			</label>
+
+			{#if anyAttending}
+				<label class="field song-field">
+					A song for our DJ? <span class="optional">(optional)</span>
+					<textarea
+						name="song_request"
+						rows="2"
+						placeholder="e.g. Mr Brightside · The Killers"
+						>{data.group.songRequest ?? ''}</textarea
+					>
+					<span class="field-hint">
+						Got a track you'd love to dance to? We'll pass it on to keep the floor moving.
+					</span>
+				</label>
+			{/if}
+
 			<label class="field">
 				A message to the couple <span class="optional">(optional)</span>
 				<textarea name="message" rows="3" placeholder="Leave us a note…"
@@ -437,6 +499,86 @@
 		color: var(--body);
 		position: relative;
 		z-index: 1;
+	}
+
+	/* Personal-message modal — pops up once per device on first open */
+	.msg-modal {
+		position: fixed;
+		inset: 0;
+		z-index: 100;
+		display: grid;
+		place-items: center;
+		padding: 24px;
+		animation: msgFade 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+	.msg-modal-backdrop {
+		position: absolute;
+		inset: 0;
+		background: rgba(20, 19, 16, 0.55);
+		backdrop-filter: blur(4px);
+		-webkit-backdrop-filter: blur(4px);
+		border: 0;
+		cursor: pointer;
+		padding: 0;
+		margin: 0;
+	}
+	.msg-modal-card {
+		position: relative;
+		background: var(--card);
+		border-radius: 18px;
+		padding: 44px 36px 32px;
+		max-width: 460px;
+		width: 100%;
+		text-align: center;
+		box-shadow: 0 18px 48px rgba(20, 19, 16, 0.25);
+		animation: msgPop 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+	.msg-modal-eyebrow {
+		font-size: 10.5px;
+		letter-spacing: 0.32em;
+		text-transform: uppercase;
+		color: var(--sage-deep);
+		margin: 0 0 8px;
+		font-weight: 600;
+	}
+	.msg-modal-sprig {
+		display: block;
+		width: 26px;
+		margin: 4px auto 18px;
+		opacity: 0.7;
+	}
+	.msg-modal-body {
+		font-family: var(--serif);
+		font-style: italic;
+		font-size: 19px;
+		line-height: 1.55;
+		color: var(--ink);
+		margin: 0 0 26px;
+	}
+	.msg-modal-close {
+		background: var(--sage);
+		color: #fff;
+		border: 0;
+		border-radius: 10px;
+		padding: 12px 28px;
+		letter-spacing: 0.18em;
+		text-transform: uppercase;
+		font-size: 11.5px;
+		font-weight: 600;
+		cursor: pointer;
+		font-family: inherit;
+		transition: background-color 0.2s ease;
+	}
+	.msg-modal-close:hover {
+		background: var(--sage-deep);
+	}
+	@keyframes msgFade {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+	@keyframes msgPop {
+		from { opacity: 0; transform: translateY(12px) scale(0.96); }
+		to { opacity: 1; transform: translateY(0) scale(1); }
 	}
 
 	/* Fixed sage panel covering only the right half of the viewport on desktop —
@@ -992,6 +1134,19 @@
 		font-weight: 400;
 		color: var(--ink);
 		background: #fff;
+	}
+	.field-hint {
+		font-size: 11.5px;
+		letter-spacing: normal;
+		text-transform: none;
+		font-weight: 400;
+		color: var(--body);
+		font-style: italic;
+		margin-top: 2px;
+	}
+	.song-field textarea {
+		background: var(--sage-soft);
+		border-color: rgba(81, 96, 63, 0.25);
 	}
 	.field textarea {
 		resize: vertical;
