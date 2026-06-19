@@ -3,7 +3,9 @@ import { build, files, version } from '$service-worker';
 
 declare const self: ServiceWorkerGlobalScope;
 
-const CACHE = `cache-${version}`;
+// Cache key bumped manually (v2) to force-evict caches from earlier builds that
+// referenced static assets that have since been removed (e.g. old flora files).
+const CACHE = `cache-${version}-v2`;
 // Build assets are hashed by SvelteKit — safe to cache aggressively.
 // `files` are everything under /static (manifest, icons, robots.txt).
 const ASSETS = [...build, ...files];
@@ -17,7 +19,10 @@ self.addEventListener('install', (event) => {
 	event.waitUntil(
 		(async () => {
 			const cache = await caches.open(CACHE);
-			await cache.addAll(ASSETS);
+			// Resilient install: a single missing asset shouldn't poison the cache.
+			// If any URL fails (e.g. removed since the last build), skip it and
+			// continue with the rest so the new SW can still activate.
+			await Promise.all(ASSETS.map((asset) => cache.add(asset).catch(() => {})));
 		})()
 	);
 	self.skipWaiting();
