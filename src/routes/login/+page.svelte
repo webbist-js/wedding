@@ -4,7 +4,7 @@
 	let { form } = $props();
 </script>
 
-<Flora placement="top" density="sparse" />
+<Flora density="sparse" />
 
 <main class="login">
 	<p class="eyebrow">Alex &amp; Katie</p>

@@ -1,160 +1,110 @@
 <script lang="ts">
-	// Decorative botanical sprigs — purely presentational. Each `placement` arranges
-	// a few of the watercolour assets along an edge, like the Save the Date design.
-	let { placement = 'top' as 'top' | 'bottom' | 'sides', density = 'normal' as 'sparse' | 'normal' } = $props();
+	// Side-edge botanical frame — sprigs scattered along the left and right margins
+	// at varying heights, naturally oriented (no flips). Fixed to the viewport so
+	// the framing rides along as guests scroll the info card; pointer-events: none
+	// so it never blocks interaction.
+	let { density = 'normal' as 'sparse' | 'normal' } = $props();
 </script>
 
-<div class="flora flora-{placement}" data-density={density} aria-hidden="true">
-	{#if placement === 'top'}
-		<img src="/flora/layer-14-1.png" alt="" class="f1" />
-		<img src="/flora/layer-11.png" alt="" class="f2" />
-		<img src="/flora/layer-18.png" alt="" class="f3" />
-		<img src="/flora/layer-12.png" alt="" class="f4" />
-		<img src="/flora/layer-15.png" alt="" class="f5" />
-	{:else if placement === 'bottom'}
-		<img src="/flora/layer-9.png" alt="" class="f1" />
-		<img src="/flora/layer-11-1.png" alt="" class="f2" />
-		<img src="/flora/layer-13.png" alt="" class="f3" />
-		<img src="/flora/layer-16.png" alt="" class="f4" />
-		<img src="/flora/layer-17.png" alt="" class="f5" />
-	{:else}
-		<img src="/flora/layer-9-1.png" alt="" class="s1" />
-		<img src="/flora/layer-10.png" alt="" class="s2" />
-		<img src="/flora/layer-14.png" alt="" class="s3" />
-	{/if}
+<div class="flora-frame" data-density={density} aria-hidden="true">
+	<!-- left edge -->
+	<img src="/flora/layer-11.png" alt="" class="l1" />
+	<img src="/flora/layer-9.png" alt="" class="l2" />
+	<img src="/flora/layer-14.png" alt="" class="l3" />
+	<img src="/flora/layer-17.png" alt="" class="l4" />
+	<!-- right edge -->
+	<img src="/flora/layer-12.png" alt="" class="r1" />
+	<img src="/flora/layer-18.png" alt="" class="r2" />
+	<img src="/flora/layer-16.png" alt="" class="r3" />
+	<img src="/flora/layer-15.png" alt="" class="r4" />
 </div>
 
 <style>
-	.flora {
-		position: absolute;
-		left: 0;
-		right: 0;
-		pointer-events: none;
-		z-index: 0;
-	}
-	.flora img {
-		position: absolute;
-		opacity: 0.6;
-		user-select: none;
-	}
-	.flora[data-density='sparse'] img {
-		opacity: 0.45;
-	}
-
-	.flora-top {
-		top: 0;
-		height: 180px;
-	}
-	.flora-bottom {
-		bottom: 0;
-		height: 180px;
-		transform: scaleY(-1);
-	}
-
-	/* Top arrangement — sprigs hanging down from the top edge */
-	.flora-top .f1 {
-		left: 4%;
-		top: -10px;
-		width: 80px;
-		transform: rotate(-12deg);
-	}
-	.flora-top .f2 {
-		left: 22%;
-		top: -20px;
-		width: 100px;
-		transform: rotate(-4deg);
-	}
-	.flora-top .f3 {
-		left: 48%;
-		top: -8px;
-		width: 80px;
-		transform: rotate(8deg);
-	}
-	.flora-top .f4 {
-		left: 70%;
-		top: -16px;
-		width: 70px;
-		transform: rotate(-10deg);
-	}
-	.flora-top .f5 {
-		right: 4%;
-		top: -10px;
-		width: 90px;
-		transform: rotate(12deg) scaleX(-1);
-	}
-
-	/* Bottom arrangement — sprigs rising from the bottom (flipped via scaleY parent) */
-	.flora-bottom .f1 {
-		left: 6%;
-		top: 10px;
-		width: 80px;
-		transform: rotate(-8deg);
-	}
-	.flora-bottom .f2 {
-		left: 26%;
-		top: 0;
-		width: 90px;
-	}
-	.flora-bottom .f3 {
-		left: 50%;
-		top: 14px;
-		width: 70px;
-		transform: rotate(8deg);
-	}
-	.flora-bottom .f4 {
-		left: 70%;
-		top: 0;
-		width: 100px;
-		transform: rotate(-6deg);
-	}
-	.flora-bottom .f5 {
-		right: 6%;
-		top: 8px;
-		width: 80px;
-		transform: rotate(10deg) scaleX(-1);
-	}
-
-	.flora-sides {
+	.flora-frame {
 		position: fixed;
 		inset: 0;
-		height: 100vh;
+		pointer-events: none;
+		z-index: 0;
+		overflow: hidden;
 	}
-	.flora-sides .s1 {
-		left: 2%;
-		top: 18vh;
-		width: 90px;
-		transform: rotate(-25deg);
+	.flora-frame img {
+		position: absolute;
+		opacity: 0.55;
+		user-select: none;
 	}
-	.flora-sides .s2 {
-		right: 2%;
-		top: 30vh;
-		width: 110px;
-		transform: rotate(15deg) scaleX(-1);
-	}
-	.flora-sides .s3 {
-		right: 4%;
-		bottom: 12vh;
-		width: 70px;
-		transform: rotate(-15deg);
+	[data-density='sparse'] img {
+		opacity: 0.4;
 	}
 
-	/* Smaller scale on narrow screens so the sprigs don't crowd the page */
+	/* Left edge — vertical scatter, slight outward tilts */
+	.l1 {
+		left: 1%;
+		top: 2vh;
+		width: 110px;
+		transform: rotate(-10deg);
+	}
+	.l2 {
+		left: 0%;
+		top: 32vh;
+		width: 110px;
+		transform: rotate(-18deg);
+	}
+	.l3 {
+		left: 2%;
+		top: 60vh;
+		width: 80px;
+		transform: rotate(12deg);
+	}
+	.l4 {
+		left: 0%;
+		bottom: 4vh;
+		width: 110px;
+		transform: rotate(-8deg);
+	}
+
+	/* Right edge — mirrored */
+	.r1 {
+		right: 1%;
+		top: 4vh;
+		width: 100px;
+		transform: scaleX(-1) rotate(-8deg);
+	}
+	.r2 {
+		right: 1%;
+		top: 28vh;
+		width: 110px;
+		transform: scaleX(-1) rotate(-12deg);
+	}
+	.r3 {
+		right: 2%;
+		top: 58vh;
+		width: 100px;
+		transform: scaleX(-1) rotate(10deg);
+	}
+	.r4 {
+		right: 0%;
+		bottom: 6vh;
+		width: 100px;
+		transform: scaleX(-1) rotate(-10deg);
+	}
+
+	/* Hide on narrow viewports so flora doesn't crowd the content */
+	@media (max-width: 900px) {
+		.flora-frame img {
+			width: 80px !important;
+			opacity: 0.4;
+		}
+	}
 	@media (max-width: 640px) {
-		.flora-top,
-		.flora-bottom {
-			height: 130px;
-		}
-		.flora-top img,
-		.flora-bottom img {
-			transform-origin: center;
-			width: 60px !important;
-		}
-		.flora-top .f2,
-		.flora-bottom .f4 {
-			width: 75px !important;
-		}
-		.flora-sides {
+		.l2,
+		.r2,
+		.l3,
+		.r3 {
 			display: none;
+		}
+		.flora-frame img {
+			width: 70px !important;
+			opacity: 0.38;
 		}
 	}
 </style>
