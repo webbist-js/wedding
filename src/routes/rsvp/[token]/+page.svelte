@@ -12,6 +12,18 @@
 	import Flora from '$lib/components/Flora.svelte';
 	import { reveal } from '$lib/actions/reveal';
 	let { data, form } = $props();
+
+	// Track each member's current selection client-side so meal/dietary blocks
+	// can appear only after they've actually clicked "Joyfully accepts".
+	type Attend = 'yes' | 'no' | null;
+	let attending = $state<Record<number, Attend>>(
+		Object.fromEntries(
+			data.members.map((m) => [
+				m.id,
+				m.rsvpStatus === 'yes' ? 'yes' : m.rsvpStatus === 'no' ? 'no' : null
+			])
+		)
+	);
 </script>
 
 <Flora />
@@ -44,10 +56,14 @@
 				</li>
 			{/each}
 		</ul>
-		<div class="dress">
-			<p class="dress-label">A gentle note on dress</p>
-			<p class="dress-body">{WEDDING.dressNote}</p>
-		</div>
+	</section>
+
+	<!-- Dress Code -->
+	<section class="card center" use:reveal>
+		<h2 class="card-title script">Dress Code</h2>
+		<img src="/flora/layer-13.png" class="card-sprig" alt="" aria-hidden="true" />
+		<p class="lead">{WEDDING.dressCode.headline}</p>
+		<p class="body">{WEDDING.dressCode.body}</p>
 	</section>
 
 	{#if form?.saved}
@@ -102,61 +118,65 @@
 					{/if}
 
 					<div class="toggle-group">
-						<label class="toggle">
+						<label class="toggle accept">
 							<input
 								type="radio"
 								name="attend_{m.id}"
 								value="yes"
 								checked={m.rsvpStatus === 'yes'}
+								onchange={() => (attending[m.id] = 'yes')}
 							/>
 							<span>Joyfully accepts</span>
 						</label>
-						<label class="toggle">
+						<label class="toggle decline">
 							<input
 								type="radio"
 								name="attend_{m.id}"
 								value="no"
 								checked={m.rsvpStatus === 'no'}
+								onchange={() => (attending[m.id] = 'no')}
 							/>
 							<span>Regretfully declines</span>
 						</label>
 					</div>
 
-					{#if m.attendanceType === 'evening'}
-						<p class="pizza">
-							You'll be joining us for <b>Baz &amp; Fred</b> wood-fired pizza, handmade on site —
-							served to everyone in the evening.
-						</p>
-					{:else if m.isChild}
-						<p class="kids">Children are served from our <b>kids' menu</b>.</p>
-					{:else}
-						<p class="sub-label">Meal choice</p>
-						<div class="toggle-group">
-							<label class="toggle">
-								<input
-									type="radio"
-									name="meal_{m.id}"
-									value="non-veg"
-									checked={m.meal === 'non-veg'}
-								/>
-								<span>Standard menu</span>
-							</label>
-							<label class="toggle">
-								<input
-									type="radio"
-									name="meal_{m.id}"
-									value="veg"
-									checked={m.meal === 'veg'}
-								/>
-								<span>Vegetarian</span>
-							</label>
-						</div>
-					{/if}
+					{#if attending[m.id] === 'yes'}
+						{#if m.attendanceType === 'evening'}
+							<p class="pizza">
+								You'll be joining us for <b>Baz &amp; Fred</b> wood-fired pizza, handmade on site —
+								served to everyone in the evening.
+							</p>
+						{:else if m.isChild}
+							<p class="kids">Children are served from our <b>kids' menu</b>.</p>
+						{:else}
+							<p class="sub-label">Meal choice</p>
+							<div class="toggle-group">
+								<label class="toggle">
+									<input
+										type="radio"
+										name="meal_{m.id}"
+										value="non-veg"
+										checked={m.meal === 'non-veg'}
+									/>
+									<span>Standard menu</span>
+								</label>
+								<label class="toggle">
+									<input
+										type="radio"
+										name="meal_{m.id}"
+										value="veg"
+										checked={m.meal === 'veg'}
+									/>
+									<span>Vegetarian</span>
+								</label>
+							</div>
+						{/if}
 
-					<label class="field">
-						Allergies / Dietary notes
-						<input name="diet_{m.id}" value={m.dietaryNotes ?? ''} placeholder="Optional" />
-					</label>
+						<label class="field">
+							Allergies / Dietary notes
+							<input name="diet_{m.id}" value={m.dietaryNotes ?? ''} placeholder="Optional" />
+						</label>
+					{/if}
 				</fieldset>
 			{/each}
 
@@ -283,6 +303,19 @@
 				</li>
 			{/each}
 		</ul>
+	</section>
+
+	<section class="card center contact-card" use:reveal>
+		<h2 class="card-title script">Any questions?</h2>
+		<img src="/flora/layer-13.png" class="card-sprig" alt="" aria-hidden="true" />
+		<p class="body">
+			Drop us a line — we'd love to hear from you.
+		</p>
+		<p class="contact-lines">
+			<a href={`mailto:${WEDDING.contact.email}`}>{WEDDING.contact.email}</a>
+			<br />
+			<a href={`tel:${WEDDING.contact.phone.replace(/\s/g, '')}`}>{WEDDING.contact.phone}</a>
+		</p>
 	</section>
 
 	<footer class="foot" use:reveal>
@@ -413,29 +446,6 @@
 		color: var(--body);
 	}
 
-	.dress {
-		margin: 26px auto 0;
-		max-width: 460px;
-		background: var(--sage-soft);
-		border-radius: 12px;
-		padding: 16px 20px;
-		text-align: left;
-	}
-	.dress-label {
-		font-weight: 600;
-		letter-spacing: 0.18em;
-		text-transform: uppercase;
-		font-size: 10px;
-		color: var(--sage-deep);
-		margin: 0 0 6px;
-	}
-	.dress-body {
-		margin: 0;
-		color: var(--sage-deep);
-		font-size: 13.5px;
-		line-height: 1.55;
-	}
-
 	.thanks {
 		background: var(--sage-soft);
 		color: var(--sage-deep);
@@ -455,7 +465,10 @@
 		border: 1px solid var(--line);
 		border-radius: 14px;
 		padding: 22px 22px 18px;
-		margin: 0 0 16px;
+		margin: 0 0 24px;
+	}
+	.rsvp-form fieldset:last-of-type {
+		margin-bottom: 8px;
 	}
 	.rsvp-form fieldset.plusone {
 		background: var(--sage-soft);
@@ -567,6 +580,22 @@
 	.toggle input:focus-visible ~ span {
 		outline: 2px solid var(--sage);
 		outline-offset: 2px;
+	}
+
+	/* Decline gets a softer beige treatment (matches the menu card) — it's not
+	   a "celebration" colour, but still clearly chosen. */
+	.toggle.decline:hover span {
+		color: #8c7a4e;
+		border-color: #d9cca8;
+		background: #faf3e3;
+	}
+	.toggle.decline input:checked ~ span {
+		background: #f4ede0;
+		color: var(--ink);
+		border-color: #d9cca8;
+	}
+	.toggle.decline input:focus-visible ~ span {
+		outline-color: #d9cca8;
 	}
 
 	.pizza,
@@ -808,6 +837,23 @@
 		font-size: 13.5px;
 		color: var(--body);
 		line-height: 1.5;
+	}
+
+	/* ---- Contact card ---- */
+	.contact-lines {
+		font-family: var(--serif);
+		font-size: 18px;
+		line-height: 1.7;
+		margin: 8px 0 0;
+		color: var(--ink);
+	}
+	.contact-lines a {
+		color: var(--sage-deep);
+		text-decoration: none;
+		border-bottom: 1px solid transparent;
+	}
+	.contact-lines a:hover {
+		border-bottom-color: var(--sage);
 	}
 
 	/* ---- Footer ---- */

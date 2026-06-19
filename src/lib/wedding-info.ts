@@ -12,8 +12,16 @@ export const WEDDING = {
 	// requirement — set ~10 weeks before so the couple has time to chase
 	// non-responders before confirming to the venue.
 	rsvpDeadline: 'Friday 22 January 2027',
-	dressNote:
-		'As our day will be professionally photographed, we kindly ask guests to avoid wearing jeans and casual sneakers.',
+	// Phrased as a direct request rather than a "gentle note" — guests respond
+	// better to a clear ask than a soft suggestion.
+	dressCode: {
+		headline: 'Wear your wedding best',
+		body: 'We\'d love to see everyone in smart, formal attire. Since our day will be professionally photographed, please leave the jeans and casual trainers at home.'
+	},
+	contact: {
+		email: 'hello@alexandkatie.wedding',
+		phone: '07514 279404'
+	},
 	mapEmbed:
 		'https://www.openstreetmap.org/export/embed.html?bbox=-1.910%2C53.978%2C-1.872%2C53.992&layer=mapnik&marker=53.984%2C-1.891',
 	mapLink: 'https://www.google.com/maps?q=The+Tithe+Barn+Bolton+Abbey+BD23+6EX',
