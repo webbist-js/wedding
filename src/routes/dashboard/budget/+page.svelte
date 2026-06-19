@@ -12,9 +12,6 @@
 	let paid = $derived(data.lines.reduce((a, l) => a + l.paid, 0));
 	let remaining = $derived(data.target - confirmed);
 	let overBudget = $derived(remaining < 0);
-	let pctOfTarget = $derived(
-		data.target > 0 ? Math.min(100, (confirmed / data.target) * 100) : 0
-	);
 
 	async function saveField(id: number, field: string, value: string | number) {
 		await fetch('/dashboard/budget/line', {
@@ -103,10 +100,6 @@
 	</div>
 </div>
 
-<div class="progress" title="{gbp(confirmed)} confirmed of {gbp(data.target)}">
-	<div class="progress-bar" class:warning={overBudget} style="width: {pctOfTarget}%"></div>
-	<span class="progress-label">{Math.round(pctOfTarget)}% of target committed</span>
-</div>
 
 {#each data.sections as section}
 	{@const sectionLines = data.lines.filter((l) => l.section === section)}
@@ -257,7 +250,7 @@
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
 		gap: 14px;
-		margin-bottom: 18px;
+		margin-bottom: 32px;
 	}
 	.stat {
 		background: var(--card);
@@ -317,36 +310,6 @@
 	.stat-edit input:focus {
 		outline: none;
 		box-shadow: 0 1px 0 var(--sage);
-	}
-
-	/* Confirmed / target progress bar */
-	.progress {
-		position: relative;
-		height: 6px;
-		background: var(--line2);
-		border-radius: 999px;
-		margin: 0 0 28px;
-		overflow: hidden;
-	}
-	.progress-bar {
-		position: absolute;
-		inset: 0 auto 0 0;
-		background: var(--sage);
-		border-radius: 999px;
-		transition: width 0.4s ease;
-	}
-	.progress-bar.warning {
-		background: var(--terra);
-	}
-	.progress-label {
-		position: absolute;
-		top: 10px;
-		right: 0;
-		font-size: 10.5px;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		color: var(--muted);
-		font-weight: 600;
 	}
 
 	.bsection {
