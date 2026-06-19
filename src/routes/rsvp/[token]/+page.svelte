@@ -534,11 +534,16 @@
 			margin-top: 40px !important;
 		}
 
+		/* Wider cards on desktop so content fills the column more */
+		.rsvp-grid > * {
+			width: min(640px, calc(100% - 48px));
+		}
+
 		/* The form/success card sits in the right column, sticky at the top */
 		.rsvp-grid > .col-right {
 			grid-column: 2;
 			grid-row: 1 / span 99;
-			width: min(500px, calc(100% - 48px));
+			width: min(600px, calc(100% - 48px));
 			margin: 40px auto !important;
 			align-self: start;
 			position: sticky;
@@ -546,7 +551,7 @@
 		}
 
 		/* Universal font bump on desktop */
-		.card { padding: 32px 36px 30px; }
+		.card { padding: 36px 40px 32px; overflow: hidden; }
 		.card-title { font-size: 52px; }
 		.card .body, .card p { font-size: 15.5px; }
 		.timetable li { font-size: 16px; }
@@ -668,7 +673,10 @@
 		list-style: none;
 		margin: 0 auto;
 		padding: 0;
-		max-width: 360px;
+		max-width: 460px;
+	}
+	@media (min-width: 960px) {
+		.timetable { max-width: none; }
 	}
 	.timetable li {
 		display: grid;
@@ -921,13 +929,13 @@
 
 	/* ---- Menu ---- */
 	.menu-video {
-		max-width: 460px;
-		margin: 0 auto 24px;
-		border-radius: 14px;
+		/* Break out of the card padding so the video runs flush with the card edges */
+		margin: -8px -40px 28px;
+		border-radius: 0;
 		overflow: hidden;
-		border: 1px solid #e8dec6;
 		background: #1a1a1a;
 		aspect-ratio: 16 / 9;
+		width: calc(100% + 80px);
 	}
 	.menu-video video {
 		width: 100%;
@@ -937,9 +945,15 @@
 	}
 
 	.menu {
-		max-width: 460px;
+		max-width: none;
 		margin: 0 auto;
 		text-align: center;
+	}
+	@media (max-width: 559px) {
+		.menu-video {
+			margin: -4px -22px 22px;
+			width: calc(100% + 44px);
+		}
 	}
 	.menu dt {
 		font-family: var(--sans);
@@ -970,7 +984,7 @@
 		margin: 0 0 14px;
 	}
 	.body {
-		max-width: 440px;
+		max-width: 560px;
 		margin: 0 auto 22px;
 		color: var(--body);
 		font-size: 14.5px;
