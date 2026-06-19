@@ -68,29 +68,38 @@
 <Flora />
 
 <main class="rsvp">
-	<header class="hero" use:reveal>
-		<p class="eyebrow">You are invited to the wedding of</p>
-		<h1 class="script">{WEDDING.coupleName}</h1>
-		<img src="/flora/layer-13.png" class="title-sprig" alt="" aria-hidden="true" />
-		<p class="when">{WEDDING.dateLong}</p>
-		<p class="where">{WEDDING.venueName} · Bolton Abbey · Yorkshire Dales</p>
-		{#if daysToGo !== null}
-			<p class="countdown">
-				<span class="cd-num">{daysToGo}</span>
-				<span class="cd-label">{daysToGo === 1 ? 'day' : 'days'} to go</span>
-			</p>
-		{/if}
-		<MusicBanner />
+	<!-- Full-width hero banner with the Tithe Barn video behind it. -->
+	<header class="hero-banner" use:reveal>
+		<!-- svelte-ignore a11y_media_has_caption -->
+		<video class="hero-bg" autoplay muted loop playsinline preload="metadata" aria-hidden="true">
+			<source src="/video/tithe-barn.mp4" type="video/mp4" />
+		</video>
+		<div class="hero-overlay" aria-hidden="true"></div>
+		<div class="hero-content">
+			<p class="eyebrow">You are invited to the wedding of</p>
+			<h1 class="script">{WEDDING.coupleName}</h1>
+			<img src="/flora/layer-13.png" class="title-sprig" alt="" aria-hidden="true" />
+			<p class="when">{WEDDING.dateLong}</p>
+			<p class="where">{WEDDING.venueName} · Bolton Abbey · Yorkshire Dales</p>
+			{#if daysToGo !== null}
+				<p class="countdown">
+					<span class="cd-num">{daysToGo}</span>
+					<span class="cd-label">{daysToGo === 1 ? 'day' : 'days'} to go</span>
+				</p>
+			{/if}
+			<MusicBanner />
+		</div>
 	</header>
 
-	{#if data.group.personalMessage}
-		<section class="personal" use:reveal>
-			<p>{data.group.personalMessage}</p>
-		</section>
-	{/if}
+	<div class="rsvp-grid">
+		{#if data.group.personalMessage}
+			<section class="personal" use:reveal>
+				<p>{data.group.personalMessage}</p>
+			</section>
+		{/if}
 
-	<!-- The Day -->
-	<section class="card" use:reveal>
+		<!-- The Day -->
+		<section class="card" use:reveal>
 		<h2 class="card-title script">The Day</h2>
 		<img src="/flora/layer-13.png" class="card-sprig" alt="" aria-hidden="true" />
 		<ul class="timetable">
@@ -392,18 +401,19 @@
 		</ul>
 	</section>
 
-	<section class="card center contact-card" use:reveal>
-		<h2 class="card-title script">Any questions?</h2>
-		<img src="/flora/layer-13.png" class="card-sprig" alt="" aria-hidden="true" />
-		<p class="body">
-			Drop us a line — we'd love to hear from you.
-		</p>
-		<p class="contact-lines">
-			<a href={`mailto:${WEDDING.contact.email}`}>{WEDDING.contact.email}</a>
-			<br />
-			<a href={`tel:${WEDDING.contact.phone.replace(/\s/g, '')}`}>{WEDDING.contact.phone}</a>
-		</p>
-	</section>
+		<section class="card center contact-card" use:reveal>
+			<h2 class="card-title script">Any questions?</h2>
+			<img src="/flora/layer-13.png" class="card-sprig" alt="" aria-hidden="true" />
+			<p class="body">
+				Drop us a line — we'd love to hear from you.
+			</p>
+			<p class="contact-lines">
+				<a href={`mailto:${WEDDING.contact.email}`}>{WEDDING.contact.email}</a>
+				<br />
+				<a href={`tel:${WEDDING.contact.phone.replace(/\s/g, '')}`}>{WEDDING.contact.phone}</a>
+			</p>
+		</section>
+	</div>
 
 	<footer class="foot" use:reveal>
 		<img src="/flora/layer-13.png" class="card-sprig" alt="" aria-hidden="true" />
@@ -413,27 +423,81 @@
 
 <style>
 	.rsvp {
-		max-width: 620px;
-		margin: 0 auto;
-		padding: 5vh 22px 60px;
 		color: var(--body);
 		position: relative;
 		z-index: 1;
 	}
 
-	/* Desktop: full-width 50/50 split with a sage-tinted right panel.
-	   The whole .rsvp is the grid, and a hard-stop linear-gradient gives the
-	   right half its panel background — so the form sits inside a visually
-	   distinct half-screen and stays sticky as the info on the left scrolls.
-	   Mobile (<960px) keeps the existing single-column source order. */
+	/* ---- Hero banner (above the split) ---- */
+	.hero-banner {
+		position: relative;
+		overflow: hidden;
+		isolation: isolate;
+		padding: 80px 22px 64px;
+		text-align: center;
+		min-height: 65vh;
+		display: flex;
+		align-items: center;
+	}
+	.hero-bg {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		z-index: -2;
+	}
+	.hero-overlay {
+		position: absolute;
+		inset: 0;
+		/* Warm cream wash so brand text stays legible while the venue video shows through */
+		background: linear-gradient(180deg, rgba(251, 250, 246, 0.86), rgba(251, 250, 246, 0.78) 60%, rgba(251, 250, 246, 0.9));
+		z-index: -1;
+	}
+	.hero-content {
+		max-width: 900px;
+		margin: 0 auto;
+		width: 100%;
+	}
+	.hero-content h1 {
+		font-size: clamp(64px, 14vw, 110px);
+		margin: 6px 0 8px;
+		line-height: 1;
+		color: var(--ink);
+	}
+
+	/* ---- Grid below the hero ---- */
+	.rsvp-grid {
+		max-width: 620px;
+		margin: 0 auto;
+		padding: 36px 22px 60px;
+		display: flex;
+		flex-direction: column;
+	}
+	.rsvp-grid > * {
+		margin-top: 0;
+	}
+	.rsvp-grid > * + * {
+		margin-top: 22px;
+	}
+
+	/* Desktop: full-width 50/50 grid with sage right panel */
 	@media (min-width: 960px) {
-		.rsvp {
+		.hero-banner {
+			min-height: 75vh;
+			padding: 100px 24px 88px;
+		}
+		.hero-content h1 {
+			font-size: clamp(96px, 11vw, 168px);
+		}
+
+		.rsvp-grid {
 			max-width: none;
-			margin: 0;
 			padding: 0 0 80px;
 			display: grid;
 			grid-template-columns: 1fr 1fr;
 			column-gap: 0;
+			row-gap: 0;
 			align-items: start;
 			background: linear-gradient(
 				to right,
@@ -443,35 +507,46 @@
 				var(--sage-soft) 100%
 			);
 		}
-
-		/* Left-column items: centered within their half with comfortable side gutters */
-		.rsvp > * {
+		.rsvp-grid > * {
 			grid-column: 1;
 			width: min(580px, calc(100% - 48px));
-			margin: 0 auto;
+			margin: 0 auto !important;
 			min-width: 0;
 		}
-		.rsvp > .card,
-		.rsvp > .personal,
-		.rsvp > .foot,
-		.rsvp > .thanks {
-			margin-top: 26px;
+		.rsvp-grid > * + * {
+			margin-top: 24px !important;
 		}
-		.rsvp > .hero {
-			padding-top: 60px;
-			margin-top: 0;
+		.rsvp-grid > :first-child {
+			margin-top: 40px !important;
 		}
 
-		/* Right column: form card sticky within the sage panel */
-		.rsvp > .col-right {
+		/* The form/success card sits in the right column, sticky at the top */
+		.rsvp-grid > .col-right {
 			grid-column: 2;
-			grid-row: 1 / -1;
-			width: min(480px, calc(100% - 48px));
-			margin: 60px auto;
+			grid-row: 1 / span 99;
+			width: min(500px, calc(100% - 48px));
+			margin: 40px auto !important;
 			align-self: start;
 			position: sticky;
 			top: 24px;
 		}
+
+		/* Universal font bump on desktop */
+		.card { padding: 32px 36px 30px; }
+		.card-title { font-size: 52px; }
+		.card .body, .card p { font-size: 15.5px; }
+		.timetable li { font-size: 16px; }
+		.menu dd { font-size: 17px; }
+		.accom-name { font-size: 20px; }
+		.accom-note { font-size: 14.5px; }
+		.field input, .field textarea { font-size: 15.5px; padding: 12px 14px; }
+		.toggle span { font-size: 11.5px; padding: 13px 14px; }
+		.member-name { font-size: 28px; }
+		.primary { font-size: 12.5px; padding: 17px 28px; }
+		.eyebrow { font-size: 12.5px; }
+		.when { font-size: 13.5px; }
+		.where { font-size: 11.5px; }
+		.lead { font-size: 22px; }
 	}
 
 	/* ---- Hero ---- */
