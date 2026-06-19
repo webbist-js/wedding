@@ -114,7 +114,7 @@
 
 	{#if form?.saved}
 		<!-- Submission summary — replaces the form entirely on success. -->
-		<section class="card center success-card" use:reveal>
+		<section class="card center success-card col-right" use:reveal>
 			<h2 class="card-title script">We look forward to seeing you!</h2>
 			<img src="/flora/layer-13.png" class="card-sprig" alt="" aria-hidden="true" />
 			<p class="body">Your reply is saved. You can update it any time from this link.</p>
@@ -148,7 +148,7 @@
 		</section>
 	{:else}
 	<!-- Please Reply -->
-	<section class="card rsvp-form" use:reveal>
+	<section class="card rsvp-form col-right" use:reveal>
 		<h2 class="card-title script">Please Reply</h2>
 		<img src="/flora/layer-13.png" class="card-sprig" alt="" aria-hidden="true" />
 		<p class="deadline">Kindly RSVP by <b>{WEDDING.rsvpDeadline}</b>.</p>
@@ -419,6 +419,37 @@
 		color: var(--body);
 		position: relative;
 		z-index: 1;
+	}
+
+	/* Desktop: two-column layout with the form card pinned to the right.
+	   Mobile keeps the existing single-column source order. */
+	@media (min-width: 960px) {
+		.rsvp {
+			max-width: 1180px;
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			column-gap: 40px;
+			row-gap: 26px;
+			align-items: start;
+			padding-top: 6vh;
+		}
+		.rsvp > * {
+			margin-top: 0;
+			grid-column: 1;
+			min-width: 0;
+		}
+		.rsvp > .col-right {
+			grid-column: 2;
+			/* Span the full grid so position: sticky has room to stick across
+			   the page scroll rather than the cell's natural height. */
+			grid-row: 1 / -1;
+			align-self: start;
+			position: sticky;
+			top: 24px;
+		}
+		.hero {
+			padding-top: 30px;
+		}
 	}
 
 	/* ---- Hero ---- */
