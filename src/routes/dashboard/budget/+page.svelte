@@ -3,6 +3,7 @@
 	import Rule from '$lib/components/Rule.svelte';
 	import Pill from '$lib/components/Pill.svelte';
 	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
 	let { data } = $props();
 	const gbp = (n: number) => '£' + n.toLocaleString('en-GB', { maximumFractionDigits: 0 });
 
@@ -26,6 +27,43 @@
 	}
 
 	const statusOptions = ['Estimate', 'To book', 'Booked', 'Deposit', 'Paid', 'Optional'];
+
+	// ---- Drag & drop reordering (within a section) ----
+	let dragId = $state<number | null>(null);
+	let dragOverId = $state<number | null>(null);
+	function onDragStart(e: DragEvent, id: number) {
+		if (!e.dataTransfer) return;
+		dragId = id;
+		e.dataTransfer.effectAllowed = 'move';
+		e.dataTransfer.setData('text/plain', String(id));
+	}
+	function onDragOver(e: DragEvent, id: number) {
+		e.preventDefault();
+		if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+		dragOverId = id;
+	}
+	function onDragLeave() {
+		dragOverId = null;
+	}
+	async function onDrop(e: DragEvent, targetId: number) {
+		e.preventDefault();
+		dragOverId = null;
+		const source = dragId;
+		dragId = null;
+		if (!source || source === targetId) return;
+		const ids = data.lines.map((l) => l.id);
+		const fromIdx = ids.indexOf(source);
+		const toIdx = ids.indexOf(targetId);
+		if (fromIdx < 0 || toIdx < 0) return;
+		const [moved] = ids.splice(fromIdx, 1);
+		ids.splice(toIdx, 0, moved);
+		await fetch('/dashboard/budget/reorder', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ ids })
+		});
+		await invalidateAll();
+	}
 </script>
 
 <SectionHeading>Budget</SectionHeading><Rule />
@@ -61,7 +99,16 @@
 			</div>
 
 			{#each sectionLines as line (line.id)}
-				<div class="row" class:venue={line.isVenue}>
+				<div
+					class="row"
+					class:venue={line.isVenue}
+					class:drop-over={dragOverId === line.id}
+					draggable={!line.isVenue}
+					ondragstart={(e) => onDragStart(e, line.id)}
+					ondragover={(e) => onDragOver(e, line.id)}
+					ondragleave={onDragLeave}
+					ondrop={(e) => onDrop(e, line.id)}
+				>
 					{#if line.isVenue}
 						<span class="cat venue-cat">{line.category} <Pill tone="green">Synced</Pill></span>
 						<input
@@ -238,6 +285,18 @@
 		align-items: center;
 		padding: 8px 4px;
 		border-bottom: 1px solid var(--line2);
+		border-top: 2px solid transparent;
+		transition: border-color 0.12s ease, background-color 0.12s ease;
+	}
+	.row[draggable='true'] {
+		cursor: grab;
+	}
+	.row[draggable='true']:active {
+		cursor: grabbing;
+	}
+	.row.drop-over {
+		border-top-color: var(--sage);
+		background: var(--sage-soft);
 	}
 	.row:last-of-type {
 		border-bottom: 0;
