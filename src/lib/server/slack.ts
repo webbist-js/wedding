@@ -192,6 +192,113 @@ export async function notifyTimelineItem(p: TimelineNotifyPayload): Promise<void
 	}
 }
 
+// Shared low-level poster — Block Kit message to the webhook, best-effort.
+// No-op when SLACK_WEBHOOK_URL is unset; always swallows errors / times out.
+async function post(text: string, blocks: unknown[]): Promise<void> {
+	const webhook = env.SLACK_WEBHOOK_URL;
+	if (!webhook) return;
+	const ac = new AbortController();
+	const timer = setTimeout(() => ac.abort(), 4000);
+	try {
+		await fetch(webhook, {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ text, blocks }),
+			signal: ac.signal
+		});
+	} catch (err) {
+		console.error('Slack notify failed:', err);
+	} finally {
+		clearTimeout(timer);
+	}
+}
+
+// ---- Appointments (calendar) ----
+export type AppointmentKind = 'booked' | 'week' | 'day' | 'day-of';
+
+export interface AppointmentNotifyPayload {
+	kind: AppointmentKind;
+	title: string;
+	dateISO: string;
+	time?: string | null;
+	supplierName?: string | null;
+	location?: string | null;
+	notes?: string | null;
+	dashboardUrl?: string;
+}
+
+const APPT_HEADINGS: Record<AppointmentKind, string> = {
+	booked: '📅 New appointment booked',
+	week: '📅 Appointment in a week',
+	day: '⏰ Appointment tomorrow',
+	'day-of': '🌿 Appointment today'
+};
+
+export async function notifyAppointment(p: AppointmentNotifyPayload): Promise<void> {
+	if (!env.SLACK_WEBHOOK_URL) return;
+	let when = p.dateISO;
+	try {
+		when = new Date(p.dateISO + 'T00:00:00').toLocaleDateString('en-GB', {
+			weekday: 'long',
+			day: 'numeric',
+			month: 'long',
+			year: 'numeric'
+		});
+	} catch {
+		/* keep ISO fallback */
+	}
+	if (p.time) when += ` · ${p.time}`;
+
+	const ctx: string[] = [when];
+	if (p.supplierName) ctx.push(esc(p.supplierName));
+	if (p.location) ctx.push(`📍 ${esc(p.location)}`);
+
+	const blocks: unknown[] = [
+		{ type: 'header', text: { type: 'plain_text', text: APPT_HEADINGS[p.kind], emoji: true } },
+		{ type: 'section', text: { type: 'mrkdwn', text: `*${esc(p.title)}*` } },
+		{ type: 'context', elements: [{ type: 'mrkdwn', text: ctx.join(' · ') }] }
+	];
+	if (p.notes?.trim()) {
+		blocks.push({ type: 'context', elements: [{ type: 'mrkdwn', text: `📝 ${esc(p.notes.trim())}` }] });
+	}
+	if (p.dashboardUrl) {
+		blocks.push({
+			type: 'context',
+			elements: [{ type: 'mrkdwn', text: `<${p.dashboardUrl}|Open the calendar →>` }]
+		});
+	}
+	await post(`${APPT_HEADINGS[p.kind]}: ${p.title}`, blocks);
+}
+
+// ---- Suppliers ----
+export interface SupplierBookedPayload {
+	category: string;
+	name?: string | null;
+	contact?: string | null;
+	dashboardUrl?: string;
+}
+
+export async function notifySupplierBooked(p: SupplierBookedPayload): Promise<void> {
+	if (!env.SLACK_WEBHOOK_URL) return;
+	const blocks: unknown[] = [
+		{ type: 'header', text: { type: 'plain_text', text: '✅ Supplier booked', emoji: true } },
+		{
+			type: 'section',
+			text: { type: 'mrkdwn', text: `*${esc(p.category)}*${p.name ? ` — ${esc(p.name)}` : ''}` }
+		}
+	];
+	if (p.contact) {
+		blocks.push({ type: 'context', elements: [{ type: 'mrkdwn', text: `📞 ${esc(p.contact)}` }] });
+	}
+	if (p.dashboardUrl) {
+		blocks.push({
+			type: 'context',
+			elements: [{ type: 'mrkdwn', text: `<${p.dashboardUrl}|Open suppliers →>` }]
+		});
+	}
+	await post(`Supplier booked: ${p.category}${p.name ? ` — ${p.name}` : ''}`, blocks);
+}
+
 function esc(s: string): string {
 	return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }

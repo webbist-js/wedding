@@ -5,9 +5,13 @@ import { inviteGroups, guests } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 
 const GROUP_TEXT = new Set(['name']);
+// Guest-CRM contact fields on the household — admin-only, not part of the seed,
+// so editing them does not detach the row from its seed identity.
+const GROUP_CONTACT = new Set(['address', 'email', 'phone']);
 const GUEST_TEXT = new Set(['name', 'relation', 'role']);
 const GUEST_ENUM_SIDE = new Set(['G', 'B', 'X']);
 const GUEST_ENUM_ATTEND = new Set(['day', 'evening']);
+const GUEST_ENUM_RSVP = new Set(['pending', 'yes', 'no']);
 const GUEST_BOOL = new Set(['isChild', 'isPlusOne']);
 
 // Field-level autosave for guest list + household editing.
@@ -18,13 +22,23 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const { kind, id, field, value } = await request.json();
 
 	if (kind === 'group') {
-		if (!GROUP_TEXT.has(field)) throw error(400, 'bad field');
-		const v = String(value ?? '').trim() || 'Household';
-		await db
-			.update(inviteGroups)
-			.set({ [field]: v, seedKey: null })
-			.where(eq(inviteGroups.id, Number(id)));
-		return json({ ok: true });
+		if (GROUP_TEXT.has(field)) {
+			const v = String(value ?? '').trim() || 'Household';
+			await db
+				.update(inviteGroups)
+				.set({ [field]: v, seedKey: null })
+				.where(eq(inviteGroups.id, Number(id)));
+			return json({ ok: true });
+		}
+		if (GROUP_CONTACT.has(field)) {
+			const v = String(value ?? '').trim();
+			await db
+				.update(inviteGroups)
+				.set({ [field]: v || null })
+				.where(eq(inviteGroups.id, Number(id)));
+			return json({ ok: true });
+		}
+		throw error(400, 'bad field');
 	}
 
 	if (kind === 'guest') {
@@ -51,6 +65,17 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			await db
 				.update(guests)
 				.set({ attendanceType: v as 'day' | 'evening', seedKey: null })
+				.where(eq(guests.id, Number(id)));
+			return json({ ok: true });
+		}
+		if (field === 'rsvpStatus') {
+			// Admin override for RSVPs taken by phone/in person. Not seeded, so we
+			// leave seed_key intact.
+			const v = String(value ?? '');
+			if (!GUEST_ENUM_RSVP.has(v)) throw error(400, 'bad rsvp');
+			await db
+				.update(guests)
+				.set({ rsvpStatus: v as 'pending' | 'yes' | 'no' })
 				.where(eq(guests.id, Number(id)));
 			return json({ ok: true });
 		}

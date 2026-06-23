@@ -1,7 +1,7 @@
 // Static wedding-day information shown on the public RSVP page.
 
 export const WEDDING = {
-	coupleName: 'Alex & Katie',
+	coupleName: 'Katie & Alex',
 	dateLong: 'Friday 2 April 2027',
 	ceremonyTime: '2.30pm',
 	venueName: 'The Tithe Barn',
@@ -27,7 +27,7 @@ export const WEDDING = {
 		}
 	},
 	contact: {
-		email: 'hello@alexandkatie.wedding',
+		email: 'hello@sherdley-bennett.wedding',
 		phone: '07514 279404'
 	},
 	mapEmbed:
@@ -55,7 +55,7 @@ export const MENU = {
 		'Tomato on toast'
 	],
 	starter: 'Leek & potato soup, Cashel blue',
-	main: 'Buttermilk chicken, herb butter & tarragon cream',
+	main: 'Rotisserie chicken with herb butter & tarragon cream',
 	mainVeg: 'Roasted squash, ricotta, chilli, pesto',
 	sides: ['Tender stem broccoli, chilli & garlic', 'Gratin dauphinoise'],
 	dessert: 'Treacle sponge, custard',

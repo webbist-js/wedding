@@ -5,6 +5,7 @@
     ['/dashboard', 'Overview'], ['/dashboard/budget', 'Budget'],
     ['/dashboard/venue', 'Venue'], ['/dashboard/guests', 'Guests'],
     ['/dashboard/seating', 'Seating'], ['/dashboard/suppliers', 'Suppliers'],
+    ['/dashboard/calendar', 'Calendar'],
     ['/dashboard/timeline', 'Timeline'], ['/dashboard/invites', 'Invites'],
     ['/dashboard/notes', 'Notes']
   ];
@@ -12,7 +13,7 @@
 
 <header class="top">
   <p class="eyebrow">The Tithe Barn · Bolton Abbey</p>
-  <h1 class="script">Alex &amp; Katie</h1>
+  <h1 class="script">Katie &amp; Alex</h1>
   <div class="meta">Friday 2 April 2027 · 2.30pm</div>
 </header>
 <nav>

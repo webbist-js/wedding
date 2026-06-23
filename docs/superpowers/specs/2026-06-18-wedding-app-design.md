@@ -1,4 +1,4 @@
-# Alex & Katie — Wedding App Design
+# Katie & Alex — Wedding App Design
 
 **Date:** 2026-06-18
 **Status:** Approved (design)
@@ -9,7 +9,7 @@
 Turn the existing single-file wedding dashboard into a real application that:
 
 1. Is built on **SvelteKit** with a **refined-botanical** visual redesign (elegant, not corporate; honours the 16th-century barn / garden setting).
-2. Persists planning data in a **SQLite-compatible database** so Alex & Katie can manage it for real.
+2. Persists planning data in a **SQLite-compatible database** so Katie & Alex can manage it for real.
 3. Adds **per-household guest-facing RSVP pages** reached by **QR code**, capturing attendance, meal choice (veg/non-veg), allergies/dietary, and a message — the data that moves wedding planning forward.
 
 This is a single iteration covering all three. The guest roster stays fixed/hardcoded (seeded), but RSVP data is live in the DB.

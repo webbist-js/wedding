@@ -15,6 +15,9 @@
 
   function onItemDragStart(e: DragEvent, id: number) {
     if (!e.dataTransfer) return;
+    // Items live inside draggable phases; stop the event bubbling to the phase's
+    // own dragstart, which would otherwise overwrite dragKind to 'phase'.
+    e.stopPropagation();
     dragKind = 'item';
     dragId = id;
     e.dataTransfer.effectAllowed = 'move';
@@ -30,6 +33,7 @@
   function onDragOver(e: DragEvent, id: number, kind: 'item' | 'phase') {
     if (dragKind !== kind) return;
     e.preventDefault();
+    e.stopPropagation(); // keep item dragover from also triggering the phase's
     if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
     dragOverId = id;
   }
@@ -88,7 +92,7 @@
         ondragstart={(e) => onItemDragStart(e, item.id)}
         ondragover={(e) => onDragOver(e, item.id, 'item')}
         ondragleave={onDragLeave}
-        ondrop={() => onDrop(item.id, 'item')}
+        ondrop={(e) => { e.stopPropagation(); onDrop(item.id, 'item'); }}
       >
         <span class="grip" title="Drag to reorder">≡</span>
         <form method="POST" action="?/toggle" use:enhance><input type="hidden" name="id" value={item.id} /><button class="dot" class:on={item.done} aria-label="toggle"></button></form>

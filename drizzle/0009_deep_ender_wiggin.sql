@@ -1,0 +1,1 @@
+ALTER TABLE `appointments` ADD `notifications_sent` text DEFAULT '' NOT NULL;

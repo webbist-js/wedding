@@ -1,7 +1,23 @@
 @import './lib/styles/tokens.css';
+@import './lib/styles/editorial.css';
 
 * {
 	box-sizing: border-box;
+}
+
+/* Lenis smooth-scroll base styles (used by the homepage redesign). */
+html.lenis,
+html.lenis body {
+	height: auto;
+}
+.lenis.lenis-smooth {
+	scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+	overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+	overflow: hidden;
 }
 
 html {
@@ -150,10 +166,10 @@ main {
 
 .reveal {
 	opacity: 0;
-	transform: translateY(22px);
+	transform: translateY(42px);
 	transition:
-		opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-		transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+		opacity 1s cubic-bezier(0.16, 1, 0.3, 1),
+		transform 1.15s cubic-bezier(0.16, 1, 0.3, 1);
 	will-change: opacity, transform;
 }
 

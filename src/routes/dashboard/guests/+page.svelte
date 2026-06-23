@@ -36,12 +36,6 @@
 			if (!confirm(message)) e.preventDefault();
 		};
 	}
-
-	function rsvpPill(status: string) {
-		if (status === 'yes') return { label: 'Yes', tone: 'green' };
-		if (status === 'no') return { label: 'No', tone: 'terra' };
-		return { label: '—', tone: 'neut' };
-	}
 </script>
 
 <SectionHeading>Guest list</SectionHeading><Rule />
@@ -97,6 +91,35 @@
 			</div>
 		</header>
 
+		<div class="h-contact">
+			<label class="field addr">
+				<span>Address</span>
+				<textarea
+					rows="2"
+					placeholder="Postal address for invitations…"
+					value={h.address ?? ''}
+					onchange={(e) => save('group', h.id, 'address', e.currentTarget.value)}
+				></textarea>
+			</label>
+			<label class="field">
+				<span>Email</span>
+				<input
+					type="email"
+					placeholder="—"
+					value={h.email ?? ''}
+					onchange={(e) => save('group', h.id, 'email', e.currentTarget.value)}
+				/>
+			</label>
+			<label class="field">
+				<span>Phone</span>
+				<input
+					placeholder="—"
+					value={h.phone ?? ''}
+					onchange={(e) => save('group', h.id, 'phone', e.currentTarget.value)}
+				/>
+			</label>
+		</div>
+
 		<div class="members">
 			<div class="row head">
 				<span>Name</span>
@@ -112,7 +135,6 @@
 			</div>
 
 			{#each h.members as m (m.id)}
-				{@const pill = rsvpPill(m.rsvpStatus)}
 				<div class="row">
 					<input
 						value={m.name}
@@ -164,7 +186,16 @@
 							onchange={(e) => save('guest', m.id, 'isPlusOne', e.currentTarget.checked)}
 						/>
 					</label>
-					<span class="pill {pill.tone}">{pill.label}</span>
+					<select
+						class="rsvp-sel {m.rsvpStatus}"
+						value={m.rsvpStatus}
+						onchange={(e) => save('guest', m.id, 'rsvpStatus', e.currentTarget.value)}
+						title="RSVP status (admin override)"
+					>
+						<option value="pending">—</option>
+						<option value="yes">Yes</option>
+						<option value="no">No</option>
+					</select>
 					<div class="actions">
 						<form method="POST" action="?/moveGuest" use:enhance class="inline">
 							<input type="hidden" name="id" value={m.id} />
@@ -331,6 +362,44 @@
 	}
 	.replied.done { color: var(--sage-deep); }
 
+	.h-contact {
+		display: grid;
+		grid-template-columns: 2fr 1fr 1fr;
+		gap: 10px;
+		margin-bottom: 14px;
+		padding-bottom: 14px;
+		border-bottom: 1px solid var(--line2);
+	}
+	.h-contact .field {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+	}
+	.h-contact .field > span {
+		font-size: 9.5px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--muted);
+		font-weight: 600;
+	}
+	.h-contact textarea,
+	.h-contact input {
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		padding: 6px 8px;
+		font: inherit;
+		font-size: 12.5px;
+		background: #fff;
+		color: var(--ink);
+		resize: vertical;
+		width: 100%;
+	}
+	@media (max-width: 760px) {
+		.h-contact {
+			grid-template-columns: 1fr;
+		}
+	}
+
 	.members .row {
 		display: grid;
 		grid-template-columns:
@@ -367,20 +436,26 @@
 		place-items: center;
 	}
 
-	.pill {
-		display: inline-block;
-		padding: 3px 8px;
-		border-radius: 999px;
-		font-size: 9.5px;
+	.rsvp-sel {
+		font-size: 11.5px;
 		font-weight: 600;
-		letter-spacing: 0.1em;
-		text-transform: uppercase;
+		border-radius: 999px !important;
 		text-align: center;
-		white-space: nowrap;
+		padding: 5px 6px;
 	}
-	.pill.green { background: var(--sage-soft); color: var(--sage-deep); }
-	.pill.terra { background: var(--terra-bg); color: var(--terra); }
-	.pill.neut { background: #f0ede5; color: #8a8678; }
+	.rsvp-sel.yes {
+		background: var(--sage-soft);
+		color: var(--sage-deep);
+		border-color: var(--sage);
+	}
+	.rsvp-sel.no {
+		background: var(--terra-bg);
+		color: var(--terra);
+		border-color: var(--terra);
+	}
+	.rsvp-sel.pending {
+		color: var(--muted);
+	}
 
 	.actions {
 		display: flex;

@@ -1,8 +1,13 @@
 import { and, eq, isNotNull } from 'drizzle-orm';
 import { env } from '$env/dynamic/private';
 import { db } from './db/index';
-import { timelineItems, timelinePhases } from './db/schema';
-import { notifyTimelineItem, type TimelineKind } from './slack';
+import { timelineItems, timelinePhases, appointments, suppliers } from './db/schema';
+import {
+	notifyTimelineItem,
+	notifyAppointment,
+	type TimelineKind,
+	type AppointmentKind
+} from './slack';
 
 // Return today's calendar date in the server's local zone, with the time component zeroed.
 function startOfDay(d: Date = new Date()): Date {
@@ -85,16 +90,97 @@ export async function runTimelineCheck(now: Date = new Date()): Promise<{ sent: 
 	return { sent };
 }
 
+// Appointment reminders fire a week out, the day before, and on the day.
+// (No "overdue" — a past appointment doesn't need chasing.)
+const APPT_THRESHOLDS: { days: number; kind: AppointmentKind }[] = [
+	{ days: 7, kind: 'week' },
+	{ days: 1, kind: 'day' },
+	{ days: 0, kind: 'day-of' }
+];
+
+// Scan upcoming appointments and fire any reminders not yet sent. Idempotent via
+// appointments.notifications_sent, mirroring the timeline check above.
+export async function runAppointmentCheck(now: Date = new Date()): Promise<{ sent: number }> {
+	const today = startOfDay(now);
+	const base = env.PUBLIC_BASE_URL ?? '';
+	const dashboardUrl = base ? `${base}/dashboard/calendar` : undefined;
+
+	const rows = await db
+		.select({
+			id: appointments.id,
+			title: appointments.title,
+			date: appointments.date,
+			time: appointments.time,
+			location: appointments.location,
+			notes: appointments.notes,
+			notificationsSent: appointments.notificationsSent,
+			supplierCategory: suppliers.category,
+			supplierName: suppliers.name
+		})
+		.from(appointments)
+		.leftJoin(suppliers, eq(appointments.supplierId, suppliers.id));
+
+	let sent = 0;
+	for (const a of rows) {
+		const due = startOfDay(new Date(a.date + 'T00:00:00'));
+		if (Number.isNaN(due.getTime())) continue;
+		const days = diffDays(due, today);
+
+		const alreadySent = new Set(
+			a.notificationsSent
+				.split(',')
+				.map((s) => s.trim())
+				.filter(Boolean) as AppointmentKind[]
+		);
+		const matches = APPT_THRESHOLDS.filter((t) => t.days === days && !alreadySent.has(t.kind));
+		if (matches.length === 0) continue;
+
+		const supplierName = a.supplierCategory
+			? a.supplierName
+				? `${a.supplierCategory} · ${a.supplierName}`
+				: a.supplierCategory
+			: null;
+
+		for (const m of matches) {
+			await notifyAppointment({
+				kind: m.kind,
+				title: a.title,
+				dateISO: a.date,
+				time: a.time,
+				supplierName,
+				location: a.location,
+				notes: a.notes,
+				dashboardUrl
+			});
+			alreadySent.add(m.kind);
+			sent++;
+		}
+
+		await db
+			.update(appointments)
+			.set({ notificationsSent: [...alreadySent].join(',') })
+			.where(eq(appointments.id, a.id));
+	}
+
+	return { sent };
+}
+
 // In-process scheduler — runs at server boot and then every hour.
 // Idempotent thanks to notifications_sent, so multiple processes (or a hot
 // reload in dev) won't duplicate messages.
 let scheduled = false;
 export function startTimelineScheduler() {
 	if (scheduled || typeof setInterval !== 'function') return;
+	// On serverless (Vercel) timers don't persist between invocations — Vercel Cron
+	// hits /api/cron/timeline-check daily instead (see vercel.json). Skip the
+	// in-process loop there; it stays active on long-running hosts.
+	if (env.VERCEL || process.env.VERCEL) return;
 	scheduled = true;
 	const HOUR = 60 * 60 * 1000;
-	runTimelineCheck().catch((e) => console.error('timeline-check (boot) failed:', e));
-	setInterval(() => {
+	const runAll = () => {
 		runTimelineCheck().catch((e) => console.error('timeline-check failed:', e));
-	}, HOUR);
+		runAppointmentCheck().catch((e) => console.error('appointment-check failed:', e));
+	};
+	runAll();
+	setInterval(runAll, HOUR);
 }

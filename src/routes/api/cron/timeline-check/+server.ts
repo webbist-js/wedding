@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 import { json, error } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
-import { runTimelineCheck } from '$lib/server/timeline-check';
+import { runTimelineCheck, runAppointmentCheck } from '$lib/server/timeline-check';
 
 // External cron entry point — hit this once a day from your scheduler of choice
 // (system cron, GitHub Actions, Vercel Cron, etc.).
@@ -13,8 +13,9 @@ async function handle(authHeader: string | null) {
 	if (env.CRON_SECRET && authHeader !== `Bearer ${env.CRON_SECRET}`) {
 		throw error(401, 'Unauthorized');
 	}
-	const result = await runTimelineCheck();
-	return json({ ok: true, ...result });
+	const timeline = await runTimelineCheck();
+	const appointmentsResult = await runAppointmentCheck();
+	return json({ ok: true, timeline: timeline.sent, appointments: appointmentsResult.sent });
 }
 
 export const GET: RequestHandler = ({ request }) => handle(request.headers.get('authorization'));

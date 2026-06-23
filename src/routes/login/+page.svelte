@@ -7,7 +7,7 @@
 <Flora density="sparse" />
 
 <main class="login">
-	<p class="eyebrow">Alex &amp; Katie</p>
+	<p class="eyebrow">Katie &amp; Alex</p>
 	<h1 class="script">Planning</h1>
 	<form method="POST" use:enhance>
 		<label for="pc">Passcode</label>

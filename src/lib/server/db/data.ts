@@ -159,7 +159,7 @@ export const SEED_GUESTS: SeedGuest[] = [
   { name: 'Grace', side: 'B', relationshipGroup: B_WK, relation: 'Dan & Rika\'s daughter (baby)', attendanceType: 'day', isChild: true, inviteGroup: 'daniel-king-rika' },
 
   // --- Neighbours ---
-  { name: 'Tony', side: 'X', relationshipGroup: NB, relation: "Alex & Katie's neighbour", attendanceType: 'day', inviteGroup: 'tony-susan' },
+  { name: 'Tony', side: 'X', relationshipGroup: NB, relation: "Katie & Alex's neighbour", attendanceType: 'day', inviteGroup: 'tony-susan' },
   { name: 'Susan', side: 'X', relationshipGroup: NB, relation: 'Neighbour', attendanceType: 'day', inviteGroup: 'tony-susan' },
 
   // --- Evening — Bride's work ---
@@ -195,7 +195,7 @@ export const SEED_QUOTE: SeedQuoteLine[] = [
   { label: 'Canapé — honey roasted sausages, spicy ketchup', section: 'Menu', scope: 'day', price: 0, included: true },
   { label: 'Canapé — tomato on toast', section: 'Menu', scope: 'day', price: 0, included: true },
   { label: 'Starter — leek & potato soup, Cashel blue', section: 'Menu', scope: 'day', price: 12.0, confirmed: false },
-  { label: 'Main — buttermilk chicken, herb butter / tarragon cream', section: 'Menu', scope: 'day', price: 44.0, confirmed: false },
+  { label: 'Main — rotisserie chicken, herb butter / tarragon cream', section: 'Menu', scope: 'day', price: 44.0, confirmed: false },
   { label: 'Side — tender stem broccoli, chilli & garlic', section: 'Menu', scope: 'day', price: 0, included: true },
   { label: 'Side — gratin dauphinoise', section: 'Menu', scope: 'day', price: 0, included: true },
   { label: 'Dessert — treacle sponge, custard', section: 'Menu', scope: 'day', price: 12.0, confirmed: true },
@@ -237,7 +237,7 @@ export const SEED_TIMELINE: SeedPhase[] = [
       { label: 'Venue — Tithe Barn (deposit)', done: true },
       { label: 'Registrar — 2 Apr 2027, 2.30pm (£50 deposit)', done: true },
       { label: 'Photographer — Adam Lowndes', done: true },
-      { label: 'Wedding rings — Alex & Katie (both bought)', done: true }
+      { label: 'Wedding rings — Katie & Alex (both bought)', done: true }
     ]
   },
   {

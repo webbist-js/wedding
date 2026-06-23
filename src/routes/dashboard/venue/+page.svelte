@@ -1,7 +1,7 @@
 <script lang="ts">
   import SectionHeading from '$lib/components/SectionHeading.svelte';
   import Rule from '$lib/components/Rule.svelte';
-  import { computeQuote } from '$lib/quote';
+  import { computeQuote, lineQty } from '$lib/quote';
   let { data } = $props();
   let day = $state(data.day),
     eve = $state(data.eve),
@@ -11,20 +11,31 @@
   const gbp = (n: number) =>
     '£' + n.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  async function saveLine(line: any, field: 'price' | 'qty') {
-    await fetch('/dashboard/venue/quote', {
+  async function post(payload: unknown) {
+    return fetch('/dashboard/venue/quote', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ id: line.id, field, value: line[field] })
+      body: JSON.stringify(payload)
     });
+  }
+  function saveLine(line: any, field: 'label' | 'scope' | 'price' | 'qty' | 'bond') {
+    post({ id: line.id, field, value: line[field] });
+  }
+  async function addLine() {
+    const res = await post({ op: 'add' });
+    const { id } = await res.json();
+    lines = [
+      ...lines,
+      { id, label: 'New item', section: 'Custom', scope: 'fixed', price: 0, qty: null, included: false, confirmed: false, bond: false, sort: 999 }
+    ];
+  }
+  function removeLine(line: any) {
+    post({ op: 'remove', id: line.id });
+    lines = lines.filter((l) => l.id !== line.id);
   }
 
   async function saveSetting(setting: 'dayGuests' | 'eveGuests' | 'minSpend', value: number) {
-    await fetch('/dashboard/venue/quote', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ setting, value })
-    });
+    post({ setting, value });
   }
 </script>
 
@@ -36,49 +47,39 @@
 </div>
 
 <div class="card">
-  <table>
-    <thead
-      ><tr
-        ><th>Item</th><th>Scope</th><th class="r">Qty</th><th class="r">Price £</th><th class="r"
-          >Total</th
-        ></tr
-      ></thead
-    >
-    <tbody>
-      {#each lines as line}
-        {@const qty =
-          line.scope === 'day'
-            ? day
-            : line.scope === 'eve'
-              ? eve
-              : line.scope === 'fixed'
-                ? 1
-                : (line.qty ?? 0)}
-        <tr>
-          <td>{line.label}</td>
-          <td class="scope">{line.scope}</td>
-          <td class="r"
-            >{#if line.scope === 'custom'}<input
-                class="qty"
-                type="number"
-                bind:value={line.qty}
-                onblur={() => saveLine(line, 'qty')}
-              />{:else}{qty}{/if}</td
-          >
-          <td class="r"
-            ><input
-              class="price"
-              type="number"
-              step="0.01"
-              bind:value={line.price}
-              onblur={() => saveLine(line, 'price')}
-            /></td
-          >
-          <td class="r">{gbp(qty * line.price)}</td>
-        </tr>
-      {/each}
-    </tbody>
-  </table>
+  <div class="qrow head">
+    <span>Item</span>
+    <span>Scope</span>
+    <span class="r">Qty</span>
+    <span class="r">Price £</span>
+    <span class="c" title="Refundable bond (excluded from spend)">Bond</span>
+    <span class="r">Total</span>
+    <span></span>
+  </div>
+
+  {#each lines as line (line.id)}
+    {@const qty = lineQty(line as any, { day, eve, min })}
+    <div class="qrow" class:bondline={line.bond}>
+      <input class="label" bind:value={line.label} onblur={() => saveLine(line, 'label')} placeholder="Item" />
+      <select bind:value={line.scope} onchange={() => saveLine(line, 'scope')}>
+        <option value="day">Per day guest</option>
+        <option value="eve">Per evening guest</option>
+        <option value="fixed">Fixed (×1)</option>
+        <option value="custom">Custom qty</option>
+      </select>
+      {#if line.scope === 'custom'}
+        <input class="num qty" type="number" bind:value={line.qty} onblur={() => saveLine(line, 'qty')} />
+      {:else}
+        <span class="readonly num">{qty}</span>
+      {/if}
+      <input class="num price" type="number" step="0.01" bind:value={line.price} onblur={() => saveLine(line, 'price')} />
+      <label class="cb"><input type="checkbox" bind:checked={line.bond} onchange={() => saveLine(line, 'bond')} /></label>
+      <span class="num total">{gbp(qty * line.price)}</span>
+      <button class="rm" type="button" onclick={() => removeLine(line)} title="Remove" aria-label="Remove">×</button>
+    </div>
+  {/each}
+
+  <button class="addrow" type="button" onclick={addLine}>+ Add item</button>
 </div>
 
 <div class="card totals">
@@ -115,45 +116,97 @@
     background: var(--card);
     border: 1px solid var(--line);
     border-radius: 16px;
-    padding: 6px 14px;
-    overflow-x: auto;
+    padding: 12px 16px;
     margin-bottom: 18px;
   }
-  table {
-    width: 100%;
-    border-collapse: collapse;
+
+  .qrow {
+    display: grid;
+    grid-template-columns: minmax(160px, 2.2fr) 150px 70px 90px 48px 100px 32px;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--line2);
   }
-  th {
-    text-align: left;
-    font-size: 10px;
-    letter-spacing: 0.1em;
+  .qrow:last-of-type {
+    border-bottom: 0;
+  }
+  .qrow.head {
+    font-size: 9.5px;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--muted);
-    padding: 11px 12px;
+    font-weight: 600;
+    padding-bottom: 8px;
     border-bottom: 1px solid var(--line);
   }
-  th.r,
-  td.r {
+  .qrow.bondline {
+    opacity: 0.85;
+  }
+  .r {
     text-align: right;
   }
-  td {
-    padding: 9px 12px;
-    border-bottom: 1px solid var(--line2);
-    font-size: 13.5px;
+  .c {
+    text-align: center;
   }
-  td.scope {
-    color: var(--faint);
-    font-size: 11.5px;
-  }
-  input.price,
-  input.qty {
+  .qrow input:not([type='checkbox']),
+  .qrow select {
+    width: 100%;
+    min-width: 0;
     border: 1px solid var(--line);
     border-radius: 6px;
-    padding: 5px 7px;
-    text-align: right;
-    width: 80px;
+    padding: 6px 8px;
     font: inherit;
+    font-size: 13px;
+    background: #fff;
+    color: var(--ink);
   }
+  .qrow .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .qrow .readonly {
+    color: var(--faint);
+    font-size: 13px;
+    padding-right: 8px;
+  }
+  .qrow .total {
+    font-size: 13px;
+    color: var(--ink);
+  }
+  .qrow .cb {
+    display: grid;
+    place-items: center;
+  }
+  .rm {
+    background: none;
+    border: 0;
+    color: var(--faint);
+    font-size: 18px;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .rm:hover {
+    color: var(--terra);
+  }
+  .addrow {
+    margin-top: 12px;
+    background: var(--sage);
+    color: #fff;
+    border: 0;
+    border-radius: 8px;
+    padding: 9px 16px;
+    font: inherit;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .addrow:hover {
+    background: var(--sage-deep);
+  }
+
   .totals {
     padding: 16px 24px;
   }
@@ -170,5 +223,15 @@
     font-size: 20px;
     font-weight: 600;
     color: var(--ink);
+  }
+
+  @media (max-width: 760px) {
+    .qrow {
+      grid-template-columns: 1fr 1fr;
+      row-gap: 4px;
+    }
+    .qrow.head {
+      display: none;
+    }
   }
 </style>

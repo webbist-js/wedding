@@ -16,6 +16,10 @@ export const inviteGroups = sqliteTable('invite_groups', {
   allergiesNote: text('allergies_note'),
   // Optional song request from the household — passed on to the DJ.
   songRequest: text('song_request'),
+  // Guest-CRM contact details (admin-only, edited from the dashboard guest list).
+  address: text('address'),
+  email: text('email'),
+  phone: text('phone'),
   respondedAt: integer('responded_at', { mode: 'timestamp' })
 });
 
@@ -78,6 +82,21 @@ export const suppliers = sqliteTable('suppliers', {
   status: text('status').notNull().default('todo'),
   notes: text('notes'),
   sort: integer('sort').notNull().default(0)
+});
+
+// Appointments / bookings, shown on the dashboard calendar. Optionally tied to a
+// supplier so a supplier's meetings show on both the calendar and the supplier row.
+export const appointments = sqliteTable('appointments', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  title: text('title').notNull(),
+  date: text('date').notNull(), // ISO date YYYY-MM-DD
+  time: text('time'), // optional, freeform e.g. "2.30pm"
+  location: text('location'),
+  notes: text('notes'),
+  supplierId: integer('supplier_id').references(() => suppliers.id),
+  createdAt: integer('created_at', { mode: 'timestamp' }),
+  // Comma-separated reminder thresholds already sent ('week' | 'day' | 'day-of').
+  notificationsSent: text('notifications_sent').notNull().default('')
 });
 
 export const seatAssignments = sqliteTable('seat_assignments', {

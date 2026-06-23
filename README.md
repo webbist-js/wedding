@@ -1,6 +1,6 @@
-# Alex & Katie — Wedding App
+# Katie & Alex — Wedding App
 
-A private wedding-planning dashboard for Alex & Katie, plus public per-household QR-code RSVP pages.
+A private wedding-planning dashboard for Katie & Alex, plus public per-household QR-code RSVP pages.
 
 Built with **SvelteKit** (Svelte 5) · **Drizzle ORM** over **libSQL** · shared-passcode auth · `qrcode`.
 

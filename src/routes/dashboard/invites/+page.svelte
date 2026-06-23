@@ -37,7 +37,7 @@
 			<div class="top">
 				<div class="qr">{@html r.qr}</div>
 				<div class="who">
-					<p class="eyebrow">Alex &amp; Katie · 2 April 2027</p>
+					<p class="eyebrow">Katie &amp; Alex · 2 April 2027</p>
 					<h3 class="script">{r.name}</h3>
 					<p class="members">{r.members.map((m) => m.name).join(' · ')}</p>
 					<p class="status">

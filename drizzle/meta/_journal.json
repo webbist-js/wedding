@@ -57,6 +57,20 @@
       "when": 1781877971436,
       "tag": "0007_flowery_mesmero",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1782152581487,
+      "tag": "0008_square_morbius",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1782213876583,
+      "tag": "0009_deep_ender_wiggin",
+      "breakpoints": true
     }
   ]
 }

@@ -108,7 +108,7 @@
 	<div class="msg-modal" role="dialog" aria-modal="true" aria-labelledby="msg-modal-title">
 		<button type="button" class="msg-modal-backdrop" aria-label="Close" onclick={dismissPersonalMsg}></button>
 		<div class="msg-modal-card">
-			<p id="msg-modal-title" class="msg-modal-eyebrow">A note from Alex &amp; Katie</p>
+			<p id="msg-modal-title" class="msg-modal-eyebrow">A note from Katie &amp; Alex</p>
 			<img src="/flora/layer-13.png" class="msg-modal-sprig" alt="" aria-hidden="true" />
 			<p class="msg-modal-body">{data.group.personalMessage}</p>
 			<button type="button" class="msg-modal-close" onclick={dismissPersonalMsg}>Continue</button>
@@ -513,7 +513,11 @@
 
 	<footer class="foot" use:reveal>
 		<img src="/flora/layer-13.png" class="card-sprig" alt="" aria-hidden="true" />
-		<p class="script">With love · A &amp; K</p>
+		<nav class="foot-links">
+			<a href="/party">Meet the wedding party →</a>
+			<a href="/location">The venue &amp; the area →</a>
+		</nav>
+		<p class="script">With love · K &amp; A</p>
 	</footer>
 </main>
 
@@ -1528,6 +1532,30 @@
 	.foot .script {
 		font-size: 32px;
 		color: var(--sage);
+	}
+	.foot-links {
+		display: flex;
+		gap: 26px;
+		justify-content: center;
+		flex-wrap: wrap;
+		margin-bottom: 22px;
+	}
+	.foot-links a {
+		font-family: var(--sans);
+		font-size: 12px;
+		letter-spacing: 0.18em;
+		text-transform: uppercase;
+		color: var(--sage-deep);
+		text-decoration: none;
+		border-bottom: 1px solid var(--rule);
+		padding-bottom: 3px;
+		transition:
+			color 0.2s ease,
+			border-color 0.2s ease;
+	}
+	.foot-links a:hover {
+		color: var(--terra);
+		border-color: var(--terra);
 	}
 
 	@media (max-width: 560px) {
