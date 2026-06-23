@@ -99,19 +99,6 @@ export const WISHES_INTRO =
 export const FUTURE_WISHES: FutureWish[] = [
 	{
 		index: '01',
-		year: '2029',
-		kicker: 'The first windfall',
-		title: 'Won the lottery. Twice.',
-		body:
-			'We win the lottery. Then, because the first time felt like beginner\'s luck, we win it again ' +
-			'the following week. The surprised faces are now thoroughly rehearsed, the novelty cheque is on ' +
-			'its third reprint, and the first win is earmarked for more dog treats than is strictly sensible.',
-		image: '/story/wish-lottery.jpg',
-		focus: 'center 40%',
-		align: 'right'
-	},
-	{
-		index: '02',
 		year: '2031',
 		kicker: 'Naturalised',
 		title: 'Became Swiss',
@@ -121,10 +108,10 @@ export const FUTURE_WISHES: FutureWish[] = [
 			'mountain chalet, and a very smug corgi in a tiny barrel.',
 		image: '/story/wish-switzerland.png',
 		focus: 'center 45%',
-		align: 'left'
+		align: 'right'
 	},
 	{
-		index: '03',
+		index: '02',
 		year: '2033',
 		kicker: 'Off-world',
 		title: 'A window seat in orbit',
@@ -134,10 +121,10 @@ export const FUTURE_WISHES: FutureWish[] = [
 			'the back garden and declines, on principle, to be impressed.',
 		image: '/story/wish-space.png',
 		focus: 'center 40%',
-		align: 'right'
+		align: 'left'
 	},
 	{
-		index: '04',
+		index: '03',
 		year: '2034',
 		kicker: 'Quite by accident',
 		title: 'Crowned by mistake',
@@ -148,32 +135,19 @@ export const FUTURE_WISHES: FutureWish[] = [
 			'supermarkets and waving from balconies.',
 		image: '/story/wish-monarchy.png',
 		focus: 'center 35%',
-		align: 'left'
-	},
-	{
-		index: '05',
-		year: '2037',
-		kicker: 'Retired early',
-		title: 'Invented time travel',
-		body:
-			'Katie invents time travel while trying to fix the dishwasher. We use it responsibly — chiefly ' +
-			'to relive the wedding and to nip back for winning lottery tickets. Historians remain divided on ' +
-			'whether we caused, or prevented, several major world events.',
-		image: '/story/wish-timetravel.png',
-		focus: 'center 45%',
 		align: 'right'
 	},
 	{
-		index: '06',
-		year: '2042',
-		kicker: 'Lunar landlords',
-		title: 'Bought the Moon',
+		index: '04',
+		year: '2037',
+		kicker: 'The first windfall',
+		title: 'Won the lottery. Twice.',
 		body:
-			'After a suspiciously successful side hustle in novelty tea towels, we acquire the Moon. ' +
-			'Visitors are charged £3 for parking, and a further £2 if they fail to validate their ticket. ' +
-			'The first lunar branch of Greggs opens shortly afterwards.',
-		image: '/story/wish-moon.png',
-		focus: 'center 45%',
+			'We win the lottery. Then, because the first time felt like beginner\'s luck, we win it again ' +
+			'the following week. The surprised faces are now thoroughly rehearsed, the novelty cheque is on ' +
+			'its third reprint, and the first win is earmarked for more dog treats than is strictly sensible.',
+		image: '/story/wish-lottery.jpg',
+		focus: 'center 40%',
 		align: 'left'
 	}
 ];

@@ -167,19 +167,19 @@
 		align-items: flex-start;
 	}
 	.duo .ed-frame {
-		width: 56%;
+		width: 52%;
 		flex: none;
 		aspect-ratio: 4 / 5;
 		border-radius: 4px;
 		box-shadow: 0 26px 60px rgba(33, 31, 26, 0.16);
 	}
 	.duo-a {
-		margin-top: 16%;
-		margin-right: -10%;
+		margin-top: 22%;
+		margin-right: -5%;
 		z-index: 2;
 	}
 	.duo-b {
-		margin-left: -10%;
+		margin-left: -5%;
 		z-index: 1;
 		border: 6px solid var(--bg);
 		box-shadow: 0 24px 50px rgba(33, 31, 26, 0.2);
@@ -190,7 +190,7 @@
 		left: 50%;
 		transform: translate(-50%, -50%);
 		z-index: 3;
-		font-size: clamp(40px, 5vw, 60px);
+		font-size: clamp(64px, 8vw, 104px);
 		line-height: 1;
 		color: var(--terra);
 		text-shadow: 0 2px 10px rgba(251, 250, 246, 0.9);
@@ -279,6 +279,9 @@
 	.rest-couple .duo {
 		max-width: 320px;
 		margin: 0 auto 26px;
+	}
+	.rest-couple .duo-amp {
+		font-size: clamp(48px, 5vw, 68px);
 	}
 	.rest-names {
 		font-family: var(--serif);

@@ -46,8 +46,8 @@
 <style>
 	.player {
 		position: fixed;
-		top: 18px;
-		right: 18px;
+		bottom: 18px;
+		left: 18px;
 		width: 42px;
 		height: 42px;
 		border-radius: 50%;
@@ -82,8 +82,8 @@
 
 	@media (max-width: 480px) {
 		.player {
-			top: 12px;
-			right: 12px;
+			bottom: 12px;
+			left: 12px;
 			width: 38px;
 			height: 38px;
 		}

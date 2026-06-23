@@ -102,8 +102,8 @@ export const WEDDING_PARTY: PartyCouple[] = [
 		side: 'groom',
 		tagline: 'School friends, basically family',
 		members: [
-			{ name: 'Kiran Philips', role: 'Groomsman', photo: portrait('kiran-philips') },
-			{ name: 'Elisa Philips', role: 'Bridesmaid', photo: portrait('elisa-philips') }
+			{ name: 'Kiran Philips', role: 'Groomsman', photo: '/party/kiran-philips.jpg', focus: 'center 28%' },
+			{ name: 'Elisa Philips', role: 'Bridesmaid', photo: '/party/elisa-philips.jpg', focus: 'center 22%' }
 		],
 		story:
 			'Alex and Kiran go all the way back to school — a friendship measured in decades and in-jokes ' +
@@ -115,8 +115,8 @@ export const WEDDING_PARTY: PartyCouple[] = [
 		side: 'groom',
 		tagline: 'Way back, and here for good',
 		members: [
-			{ name: 'Oliver Brierley', role: 'Groomsman', photo: portrait('oliver-brierley') },
-			{ name: 'Pheobe Brierley', role: 'Bridesmaid', photo: portrait('pheobe-brierley') }
+			{ name: 'Oliver Brierley', role: 'Groomsman', photo: '/party/oliver-brierley.png', focus: 'center 28%' },
+			{ name: 'Pheobe Brierley', role: 'Bridesmaid', photo: '/party/pheobe-brierley.png', focus: 'center 25%' }
 		],
 		story:
 			'Oli is another of Alex\'s school friends — proof that the best ones stick around. Pheobe joined ' +
@@ -128,8 +128,8 @@ export const WEDDING_PARTY: PartyCouple[] = [
 		side: 'groom',
 		tagline: 'The pair we adopted on sight',
 		members: [
-			{ name: 'Chris Todd', role: 'Groomsman', photo: portrait('chris-todd') },
-			{ name: 'Jen Todd', role: 'Bridesmaid', photo: portrait('jen-todd') }
+			{ name: 'Chris Todd', role: 'Groomsman', photo: '/party/chris-todd.png', focus: 'center 30%' },
+			{ name: 'Jen Todd', role: 'Bridesmaid', photo: '/party/jen-todd.png', focus: 'center 22%' }
 		],
 		story:
 			'We met Chris and Jen through Kiran and clicked within the hour — one of those rare couples who ' +
