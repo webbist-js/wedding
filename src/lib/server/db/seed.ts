@@ -11,7 +11,8 @@ import {
 	quoteLines,
 	stationeryItems,
 	settings,
-	notes
+	notes,
+	seatingTables
 } from './schema';
 import {
 	SEED_GUESTS,
@@ -21,6 +22,7 @@ import {
 	SEED_BUDGET,
 	SEED_STATIONERY,
 	SEED_NOTES,
+	SEED_TABLES,
 	SEED_SETTINGS,
 	type SeedGuest
 } from './data';
@@ -255,6 +257,19 @@ export async function seed(): Promise<void> {
 	if ((await db.select().from(stationeryItems).limit(1)).length === 0) {
 		for (const [i, label] of SEED_STATIONERY.entries()) {
 			await db.insert(stationeryItems).values({ label, done: false, sort: i });
+		}
+	}
+
+	// Seating tables: default 7 round-of-10, only when none exist yet.
+	if ((await db.select().from(seatingTables).limit(1)).length === 0) {
+		for (const [i, t] of SEED_TABLES.entries()) {
+			await db.insert(seatingTables).values({
+				number: t.number,
+				kind: t.kind,
+				seats: t.seats,
+				label: t.label ?? null,
+				sort: i
+			});
 		}
 	}
 

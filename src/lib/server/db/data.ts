@@ -415,5 +415,22 @@ export const SEED_SETTINGS: Record<string, string> = {
   eveGuests: '90',
   minSpend: '16455',
   tableCount: '7',
-  seatMode: 'day'
+  seatMode: 'day',
+  // The couple's own seats (table number, or empty when unseated).
+  seatBride: '',
+  seatGroom: ''
 };
+
+// Default room layout: 7 round tables of 10. Editable per table in the dashboard.
+export interface SeedTable {
+  number: number;
+  kind: string;
+  seats: number;
+  label?: string;
+}
+
+export const SEED_TABLES: SeedTable[] = Array.from({ length: 7 }, (_, i) => ({
+  number: i + 1,
+  kind: 'round',
+  seats: 10
+}));

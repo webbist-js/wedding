@@ -104,6 +104,19 @@ export const seatAssignments = sqliteTable('seat_assignments', {
   tableNo: integer('table_no').notNull()
 });
 
+// Each physical table in the room. `number` is the stable identifier referenced
+// by seatAssignments.tableNo (and the couple's seat settings); `kind` selects an
+// arrangement (round / long / square / sweetheart / head) and `seats` is its
+// capacity, so the dashboard can model layouts beyond a fixed 10-per-round-table.
+export const seatingTables = sqliteTable('seating_tables', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  number: integer('number').notNull(),
+  label: text('label'),
+  kind: text('kind').notNull().default('round'),
+  seats: integer('seats').notNull().default(10),
+  sort: integer('sort').notNull().default(0)
+});
+
 export const quoteLines = sqliteTable('quote_lines', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   label: text('label').notNull(),
