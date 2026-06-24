@@ -208,7 +208,7 @@
     font-weight: 700; font-size: 17px; display: inline-flex; align-items: baseline; gap: 5px;
   }
   .wd-pill span { font-size: 9.5px; letter-spacing: .16em; text-transform: uppercase; font-weight: 600; opacity: .85; }
-  .page-body { padding: 28px 48px 80px; max-width: 1280px; }
+  .page-body { padding: 28px 48px 80px; max-width: 1700px; }
 
   /* ---------- Mobile ---------- */
   .mobilebar { display: none; }
