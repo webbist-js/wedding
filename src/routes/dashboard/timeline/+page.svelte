@@ -106,6 +106,7 @@
       <section
         class="phase"
         class:drop-over={dragOverId === phase.id && dragKind === 'phase'}
+        role="group"
         draggable="true"
         ondragstart={(e) => onPhaseDragStart(e, phase.id)}
         ondragover={(e) => onDragOver(e, phase.id, 'phase')}
@@ -129,6 +130,7 @@
                 class="task"
                 class:done={item.done}
                 class:drop-over={dragOverId === item.id && dragKind === 'item'}
+                role="listitem"
                 draggable="true"
                 ondragstart={(e) => onItemDragStart(e, item.id)}
                 ondragover={(e) => onDragOver(e, item.id, 'item')}
