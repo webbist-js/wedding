@@ -50,20 +50,6 @@
   }
 </script>
 
-<p class="intro">
-  Your venue quote (Cordero <b>#4673989</b>) was built on <b>80 covers</b> and totalled <b>{gbp(ORIGINAL_QUOTE)}</b>.
-  Adjust the numbers below and the quote recalculates live. Lines marked <span class="confirm">Confirm</span>
-  were too blurry to read — plug in the real figures from your Cordero account.
-</p>
-
-<div class="alert">
-  <span class="ai" aria-hidden="true">!</span>
-  <div>
-    <p class="at">Minimum spend</p>
-    <p class="ab">The venue has a minimum food &amp; drink spend (your quote shows ~{gbp(16455)}). If fewer guests pull your food/drink below it, the venue charges the difference as a top-up — so cutting covers may save less than you'd expect. The calculator estimates this below; <b>confirm the exact rule with Laura.</b></p>
-  </div>
-</div>
-
 <div class="ctrls">
   <label>Day guests <input type="number" bind:value={day} onchange={() => saveSetting('dayGuests', day)} /></label>
   <label>Evening guests (total) <input type="number" bind:value={eve} onchange={() => saveSetting('eveGuests', eve)} /></label>

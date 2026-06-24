@@ -25,3 +25,5 @@ vite.config.ts.timestamp-*
 # Database (libSQL)
 *.db
 *.db-*
+auth
+auth-wal
