@@ -1,9 +1,13 @@
 import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db/index';
-import { budgetLines, stationeryItems, settings, quoteLines } from '$lib/server/db/schema';
+import { budgetLines, stationeryItems, settings, quoteLines, shoppingItems } from '$lib/server/db/schema';
 import { asc, eq } from 'drizzle-orm';
 import { computeQuote } from '$lib/quote';
 import { BUDGET_SECTIONS, VENUE_BUDGET_CATEGORY } from '$lib/server/db/data';
+
+// The shopping list surfaces in the budget as one synced, read-only line.
+const SHOPPING_BUDGET_CATEGORY = 'Shopping list';
+const SHOPPING_BUDGET_SECTION = 'Everything else';
 
 export const load: PageServerLoad = async () => {
 	const lines = await db.select().from(budgetLines).orderBy(asc(budgetLines.sort));
@@ -19,18 +23,37 @@ export const load: PageServerLoad = async () => {
 		{ day: Number(s.dayGuests ?? 61), eve: Number(s.eveGuests ?? 90), min: Number(s.minSpend ?? 16455) }
 	).grand;
 
-	const synced = lines.map((l) =>
-		l.category === VENUE_BUDGET_CATEGORY
-			? { ...l, confirmed: venueTotal, isVenue: true }
-			: { ...l, isVenue: false }
-	);
+	const synced = lines.map((l) => ({
+		...l,
+		confirmed: l.category === VENUE_BUDGET_CATEGORY ? venueTotal : l.confirmed,
+		isVenue: l.category === VENUE_BUDGET_CATEGORY,
+		isShopping: false
+	}));
+
+	// Inject the shopping-list total as a synced line under "Everything else".
+	const shopping = await db.select().from(shoppingItems);
+	const shopTotal = shopping.reduce((a, i) => a + i.cost * i.qty, 0);
+	const shopPaid = shopping.filter((i) => i.bought).reduce((a, i) => a + i.cost * i.qty, 0);
+	synced.push({
+		id: -1,
+		category: SHOPPING_BUDGET_CATEGORY,
+		section: SHOPPING_BUDGET_SECTION,
+		budgeted: shopTotal,
+		confirmed: shopTotal,
+		paid: shopPaid,
+		status: 'Shopping',
+		sort: 1_000_000_000,
+		isVenue: false,
+		isShopping: true
+	});
 
 	return {
 		sections: BUDGET_SECTIONS,
 		lines: synced,
 		statio,
 		target,
-		venueCategory: VENUE_BUDGET_CATEGORY
+		venueCategory: VENUE_BUDGET_CATEGORY,
+		shoppingCount: shopping.length
 	};
 };
 

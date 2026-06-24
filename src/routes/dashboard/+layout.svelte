@@ -3,6 +3,7 @@
   let { children } = $props();
   const tabs = [
     ['/dashboard', 'Overview'], ['/dashboard/budget', 'Budget'],
+    ['/dashboard/shopping', 'Shopping'],
     ['/dashboard/venue', 'Venue'], ['/dashboard/guests', 'Guests'],
     ['/dashboard/seating', 'Seating'], ['/dashboard/suppliers', 'Suppliers'],
     ['/dashboard/calendar', 'Calendar'],

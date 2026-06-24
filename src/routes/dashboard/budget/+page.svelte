@@ -52,8 +52,8 @@
 		dragOverId = null;
 		const source = dragId;
 		dragId = null;
-		if (!source || source === targetId) return;
-		const ids = data.lines.map((l) => l.id);
+		if (!source || source === targetId || source < 0 || targetId < 0) return;
+		const ids = data.lines.map((l) => l.id).filter((id) => id > 0);
 		const fromIdx = ids.indexOf(source);
 		const toIdx = ids.indexOf(targetId);
 		if (fromIdx < 0 || toIdx < 0) return;
@@ -135,16 +135,24 @@
 			{#each sectionLines as line (line.id)}
 				<div
 					class="row"
-					class:venue={line.isVenue}
+					class:venue={line.isVenue || line.isShopping}
 					class:drop-over={dragOverId === line.id}
-					draggable={!line.isVenue}
+					draggable={!line.isVenue && !line.isShopping}
 					ondragstart={(e) => onDragStart(e, line.id)}
 					ondragover={(e) => onDragOver(e, line.id)}
 					ondragleave={onDragLeave}
 					ondrop={(e) => onDrop(e, line.id)}
 				>
-					<span class="grip" aria-hidden="true">{line.isVenue ? '' : '≡'}</span>
-					{#if line.isVenue}
+					<span class="grip" aria-hidden="true">{line.isVenue || line.isShopping ? '' : '≡'}</span>
+					{#if line.isShopping}
+						<span class="cat venue-cat">{line.category} <Pill tone="green">Synced</Pill></span>
+						<span class="readonly num">{gbp(line.budgeted)}</span>
+						<span class="readonly num">{gbp(line.confirmed)}</span>
+						<span class="readonly num">{gbp(line.paid)}</span>
+						<span class="locked">Shopping</span>
+						<span class="locked">Everything else</span>
+						<a class="shop-link" href="/dashboard/shopping" title="Edit shopping list">Edit →</a>
+					{:else if line.isVenue}
 						<span class="cat venue-cat">{line.category} <Pill tone="green">Synced</Pill></span>
 						<input
 							class="num"
@@ -439,6 +447,15 @@
 		gap: 8px;
 		font-weight: 600;
 		color: var(--ink);
+	}
+	.shop-link {
+		font-size: 11px;
+		color: var(--sage-deep);
+		text-decoration: none;
+		white-space: nowrap;
+	}
+	.shop-link:hover {
+		text-decoration: underline;
 	}
 	.rmf {
 		margin: 0;

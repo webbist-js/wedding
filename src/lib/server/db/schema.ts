@@ -150,6 +150,18 @@ export const settings = sqliteTable('settings', {
   value: text('value').notNull()
 });
 
+// Shopping list — ad-hoc things to buy, each with a unit cost and quantity.
+// Its running total feeds the budget as a synced "Shopping list" line.
+export const shoppingItems = sqliteTable('shopping_items', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  label: text('label').notNull(),
+  qty: integer('qty').notNull().default(1),
+  cost: real('cost').notNull().default(0), // unit cost
+  bought: integer('bought', { mode: 'boolean' }).notNull().default(false),
+  notes: text('notes'),
+  sort: integer('sort').notNull().default(0)
+});
+
 // Free-form notes. A note always belongs to a `category` (the dashboard section
 // it's filed under in the Notes hub). It may optionally cross-link to a specific
 // row elsewhere in the dashboard via (entityType, entityId) — e.g. a note tied
