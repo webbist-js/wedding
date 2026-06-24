@@ -1,5 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import { invalidateAll } from '$app/navigation';
   let { data } = $props();
 
   const gbp = (n: number) => '£' + n.toLocaleString('en-GB', { maximumFractionDigits: 2 });
@@ -14,6 +15,8 @@
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ id, field, value })
     });
+    // Refresh so the derived totals (cost/qty/bought) update without a manual reload.
+    await invalidateAll();
   }
 </script>
 

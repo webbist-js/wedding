@@ -42,6 +42,9 @@
   }
 </script>
 
+{#snippet calIcon()}<svg class="ico" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>{/snippet}
+{#snippet noteIcon()}<svg class="ico" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l5 5v13H6z"/><path d="M14 3v6h6M9 13h6M9 17h4"/></svg>{/snippet}
+
 <div class="list">
   {#each data.suppliers as s (s.id)}
     <article class="supplier">
@@ -70,12 +73,12 @@
       <div class="actions">
         {#each apptsBySupplier[s.id] ?? [] as a (a.id)}
           <a class="chip booked-chip" href="/dashboard/calendar" title={a.title}>
-            📅 {fmt(a.date)}{a.time ? ` · ${a.time}` : ''} — {a.title}
+            {@render calIcon()} {fmt(a.date)}{a.time ? ` · ${a.time}` : ''} — {a.title}
           </a>
         {/each}
-        <a class="chip" href={`/dashboard/calendar?supplier=${s.id}`}>📅 Book appointment</a>
+        <a class="chip" href={`/dashboard/calendar?supplier=${s.id}`}>{@render calIcon()} Book appointment</a>
         <button class="chip" onclick={() => (openNotes[s.id] = !openNotes[s.id])}>
-          📝 Notes{(notesBySupplier[s.id] ?? []).length ? ` · ${notesBySupplier[s.id].length}` : ''}
+          {@render noteIcon()} Notes{(notesBySupplier[s.id] ?? []).length ? ` · ${notesBySupplier[s.id].length}` : ''}
         </button>
       </div>
 
@@ -137,6 +140,7 @@
     text-transform: uppercase; color: var(--sage-deep); text-decoration: none; cursor: pointer;
   }
   .chip:hover { border-color: var(--sage); background: var(--sage-soft); }
+  .chip :global(.ico) { flex: none; }
   .booked-chip { background: var(--terra-bg); border-color: var(--terra-bg); color: var(--terra); text-transform: none; letter-spacing: 0; }
   .booked-chip:hover { border-color: var(--terra); background: var(--terra-bg); }
 
