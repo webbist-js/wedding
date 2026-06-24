@@ -8,7 +8,7 @@
     {
       title: 'Money',
       items: [
-        ['/dashboard/venue', 'Venue & costs', 'receipt'],
+        ['/dashboard/venue', 'Venue', 'receipt'],
         ['/dashboard/budget', 'Budget', 'wallet'],
         ['/dashboard/shopping', 'Shopping', 'cart']
       ]
@@ -35,7 +35,7 @@
   // Per-route header: script title + muted subtitle.
   const META: Record<string, { title: string; subtitle: string }> = {
     '/dashboard': { title: 'Overview', subtitle: 'Where you are, at a glance' },
-    '/dashboard/venue': { title: 'Venue & costs', subtitle: 'Live quote calculator — edits save automatically' },
+    '/dashboard/venue': { title: 'Venue', subtitle: 'Live quote calculator — edits save automatically' },
     '/dashboard/budget': { title: 'Budget', subtitle: 'What you plan to spend, and what’s confirmed' },
     '/dashboard/shopping': { title: 'Shopping list', subtitle: 'Things to buy — feeds the budget' },
     '/dashboard/guests': { title: 'Guest list', subtitle: 'Households, contacts & RSVPs' },

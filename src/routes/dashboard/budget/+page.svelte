@@ -132,15 +132,15 @@
 			{#each sectionLines as line (line.id)}
 				<div
 					class="row"
-					class:venue={line.isVenue || line.isShopping}
+					class:venue={line.isShopping}
 					class:drop-over={dragOverId === line.id}
-					draggable={!line.isVenue && !line.isShopping}
+					draggable={!line.isShopping}
 					ondragstart={(e) => onDragStart(e, line.id)}
 					ondragover={(e) => onDragOver(e, line.id)}
 					ondragleave={onDragLeave}
 					ondrop={(e) => onDrop(e, line.id)}
 				>
-					<span class="grip" aria-hidden="true">{line.isVenue || line.isShopping ? '' : '≡'}</span>
+					<span class="grip" aria-hidden="true">{line.isShopping ? '' : '≡'}</span>
 					{#if line.isShopping}
 						<span class="cat venue-cat">{line.category} <Pill tone="green">Synced</Pill></span>
 						<span class="readonly num">{gbp(line.budgeted)}</span>
@@ -149,31 +149,6 @@
 						<span class="locked">Shopping</span>
 						<span class="locked">Everything else</span>
 						<a class="shop-link" href="/dashboard/shopping" title="Edit shopping list">Edit →</a>
-					{:else if line.isVenue}
-						<span class="cat venue-cat">{line.category} <Pill tone="green">Synced</Pill></span>
-						<input
-							class="num"
-							type="number"
-							value={line.budgeted}
-							onchange={(e) => saveField(line.id, 'budgeted', e.currentTarget.value)}
-						/>
-						<span class="readonly num">{gbp(line.confirmed)}</span>
-						<input
-							class="num"
-							type="number"
-							value={line.paid}
-							onchange={(e) => saveField(line.id, 'paid', e.currentTarget.value)}
-						/>
-						<select
-							onchange={(e) => saveField(line.id, 'status', e.currentTarget.value)}
-							value={line.status}
-						>
-							{#each statusOptions as opt}
-								<option value={opt} selected={opt === line.status}>{opt}</option>
-							{/each}
-						</select>
-						<span class="locked">Essentials</span>
-						<span></span>
 					{:else}
 						<input
 							class="cat"

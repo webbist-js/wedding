@@ -11,8 +11,8 @@
     days = Math.max(0, Math.ceil((new Date(data.weddingISO).getTime() - Date.now()) / 86400000));
   });
 
-  let v = $derived(data.venue);
-  const seg = (n: number) => (v.grand > 0 ? (n / v.grand) * 100 : 0);
+  let b = $derived(data.budget);
+  const pctOf = (n: number) => (b.target > 0 ? Math.min(100, (n / b.target) * 100) : 0);
 
   let invited = $derived(data.summary.total);
   let yes = $derived(data.summary.rsvpYes);
@@ -47,7 +47,7 @@
   <div class="stat"><div class="v">{data.summary.total}</div><div class="l">Total guests</div></div>
   <div class="stat"><div class="v">{data.summary.day} / {data.summary.evening}</div><div class="l">Day / evening</div></div>
   <div class="stat"><div class="v sage">{data.summary.rsvpYes}</div><div class="l">RSVP'd yes</div></div>
-  <div class="stat"><div class="v">{gbp0(v.grand)}</div><div class="l">Est. total</div></div>
+  <div class="stat"><div class="v">{gbp0(b.confirmed)}</div><div class="l">Confirmed spend</div></div>
 </div>
 
 <Alert title="Notice of marriage — timing matters">
@@ -56,25 +56,23 @@
 </Alert>
 
 <div class="cols">
-  <!-- Venue at a glance -->
+  <!-- Budget at a glance -->
   <section class="panel">
-    <div class="phead"><h3>Venue quote at a glance</h3><a href="/dashboard/venue">Open →</a></div>
-    <div class="bignum">{gbp(v.grand)}</div>
+    <div class="phead"><h3>Budget at a glance</h3><a href="/dashboard/budget">Open →</a></div>
+    <div class="bignum">{gbp(b.confirmed)}</div>
     <p class="sub">
-      estimated total for {data.summary.day} day · {data.summary.evening} evening —
-      {#if v.vsQuote > 0}<span class="up">{gbp(v.vsQuote)} higher vs quote</span>
-      {:else if v.vsQuote < 0}<span class="down">{gbp(-v.vsQuote)} under quote</span>
-      {:else}in line with quote{/if}
+      confirmed of {gbp(b.target)} target —
+      {#if b.remaining >= 0}<span class="down">{gbp(b.remaining)} remaining</span>
+      {:else}<span class="up">{gbp(-b.remaining)} over budget</span>{/if}
     </p>
     <div class="bar">
-      <span style={`width:${seg(v.foodDrink)}%`} class="s1"></span>
-      <span style={`width:${seg(v.topup)}%`} class="s2"></span>
-      <span style={`width:${seg(v.hireExtras)}%`} class="s3"></span>
+      <span style={`width:${pctOf(b.paid)}%`} class="s1"></span>
+      <span style={`width:${pctOf(Math.max(0, b.confirmed - b.paid))}%`} class="s3"></span>
     </div>
     <div class="legend">
-      <span><i class="d1"></i> Food &amp; drink <b>{gbp(v.foodDrink)}</b></span>
-      <span><i class="d2"></i> Min-spend top-up <b>{gbp(v.topup)}</b></span>
-      <span><i class="d3"></i> Hire &amp; extras <b>{gbp(v.hireExtras)}</b></span>
+      <span><i class="d1"></i> Paid <b>{gbp(b.paid)}</b></span>
+      <span><i class="d3"></i> Confirmed <b>{gbp(b.confirmed)}</b></span>
+      <span><i class="d4"></i> Target <b>{gbp(b.target)}</b></span>
     </div>
   </section>
 
@@ -165,10 +163,10 @@
   .sub .down { color: var(--sage-deep); font-weight: 600; }
   .bar { display: flex; height: 12px; border-radius: 999px; overflow: hidden; background: var(--line2); margin-bottom: 14px; }
   .bar span { display: block; height: 100%; }
-  .bar .s1 { background: var(--sage-deep); } .bar .s2 { background: var(--tan); } .bar .s3 { background: var(--sage); opacity: .55; }
+  .bar .s1 { background: var(--sage-deep); } .bar .s3 { background: var(--sage); }
   .legend { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 12px; color: var(--body); }
   .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
-  .legend .d1 { background: var(--sage-deep); } .legend .d2 { background: var(--tan); } .legend .d3 { background: var(--sage); opacity: .55; }
+  .legend .d1 { background: var(--sage-deep); } .legend .d3 { background: var(--sage); } .legend .d4 { background: var(--line2); border: 1px solid var(--line); }
   .legend b { color: var(--ink); }
 
   /* Rings */

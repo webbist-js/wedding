@@ -306,7 +306,7 @@ export const SEED_TIMELINE: SeedPhase[] = [
 // Budget — figures from BUDGET_DEFAULT. Status derived from the source's
 // bStatus(confirmed, paid): paid>=confirmed&&confirmed>0 -> Paid;
 // confirmed>0&&paid>0 -> Deposit; confirmed>0 -> Booked; else -> Estimate.
-export const VENUE_BUDGET_CATEGORY = 'Venue & catering';
+export const VENUE_BUDGET_CATEGORY = 'Venue';
 
 export const SEED_BUDGET: SeedBudgetLine[] = [
   { category: VENUE_BUDGET_CATEGORY, section: 'Essentials', budgeted: 17320, confirmed: 17319.4, paid: 0, status: 'Booked' },

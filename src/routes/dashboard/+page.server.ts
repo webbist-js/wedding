@@ -4,16 +4,13 @@ import { db } from '$lib/server/db/index';
 import {
 	appointments,
 	suppliers,
-	quoteLines,
+	budgetLines,
+	shoppingItems,
 	settings,
 	timelinePhases,
 	timelineItems
 } from '$lib/server/db/schema';
 import { asc, eq, gte } from 'drizzle-orm';
-import { computeQuote, lineQty } from '$lib/quote';
-
-// The venue's original headline quote (80 covers), used for the "vs quote" delta.
-const ORIGINAL_QUOTE = 17319.4;
 
 export const load: PageServerLoad = async () => {
 	const guests = await allGuests();
@@ -21,32 +18,19 @@ export const load: PageServerLoad = async () => {
 
 	const setRows = await db.select().from(settings);
 	const s = Object.fromEntries(setRows.map((r) => [r.key, r.value]));
-	const inputs = {
-		day: Number(s.dayGuests ?? 61),
-		eve: Number(s.eveGuests ?? 90),
-		min: Number(s.minSpend ?? 16455)
-	};
+	const target = Number(s.target ?? 30000);
 
-	// Venue quote breakdown: food & drink (per-guest consumables) vs hire & extras
-	// (fixed) + min-spend top-up. Segments sum to the grand total.
-	const quote = await db.select().from(quoteLines);
-	const calc = quote.map((q) => ({ scope: q.scope, price: q.price, qty: q.qty, bond: q.bond }));
-	const result = computeQuote(calc, inputs);
-	let foodDrink = 0;
-	let fixedNonBond = 0;
-	for (const q of calc) {
-		if (q.bond) continue;
-		const total = lineQty(q, inputs) * q.price;
-		if (q.scope === 'fixed') fixedNonBond += total;
-		else foodDrink += total;
-	}
-	const venue = {
-		grand: result.grand,
-		foodDrink,
-		topup: result.topup,
-		hireExtras: fixedNonBond + result.bond,
-		vsQuote: result.grand - ORIGINAL_QUOTE
-	};
+	// Budget at a glance: roll up all budget lines + the shopping list (mirrors
+	// what the Budget tab shows). Money on the overview is budget-driven, not just
+	// the venue quote.
+	const blines = await db.select().from(budgetLines);
+	const shopping = await db.select().from(shoppingItems);
+	const shopTotal = shopping.reduce((a, i) => a + i.cost * i.qty, 0);
+	const shopPaid = shopping.filter((i) => i.bought).reduce((a, i) => a + i.cost * i.qty, 0);
+	const earmarked = blines.reduce((a, l) => a + l.budgeted, 0) + shopTotal;
+	const confirmed = blines.reduce((a, l) => a + l.confirmed, 0) + shopTotal;
+	const paid = blines.reduce((a, l) => a + l.paid, 0) + shopPaid;
+	const budget = { target, earmarked, confirmed, paid, remaining: target - confirmed };
 
 	// Timeline progress + next steps.
 	const phases = await db.select().from(timelinePhases).orderBy(asc(timelinePhases.sort));
@@ -88,7 +72,7 @@ export const load: PageServerLoad = async () => {
 	return {
 		summary,
 		weddingISO: '2027-04-02T14:30:00',
-		venue,
+		budget,
 		progress: { done: tasksDone, total: tasksTotal, next: undone.slice(0, 3) },
 		priority: undone.slice(0, 6),
 		booked,
