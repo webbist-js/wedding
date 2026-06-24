@@ -76,7 +76,7 @@
             {@render calIcon()} {fmt(a.date)}{a.time ? ` · ${a.time}` : ''} — {a.title}
           </a>
         {/each}
-        <a class="chip" href={`/dashboard/calendar?supplier=${s.id}`}>{@render calIcon()} Book appointment</a>
+        <a class="chip dashed" href={`/dashboard/calendar?supplier=${s.id}`}>{@render calIcon()} Book appointment</a>
         <button class="chip" onclick={() => (openNotes[s.id] = !openNotes[s.id])}>
           {@render noteIcon()} Notes{(notesBySupplier[s.id] ?? []).length ? ` · ${notesBySupplier[s.id].length}` : ''}
         </button>
@@ -133,7 +133,7 @@
 
   .note-line { display: block; width: 100%; color: var(--muted); font-size: 13px; margin-top: 4px; }
 
-  .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line2); }
   .chip {
     display: inline-flex; align-items: center; gap: 6px; background: transparent; border: 1px solid var(--line);
     border-radius: 999px; padding: 6px 13px; font: inherit; font-size: 10.5px; letter-spacing: .07em;
@@ -141,6 +141,7 @@
   }
   .chip:hover { border-color: var(--sage); background: var(--sage-soft); }
   .chip :global(.ico) { flex: none; }
+  .chip.dashed { border-style: dashed; }
   .booked-chip { background: var(--terra-bg); border-color: var(--terra-bg); color: var(--terra); text-transform: none; letter-spacing: 0; }
   .booked-chip:hover { border-color: var(--terra); background: var(--terra-bg); }
 
