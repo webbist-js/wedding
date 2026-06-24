@@ -101,7 +101,10 @@ export const appointments = sqliteTable('appointments', {
 
 export const seatAssignments = sqliteTable('seat_assignments', {
   guestId: integer('guest_id').primaryKey().references(() => guests.id),
-  tableNo: integer('table_no').notNull()
+  tableNo: integer('table_no').notNull(),
+  // Specific seat position at that table (1..table.seats). Null = at the table
+  // but no fixed seat yet (overflow / legacy "sit anywhere" assignment).
+  seatNo: integer('seat_no')
 });
 
 // Each physical table in the room. `number` is the stable identifier referenced

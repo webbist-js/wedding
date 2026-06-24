@@ -2,13 +2,14 @@ import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db/index';
 import { guests, seatAssignments, seatingTables, settings } from '$lib/server/db/schema';
 import { asc, eq } from 'drizzle-orm';
-import { TABLE_KINDS, isTableKind, COUPLE } from '$lib/seating';
-
-async function setSetting(key: string, value: string) {
-	const [existing] = await db.select().from(settings).where(eq(settings.key, key));
-	if (existing) await db.update(settings).set({ value }).where(eq(settings.key, key));
-	else await db.insert(settings).values({ key, value });
-}
+import { TABLE_KINDS, isTableKind } from '$lib/seating';
+import {
+	setSetting,
+	parseCoupleSeat,
+	placeOccupant,
+	firstFreeSeat,
+	type Occupant
+} from '$lib/server/seating';
 
 export const load: PageServerLoad = async () => {
 	const all = await db.select().from(guests);
@@ -19,43 +20,42 @@ export const load: PageServerLoad = async () => {
 		.orderBy(asc(seatingTables.sort), asc(seatingTables.number));
 	const setRows = await db.select().from(settings);
 	const s = Object.fromEntries(setRows.map((r) => [r.key, r.value]));
-	const seatMap = new Map(seats.map((x) => [x.guestId, x.tableNo]));
+	const seatMap = new Map(seats.map((x) => [x.guestId, x]));
 
 	return {
 		seatMode: s.seatMode ?? 'day',
 		tables,
-		guests: all.map((g) => ({ ...g, tableNo: seatMap.get(g.id) ?? null })),
+		guests: all.map((g) => {
+			const a = seatMap.get(g.id);
+			return { ...g, tableNo: a?.tableNo ?? null, seatNo: a?.seatNo ?? null };
+		}),
 		couple: {
-			bride: s.seatBride ? Number(s.seatBride) : null,
-			groom: s.seatGroom ? Number(s.seatGroom) : null
+			bride: parseCoupleSeat(s.seatBride),
+			groom: parseCoupleSeat(s.seatGroom)
 		}
 	};
 };
 
 export const actions: Actions = {
-	// Assign / unassign a guest OR a member of the couple to a table number.
+	// Picker fallback (no-JS / dropdown): assign a guest or couple member to a
+	// table — they land in the lowest free seat. Drag-and-drop uses /place.
 	assign: async ({ request }) => {
 		const f = await request.formData();
 		const who = String(f.get('who') ?? ''); // '', 'bride' or 'groom'
 		const raw = f.get('tableNo');
 		const tableNo = raw ? Number(raw) : null;
 
-		const coupleMember = COUPLE.find((c) => c.key === who);
-		if (coupleMember) {
-			await setSetting(coupleMember.settingKey, tableNo ? String(tableNo) : '');
+		const occupant: Occupant =
+			who === 'bride' || who === 'groom'
+				? { kind: 'couple', key: who }
+				: { kind: 'guest', id: Number(f.get('guestId')) };
+		if (occupant.kind === 'guest' && !occupant.id) return;
+
+		if (tableNo == null) {
+			await placeOccupant(occupant, null, null);
 			return;
 		}
-
-		const guestId = Number(f.get('guestId'));
-		if (!guestId) return;
-		if (tableNo == null) {
-			await db.delete(seatAssignments).where(eq(seatAssignments.guestId, guestId));
-		} else {
-			await db
-				.insert(seatAssignments)
-				.values({ guestId, tableNo })
-				.onConflictDoUpdate({ target: seatAssignments.guestId, set: { tableNo } });
-		}
+		await placeOccupant(occupant, tableNo, await firstFreeSeat(tableNo));
 	},
 
 	addTable: async ({ request }) => {
