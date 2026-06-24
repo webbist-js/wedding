@@ -10,7 +10,8 @@ import {
 	suppliers,
 	quoteLines,
 	stationeryItems,
-	settings
+	settings,
+	notes
 } from './schema';
 import {
 	SEED_GUESTS,
@@ -19,6 +20,7 @@ import {
 	SEED_TIMELINE,
 	SEED_BUDGET,
 	SEED_STATIONERY,
+	SEED_NOTES,
 	SEED_SETTINGS,
 	type SeedGuest
 } from './data';
@@ -253,6 +255,22 @@ export async function seed(): Promise<void> {
 	if ((await db.select().from(stationeryItems).limit(1)).length === 0) {
 		for (const [i, label] of SEED_STATIONERY.entries()) {
 			await db.insert(stationeryItems).values({ label, done: false, sort: i });
+		}
+	}
+
+	// Notes: only seed the starter research notes when the table is empty, so the
+	// couple's own notes (and their edits) are never overwritten on reseed.
+	if ((await db.select().from(notes).limit(1)).length === 0) {
+		const now = new Date();
+		for (const [i, n] of SEED_NOTES.entries()) {
+			await db.insert(notes).values({
+				body: n.body,
+				category: n.category,
+				pinned: n.pinned ?? false,
+				sort: i,
+				createdAt: now,
+				updatedAt: now
+			});
 		}
 	}
 

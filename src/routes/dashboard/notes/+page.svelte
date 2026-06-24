@@ -1,27 +1,128 @@
 <script lang="ts">
-  import SectionHeading from '$lib/components/SectionHeading.svelte';
-  import Rule from '$lib/components/Rule.svelte';
-  import Card from '$lib/components/Card.svelte';
-  import Alert from '$lib/components/Alert.svelte';
+	import SectionHeading from '$lib/components/SectionHeading.svelte';
+	import Rule from '$lib/components/Rule.svelte';
+	import Notes from '$lib/components/Notes.svelte';
+	import type { NoteRow } from '$lib/components/Notes.svelte';
+	import { NOTE_CATEGORIES } from '$lib/notes';
+
+	let { data } = $props();
+
+	// Group notes by category, preserving the canonical category order. Empty
+	// categories are skipped in the body but always available in the "add" picker.
+	const byCategory = $derived.by(() => {
+		const map = new Map<string, NoteRow[]>();
+		for (const c of NOTE_CATEGORIES) map.set(c, []);
+		for (const n of data.notes as NoteRow[]) {
+			if (!map.has(n.category)) map.set(n.category, []);
+			map.get(n.category)!.push(n);
+		}
+		return map;
+	});
+
+	const total = $derived((data.notes as NoteRow[]).length);
+	const pinned = $derived((data.notes as NoteRow[]).filter((n) => n.pinned).length);
+
+	// Category to file a brand-new standalone note under.
+	let newCategory = $state<string>('General');
 </script>
 
-<SectionHeading>Research &amp; notes</SectionHeading><Rule />
-<Card kicker="The Tithe Barn, Bolton Abbey (Cripps & Co)">
-  <p>16th-century Grade II* listed barn on the Bolton Abbey Estate. Capacity 200 (ceremony & feast), 300 (drinks & dancing). Licensed for civil ceremonies. Late licence to 1am, Funktion-One sound, underfloor heating, fire pits, dog-friendly.</p>
-  <p><b>All food & drink is in-house</b> — no external caterer. Book a <b>Feast Night</b> to taste & finalise the menu. Quote changes allowed up to 6 weeks before.</p>
-  <p class="fine">enquiries@crippsboltonabbey.com · +44 1756 631 000 · coordinator Laura</p>
-</Card>
-<Card kicker="Adam Lowndes — Photographer (booked)">
-  <p>Stoke-on-Trent based, travels UK. Relaxed, personality-led style. hello@adamlowndes.co.uk · 07527 547 073</p>
-</Card>
-<Card kicker="Venue logistics — once you have booked">
-  <p>The £50pp Event Fee includes the coordinator, all staff, crockery, linen, décor, plus 3 canapés + 2 drinks per person. Final numbers 8 weeks before; final balance due 40 days before (~21 Feb 2027) via GoCardless. Planning meeting ~9 months out. Access from 9am; exclusive hire from 12.30pm. Full-day suppliers can have a meal at £25pp.</p>
-</Card>
-<Alert title="Check the shopping list against venue rules">
-  Confetti must be <b>fresh petals only</b>. No fireworks, confetti cannons, Chinese lanterns, balloons or drones. Confirm whether sparklers are allowed. No décor fixed to walls/beams; chair sashes OK, full covers not.
-</Alert>
-<Alert title="Good to know" tone="sage">
-  The venue's own gallery is shot by <b>Hamish Irvine</b> — the other name on the photographer shortlist.
-</Alert>
+<SectionHeading>Notes</SectionHeading>
+<Rule />
 
-<style>.fine { font-size: 12.5px; color: var(--muted); }</style>
+<p class="lead">
+	{total} note{total === 1 ? '' : 's'}{pinned ? ` · ${pinned} pinned` : ''}. Notes added against a
+	supplier (or other item) elsewhere in the dashboard show up here under their section, and stay
+	linked back to where you flagged them.
+</p>
+
+<div class="addbar">
+	<label>
+		New note in
+		<select bind:value={newCategory}>
+			{#each NOTE_CATEGORIES as c}
+				<option value={c}>{c}</option>
+			{/each}
+		</select>
+	</label>
+	<div class="addbox">
+		{#key newCategory}
+			<Notes notes={[]} category={newCategory} addLabel="Add note" />
+		{/key}
+	</div>
+</div>
+
+{#each NOTE_CATEGORIES as category}
+	{@const list = byCategory.get(category) ?? []}
+	{#if list.length}
+		<section class="group">
+			<h2>{category} <span class="count">{list.length}</span></h2>
+			<Notes notes={list} {category} showContext addLabel="Add to {category}" />
+		</section>
+	{/if}
+{/each}
+
+{#if total === 0}
+	<p class="empty">No notes yet — add your first one above, or jot one against a supplier.</p>
+{/if}
+
+<style>
+	.lead {
+		color: var(--muted);
+		font-size: 13.5px;
+		line-height: 1.6;
+		max-width: 64ch;
+		margin: 0 0 20px;
+	}
+	.addbar {
+		background: var(--card);
+		border: 1px solid var(--line);
+		border-radius: 14px;
+		padding: 14px 16px;
+		margin-bottom: 28px;
+	}
+	.addbar label {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 11px;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--muted);
+		margin-bottom: 10px;
+	}
+	.addbar select {
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		padding: 5px 8px;
+		font: inherit;
+		font-size: 13px;
+		text-transform: none;
+		letter-spacing: 0;
+	}
+	.group {
+		margin-bottom: 28px;
+	}
+	.group h2 {
+		font-family: var(--serif);
+		font-weight: 600;
+		font-size: 22px;
+		margin: 0 0 12px;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+	.count {
+		font-family: var(--sans);
+		font-size: 11px;
+		font-weight: 600;
+		color: var(--muted);
+		background: var(--bg);
+		border: 1px solid var(--line);
+		border-radius: 999px;
+		padding: 2px 9px;
+	}
+	.empty {
+		color: var(--muted);
+		font-size: 13.5px;
+	}
+</style>

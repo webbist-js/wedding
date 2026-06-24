@@ -1,7 +1,7 @@
 import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db/index';
-import { suppliers, appointments } from '$lib/server/db/schema';
-import { asc, eq } from 'drizzle-orm';
+import { suppliers, appointments, notes } from '$lib/server/db/schema';
+import { asc, desc, eq } from 'drizzle-orm';
 import { env } from '$env/dynamic/private';
 import { notifySupplierBooked } from '$lib/server/slack';
 
@@ -16,7 +16,13 @@ export const load: PageServerLoad = async () => ({
       supplierId: appointments.supplierId
     })
     .from(appointments)
-    .orderBy(asc(appointments.date), asc(appointments.time))
+    .orderBy(asc(appointments.date), asc(appointments.time)),
+  // Cross-linked notes filed against a supplier — also surface in the Notes hub.
+  notes: await db
+    .select()
+    .from(notes)
+    .where(eq(notes.entityType, 'supplier'))
+    .orderBy(desc(notes.pinned), desc(notes.updatedAt), desc(notes.id))
 });
 
 export const actions: Actions = {

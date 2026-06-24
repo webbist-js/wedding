@@ -1,6 +1,8 @@
 <script lang="ts">
   import SectionHeading from '$lib/components/SectionHeading.svelte';
   import Rule from '$lib/components/Rule.svelte';
+  import Notes from '$lib/components/Notes.svelte';
+  import type { NoteRow } from '$lib/components/Notes.svelte';
   import { enhance } from '$app/forms';
   let { data } = $props();
 
@@ -11,6 +13,15 @@
     for (const a of data.appointments) {
       if (a.supplierId == null || a.date < todayISO) continue;
       (map[a.supplierId] ??= []).push(a);
+    }
+    return map;
+  });
+  // Cross-linked notes grouped by supplier id.
+  const notesBySupplier = $derived.by(() => {
+    const map: Record<number, NoteRow[]> = {};
+    for (const n of data.notes as NoteRow[]) {
+      if (n.entityId == null) continue;
+      (map[n.entityId] ??= []).push(n);
     }
     return map;
   });
@@ -42,6 +53,17 @@
         {/each}
         <a class="book" href={`/dashboard/calendar?supplier=${s.id}`}>+ Book appointment</a>
       </div>
+      <details class="notes-wrap" open={(notesBySupplier[s.id] ?? []).length > 0}>
+        <summary>Notes{(notesBySupplier[s.id] ?? []).length ? ` (${notesBySupplier[s.id].length})` : ''}</summary>
+        <Notes
+          notes={notesBySupplier[s.id] ?? []}
+          category="Suppliers"
+          entityType="supplier"
+          entityId={s.id}
+          compact
+          addLabel="Add note"
+        />
+      </details>
     </div>
   {/each}
   <form method="POST" action="?/add" use:enhance class="add"><button>+ Add supplier</button></form>
@@ -61,6 +83,9 @@
   .rowform .notes { flex: 1 1 200px; }
   .rowform button { background: var(--sage); color: #fff; border: 0; border-radius: 6px; padding: 6px 12px; font-size: 11px; text-transform: uppercase; cursor: pointer; }
   .rm { background: none; border: 0; color: var(--faint); font-size: 18px; cursor: pointer; }
+  .notes-wrap { margin-top: 10px; padding-left: 2px; }
+  .notes-wrap summary { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--sage-deep); cursor: pointer; margin-bottom: 8px; width: max-content; }
+  .notes-wrap summary:hover { text-decoration: underline; }
   .add { margin-top: 12px; }
   .add button { background: var(--sage); color: #fff; border: 0; border-radius: 6px; padding: 8px 14px; font-size: 11px; text-transform: uppercase; cursor: pointer; }
 </style>

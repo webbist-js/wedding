@@ -356,6 +356,59 @@ export const SEED_STATIONERY: string[] = [
   'Confetti cones / favour tags / cake topper'
 ];
 
+// Starter notes — the research that used to live as static cards on the Notes
+// page, now seeded into the editable notes table. Standalone (no entity link)
+// so they don't depend on supplier row ids matching across environments.
+export interface SeedNote {
+  body: string;
+  category: string;
+  pinned?: boolean;
+}
+
+export const SEED_NOTES: SeedNote[] = [
+  {
+    category: 'Venue',
+    pinned: true,
+    body:
+      'The Tithe Barn, Bolton Abbey (Cripps & Co). 16th-century Grade II* listed barn on the Bolton ' +
+      'Abbey Estate. Capacity 200 (ceremony & feast), 300 (drinks & dancing). Licensed for civil ' +
+      'ceremonies. Late licence to 1am, Funktion-One sound, underfloor heating, fire pits, dog-friendly.\n' +
+      'enquiries@crippsboltonabbey.com · +44 1756 631 000 · coordinator Laura'
+  },
+  {
+    category: 'Venue',
+    body:
+      'All food & drink is in-house — no external caterer. Book a Feast Night to taste & finalise the ' +
+      'menu. Quote changes allowed up to 6 weeks before.'
+  },
+  {
+    category: 'Venue',
+    body:
+      'Logistics once booked: the £50pp Event Fee includes the coordinator, all staff, crockery, linen, ' +
+      'décor, plus 3 canapés + 2 drinks per person. Final numbers 8 weeks before; final balance due 40 ' +
+      'days before (~21 Feb 2027) via GoCardless. Planning meeting ~9 months out. Access from 9am; ' +
+      'exclusive hire from 12.30pm. Full-day suppliers can have a meal at £25pp.'
+  },
+  {
+    category: 'Venue',
+    body:
+      'Venue rules — check the shopping list against these: confetti must be fresh petals only. No ' +
+      'fireworks, confetti cannons, Chinese lanterns, balloons or drones. Confirm whether sparklers are ' +
+      'allowed. No décor fixed to walls/beams; chair sashes OK, full covers not.'
+  },
+  {
+    category: 'Suppliers',
+    pinned: true,
+    body:
+      'Adam Lowndes — Photographer (booked). Stoke-on-Trent based, travels UK. Relaxed, personality-led ' +
+      'style. hello@adamlowndes.co.uk · 07527 547 073'
+  },
+  {
+    category: 'Suppliers',
+    body: "The venue's own gallery is shot by Hamish Irvine — the other name on the photographer shortlist."
+  }
+];
+
 export const SEED_SETTINGS: Record<string, string> = {
   target: '30000',
   dayGuests: '61',

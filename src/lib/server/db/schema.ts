@@ -128,3 +128,26 @@ export const settings = sqliteTable('settings', {
   key: text('key').primaryKey(),
   value: text('value').notNull()
 });
+
+// Free-form notes. A note always belongs to a `category` (the dashboard section
+// it's filed under in the Notes hub). It may optionally cross-link to a specific
+// row elsewhere in the dashboard via (entityType, entityId) — e.g. a note tied
+// to one supplier. That's the one-to-many bit: an entity (a supplier, a budget
+// line…) can have many notes, each of which also surfaces in the Notes hub under
+// its category. A null entityType is a standalone note filed under `category`.
+export const notes = sqliteTable('notes', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  body: text('body').notNull(),
+  // Section grouping in the Notes hub: General | Venue | Budget | Guests |
+  // Seating | Suppliers | Calendar | Timeline | Invites | Stationery.
+  category: text('category').notNull().default('General'),
+  // Cross-link to a dashboard entity. entityType names the section/table
+  // ('supplier' | 'budget' | 'guest_group' | 'timeline' | 'venue'…), entityId
+  // its row id. Both null for a standalone note.
+  entityType: text('entity_type'),
+  entityId: integer('entity_id'),
+  pinned: integer('pinned', { mode: 'boolean' }).notNull().default(false),
+  sort: integer('sort').notNull().default(0),
+  createdAt: integer('created_at', { mode: 'timestamp' }),
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
+});
