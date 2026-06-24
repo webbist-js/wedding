@@ -1,10 +1,13 @@
 <script lang="ts">
   import SectionHeading from '$lib/components/SectionHeading.svelte';
   import Rule from '$lib/components/Rule.svelte';
+  import FloorPlan from '$lib/components/FloorPlan.svelte';
   import { enhance } from '$app/forms';
   import { invalidateAll } from '$app/navigation';
-  import { TABLE_KINDS, kindLabel, kindShape, COUPLE } from '$lib/seating';
+  import { TABLE_KINDS, kindLabel, kindShape, seatPositions, initials, COUPLE } from '$lib/seating';
   let { data } = $props();
+
+  let tab = $state<'plan' | 'floor'>('plan');
 
   type Occ = {
     key: string;
@@ -47,34 +50,9 @@
 
   const kindEntries = Object.entries(TABLE_KINDS);
   const tableName = (t: { label: string | null; number: number }) => t.label || `Table ${t.number}`;
-  const initials = (name: string) =>
-    name.trim().split(/\s+/).map((w) => w[0]?.toUpperCase() ?? '').slice(0, 2).join('');
 
   function submitOnChange(e: Event) {
     (e.currentTarget as HTMLElement & { form: HTMLFormElement | null }).form?.requestSubmit();
-  }
-
-  // Seat coordinates (centre %, within the stage) for n seats of a given shape.
-  function seatPositions(shape: string, n: number): { x: number; y: number }[] {
-    const pos: { x: number; y: number }[] = [];
-    const spread = (i: number, count: number) => (count <= 1 ? 50 : 11 + (i * 78) / (count - 1));
-    if (shape === 'long') {
-      const top = Math.ceil(n / 2);
-      for (let i = 0; i < top; i++) pos.push({ x: spread(i, top), y: 14 });
-      for (let i = 0; i < n - top; i++) pos.push({ x: spread(i, n - top), y: 86 });
-      return pos;
-    }
-    if (shape === 'sweetheart') {
-      for (let i = 0; i < n; i++) pos.push({ x: n === 1 ? 50 : spread(i, n), y: 52 });
-      return pos;
-    }
-    const rx = shape === 'oval' ? 45 : 40;
-    const ry = shape === 'oval' ? 30 : 40;
-    for (let i = 0; i < n; i++) {
-      const a = ((-90 + (i * 360) / n) * Math.PI) / 180;
-      pos.push({ x: 50 + rx * Math.cos(a), y: 50 + ry * Math.sin(a) });
-    }
-    return pos;
   }
 
   // ---- Drag and drop ----
@@ -120,6 +98,14 @@
 
 <SectionHeading>Seating chart</SectionHeading><Rule />
 
+<div class="tabs">
+  <button class:active={tab === 'plan'} onclick={() => (tab = 'plan')}>Plan</button>
+  <button class:active={tab === 'floor'} onclick={() => (tab = 'floor')}>Floor plan</button>
+</div>
+
+{#if tab === 'floor'}
+  <FloorPlan tables={data.tables} {occupants} />
+{:else}
 <div class="ctrls">
   <form method="POST" action="?/setMode" use:enhance class="seg">
     <input type="hidden" name="seatMode" value={data.seatMode === 'day' ? 'all' : 'day'} />
@@ -194,8 +180,8 @@
           {#each kindEntries as [key]}<option value={key}>{kindLabel(key)}</option>{/each}
         </select>
         <label class="seats">seats<input name="seats" type="number" min="1" max="40" value={t.seats} onchange={submitOnChange} /></label>
-        <button class="rm-tbl" formaction="?/removeTable" title="Remove table"
-                onclick={(e) => { if (!confirm(`Remove ${tableName(t)}?`)) e.preventDefault(); }}>×</button>
+        <button class="rm-tbl" formaction="?/removeTable" title="Remove table (frees its guests)"
+                onclick={(e) => { if (!confirm(`Remove ${tableName(t)}? Anyone seated there moves back to unassigned.`)) e.preventDefault(); }}>×</button>
       </form>
 
       <div class={`stage ${shape}`}>
@@ -245,8 +231,14 @@
   {/each}
   {#if data.tables.length === 0}<p class="empty">No tables yet — add one above.</p>{/if}
 </div>
+{/if}
 
 <style>
+  .tabs { display: flex; gap: 6px; margin-bottom: 18px; }
+  .tabs button { background: transparent; border: 1px solid var(--line); color: var(--muted); border-radius: 999px;
+    padding: 7px 18px; font: inherit; font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; font-weight: 600; cursor: pointer; }
+  .tabs button.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
   .ctrls { display: flex; gap: 18px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
   .ctrls form { display: flex; gap: 8px; align-items: center; }
   .ctrls button { background: var(--sage); color: #fff; border: 0; border-radius: 6px; padding: 7px 12px; cursor: pointer; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }

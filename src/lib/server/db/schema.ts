@@ -117,7 +117,12 @@ export const seatingTables = sqliteTable('seating_tables', {
   label: text('label'),
   kind: text('kind').notNull().default('round'),
   seats: integer('seats').notNull().default(10),
-  sort: integer('sort').notNull().default(0)
+  sort: integer('sort').notNull().default(0),
+  // Floor-plan placement: position as a percentage of the room (0..100) and
+  // rotation in degrees. Null position = auto-arranged in a grid by the UI.
+  posX: real('pos_x'),
+  posY: real('pos_y'),
+  rotation: integer('rotation').notNull().default(0)
 });
 
 export const quoteLines = sqliteTable('quote_lines', {
