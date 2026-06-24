@@ -55,7 +55,7 @@
 				<button type="button" class="ghost" onclick={(e) => copyLink(r.url, e.currentTarget)}>
 					Copy
 				</button>
-				<a class="dl" href={r.qrPng} download={`qr-${r.slug}.png`}>Download QR</a>
+				<a class="dl" href={`/dashboard/invites/qr?token=${r.token}`} download={`qr-${r.slug}.png`}>Download QR</a>
 			</div>
 
 			<label class="msg">
@@ -71,11 +71,50 @@
 	{/each}
 </div>
 
+{#if data.pageCount > 1}
+	<nav class="pager" aria-label="Pages">
+		<a class="pg" class:disabled={data.page <= 1} href={`?page=${data.page - 1}`} aria-disabled={data.page <= 1}>← Prev</a>
+		<span class="pginfo">Page {data.page} of {data.pageCount} · {data.total} households</span>
+		<a class="pg" class:disabled={data.page >= data.pageCount} href={`?page=${data.page + 1}`} aria-disabled={data.page >= data.pageCount}>Next →</a>
+	</nav>
+{/if}
+
 <style>
 	.hint {
 		color: var(--body);
 		max-width: 560px;
 		margin-bottom: 24px;
+	}
+
+	.pager {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 18px;
+		margin-top: 28px;
+	}
+	.pager .pg {
+		border: 1px solid var(--line);
+		border-radius: 999px;
+		padding: 8px 16px;
+		font-size: 11px;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		font-weight: 600;
+		color: var(--sage-deep);
+		text-decoration: none;
+	}
+	.pager .pg:hover {
+		border-color: var(--sage);
+		background: var(--sage-soft);
+	}
+	.pager .pg.disabled {
+		opacity: 0.4;
+		pointer-events: none;
+	}
+	.pginfo {
+		font-size: 12px;
+		color: var(--muted);
 	}
 
 	.cards {

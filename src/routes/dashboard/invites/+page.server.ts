@@ -5,21 +5,27 @@ import { asc } from 'drizzle-orm';
 import { env } from '$env/dynamic/private';
 import QRCode from 'qrcode';
 
-export const load: PageServerLoad = async () => {
-	const base = env.PUBLIC_BASE_URL ?? 'http://localhost:5173';
-	const groups = await db.select().from(inviteGroups).orderBy(asc(inviteGroups.name));
+const PAGE_SIZE = 12;
+
+export const load: PageServerLoad = async ({ url }) => {
+	// Prefer the configured public URL; otherwise use the request origin so links
+	// are correct on whatever host we're served from (never hard-coded localhost in prod).
+	const base = env.PUBLIC_BASE_URL || url.origin;
+
+	const allGroups = await db.select().from(inviteGroups).orderBy(asc(inviteGroups.name));
+	const total = allGroups.length;
+	const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+	const page = Math.min(Math.max(1, Number(url.searchParams.get('page') ?? 1)), pageCount);
+	const groups = allGroups.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
 	const allGuests = await db.select().from(guests);
+	// Only the lightweight inline SVG is rendered per card; the print-resolution
+	// PNG is generated on demand by /dashboard/invites/qr (keeps this load fast).
 	const rows = await Promise.all(
 		groups.map(async (g) => {
 			const members = allGuests.filter((m) => m.groupId === g.id);
-			const url = `${base}/rsvp/${g.token}`;
-			const qr = await QRCode.toString(url, { type: 'svg', margin: 1, width: 160 });
-			// Higher-resolution PNG for the download button (print-ready).
-			const qrPng = await QRCode.toDataURL(url, {
-				width: 1024,
-				margin: 1,
-				errorCorrectionLevel: 'M'
-			});
+			const rsvpUrl = `${base}/rsvp/${g.token}`;
+			const qr = await QRCode.toString(rsvpUrl, { type: 'svg', margin: 1, width: 160 });
 			const slug =
 				g.name
 					.toLowerCase()
@@ -30,11 +36,11 @@ export const load: PageServerLoad = async () => {
 			const responded = members.filter((m) => m.rsvpStatus !== 'pending').length;
 			return {
 				id: g.id,
+				token: g.token,
 				name: g.name,
 				personalMessage: g.personalMessage ?? '',
-				url,
+				url: rsvpUrl,
 				qr,
-				qrPng,
 				slug,
 				members,
 				responded,
@@ -42,5 +48,6 @@ export const load: PageServerLoad = async () => {
 			};
 		})
 	);
-	return { rows };
+
+	return { rows, page, pageCount, total, pageSize: PAGE_SIZE };
 };
