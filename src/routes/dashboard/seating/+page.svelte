@@ -1,6 +1,4 @@
 <script lang="ts">
-  import SectionHeading from '$lib/components/SectionHeading.svelte';
-  import Rule from '$lib/components/Rule.svelte';
   import FloorPlan from '$lib/components/FloorPlan.svelte';
   import { enhance } from '$app/forms';
   import { invalidateAll } from '$app/navigation';
@@ -96,7 +94,6 @@
   {:else}<span class="pill both">Both</span>{/if}
 {/snippet}
 
-<SectionHeading>Seating chart</SectionHeading><Rule />
 
 <div class="tabs">
   <button class:active={tab === 'plan'} onclick={() => (tab = 'plan')}>Plan</button>

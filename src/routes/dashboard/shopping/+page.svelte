@@ -1,6 +1,4 @@
 <script lang="ts">
-  import SectionHeading from '$lib/components/SectionHeading.svelte';
-  import Rule from '$lib/components/Rule.svelte';
   import { enhance } from '$app/forms';
   let { data } = $props();
 
@@ -19,7 +17,6 @@
   }
 </script>
 
-<SectionHeading>Shopping list</SectionHeading><Rule />
 
 <div class="stats">
   <div class="stat"><div class="v">{data.items.length}</div><div class="l">Items</div></div>

@@ -1,6 +1,4 @@
 <script lang="ts">
-  import SectionHeading from '$lib/components/SectionHeading.svelte';
-  import Rule from '$lib/components/Rule.svelte';
   import { enhance } from '$app/forms';
   import { invalidateAll } from '$app/navigation';
   let { data } = $props();
@@ -67,7 +65,7 @@
   }
 </script>
 
-<SectionHeading>Timeline</SectionHeading><Rule />
+<div class="phase-grid">
 {#each data.phases as phase (phase.id)}
   <div
     class="phase"
@@ -116,17 +114,23 @@
     </form>
   </div>
 {/each}
+</div>
 <form method="POST" action="?/addPhase" use:enhance class="addphase">
   <input name="title" placeholder="New phase title" /><input name="window" placeholder="Window (e.g. Spring 2027)" /><button>+ Add phase</button>
 </form>
 
 <style>
-  .phase { margin-bottom: 26px; padding-top: 4px; border-top: 2px solid transparent; transition: border-color .12s ease; }
+  .phase-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; align-items: start; }
+  .phase {
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 18px 20px; border-top: 2px solid var(--line);
+    transition: border-color .12s ease;
+  }
   .phase.drop-over { border-top-color: var(--sage); }
-  .head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px; cursor: grab; }
+  .head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; cursor: grab; flex-wrap: wrap; }
   .head:active { cursor: grabbing; }
-  .head .t { font-family: var(--serif); font-weight: 600; font-size: 20px; color: var(--ink); }
-  .head .w { letter-spacing: .14em; text-transform: uppercase; font-size: 11px; color: var(--sage); }
+  .head .t { font-family: var(--sans); font-weight: 700; font-size: 16px; color: var(--ink); }
+  .head .w { letter-spacing: .14em; text-transform: uppercase; font-size: 10.5px; color: var(--sage); margin-left: auto; }
   .grip { color: var(--faint); font-size: 14px; cursor: grab; user-select: none; line-height: 1; }
   .grip:active { cursor: grabbing; }
   .item { display: flex; gap: 12px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--line2); border-top: 2px solid transparent; transition: border-color .12s ease, background-color .12s ease; }

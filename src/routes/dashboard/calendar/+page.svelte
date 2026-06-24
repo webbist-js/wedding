@@ -1,6 +1,4 @@
 <script lang="ts">
-	import SectionHeading from '$lib/components/SectionHeading.svelte';
-	import Rule from '$lib/components/Rule.svelte';
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	let { data } = $props();
@@ -59,8 +57,6 @@
 	const past = $derived(data.appointments.filter((a) => a.date < todayISO));
 </script>
 
-<SectionHeading>Calendar</SectionHeading>
-<Rule />
 
 <!-- ===== Month grid ===== -->
 <div class="cal-head">

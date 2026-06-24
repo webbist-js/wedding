@@ -1,6 +1,4 @@
 <script lang="ts">
-	import SectionHeading from '$lib/components/SectionHeading.svelte';
-	import Rule from '$lib/components/Rule.svelte';
 	import Pill from '$lib/components/Pill.svelte';
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
@@ -68,7 +66,6 @@
 	}
 </script>
 
-<SectionHeading>Budget</SectionHeading><Rule />
 
 <div class="stats">
 	<form method="POST" action="?/setTarget" use:enhance class="stat stat-edit">

@@ -1,6 +1,4 @@
 <script lang="ts">
-	import SectionHeading from '$lib/components/SectionHeading.svelte';
-	import Rule from '$lib/components/Rule.svelte';
 	import Notes from '$lib/components/Notes.svelte';
 	import type { NoteRow } from '$lib/components/Notes.svelte';
 	import { NOTE_CATEGORIES } from '$lib/notes';
@@ -26,8 +24,6 @@
 	let newCategory = $state<string>('General');
 </script>
 
-<SectionHeading>Notes</SectionHeading>
-<Rule />
 
 <p class="lead">
 	{total} note{total === 1 ? '' : 's'}{pinned ? ` · ${pinned} pinned` : ''}. Notes added against a

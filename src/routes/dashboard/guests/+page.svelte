@@ -1,6 +1,4 @@
 <script lang="ts">
-	import SectionHeading from '$lib/components/SectionHeading.svelte';
-	import Rule from '$lib/components/Rule.svelte';
 	import Stat from '$lib/components/Stat.svelte';
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
@@ -84,7 +82,6 @@
 	}
 </script>
 
-<SectionHeading>Guest list</SectionHeading><Rule />
 
 <div class="stats">
 	<Stat value={String(data.summary.total)} label="Total" />

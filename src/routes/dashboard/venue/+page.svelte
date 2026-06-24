@@ -1,6 +1,4 @@
 <script lang="ts">
-  import SectionHeading from '$lib/components/SectionHeading.svelte';
-  import Rule from '$lib/components/Rule.svelte';
   import { computeQuote, lineQty } from '$lib/quote';
   let { data } = $props();
   let day = $state(data.day),
@@ -39,7 +37,6 @@
   }
 </script>
 
-<SectionHeading>Venue quote</SectionHeading><Rule />
 <div class="ctrls">
   <label>Day guests <input type="number" bind:value={day} onchange={() => saveSetting('dayGuests', day)} /></label>
   <label>Evening guests <input type="number" bind:value={eve} onchange={() => saveSetting('eveGuests', eve)} /></label>

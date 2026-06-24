@@ -4,6 +4,10 @@
   --sage: #6f7d59; --sage-deep: #51603f; --sage-soft: #eef1e7;
   --terra: #b05c3f; --terra-bg: #faf0ea; --tan: #c2a18a; --rule: #cbbd9e;
   --rose: #c08a86; --rose-bg: #f6ecea;
+  --lilac: #7e74a8; --lilac-bg: #efebf5;
+  /* Dashboard sidebar shell */
+  --sidebar: #26251f; --sidebar-soft: #34332b; --sidebar-line: #3a392f;
+  --sidebar-text: #b8b4a6; --sidebar-faint: #807c70; --sidebar-active: #f4f1e8;
   --serif: 'Cormorant Garamond', Georgia, serif;
   --sans: 'Inter', system-ui, sans-serif;
   --script: 'Style Script', cursive;

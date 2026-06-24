@@ -1,5 +1,5 @@
 <script lang="ts">
-  let { tone = 'neut', children } = $props(); // neut|green|rose|tan|terra
+  let { tone = 'neut', children } = $props(); // neut|green|rose|tan|terra|lilac
 </script>
 <span class="pill {tone}">{@render children()}</span>
 <style>
@@ -10,4 +10,5 @@
   .rose { background: var(--rose-bg); color: var(--rose); }
   .tan { background: #f0e8da; color: #9a7b53; }
   .terra { background: var(--terra-bg); color: var(--terra); }
+  .lilac { background: var(--lilac-bg); color: var(--lilac); }
 </style>

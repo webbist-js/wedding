@@ -1,6 +1,4 @@
 <script lang="ts">
-	import SectionHeading from '$lib/components/SectionHeading.svelte';
-	import Rule from '$lib/components/Rule.svelte';
 	let { data } = $props();
 
 	async function saveMessage(id: number, message: string) {
@@ -25,7 +23,6 @@
 	}
 </script>
 
-<SectionHeading>Invites &amp; QR codes</SectionHeading><Rule />
 <p class="hint">
 	One card per household. Add a personal note for each (it shows at the top of their RSVP page),
 	share the link, or download the QR code as a PNG for the printed save-the-dates.

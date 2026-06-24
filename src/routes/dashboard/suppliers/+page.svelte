@@ -1,6 +1,4 @@
 <script lang="ts">
-  import SectionHeading from '$lib/components/SectionHeading.svelte';
-  import Rule from '$lib/components/Rule.svelte';
   import Notes from '$lib/components/Notes.svelte';
   import type { NoteRow } from '$lib/components/Notes.svelte';
   import { enhance } from '$app/forms';
@@ -29,7 +27,6 @@
     new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 </script>
 
-<SectionHeading>Suppliers</SectionHeading><Rule />
 <div class="card">
   {#each data.suppliers as s (s.id)}
     <div class="supplier">
