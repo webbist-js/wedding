@@ -3,6 +3,7 @@
 	import Rule from '$lib/components/Rule.svelte';
 	import Stat from '$lib/components/Stat.svelte';
 	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
 	let { data } = $props();
 
 	let q = $state('');
@@ -36,6 +37,33 @@
 			if (!confirm(message)) e.preventDefault();
 		};
 	}
+
+	// Relationship-group dropdown. The "+ New group…" sentinel prompts for a fresh
+	// group name; we reload so it persists and appears as an option everywhere.
+	const NEW_GROUP = '__new__';
+	async function onRelChange(memberId: number, current: string, e: Event) {
+		const sel = e.currentTarget as HTMLSelectElement;
+		const v = sel.value;
+		if (v === NEW_GROUP) {
+			const name = window.prompt('New relationship group name:')?.trim();
+			sel.value = current; // restore until the reload confirms the change
+			if (!name) return;
+			await save('guest', memberId, 'relationshipGroup', name);
+			await invalidateAll();
+			return;
+		}
+		await save('guest', memberId, 'relationshipGroup', v);
+	}
+
+	// Add-household modal.
+	let showAdd = $state(false);
+	let addName = $state('');
+	function openAdd() {
+		showAdd = true;
+	}
+	function closeAdd() {
+		showAdd = false;
+	}
 </script>
 
 <SectionHeading>Guest list</SectionHeading><Rule />
@@ -49,16 +77,8 @@
 
 <div class="ctrls">
 	<input class="srch" bind:value={q} placeholder="Search households or names…" />
-	<form method="POST" action="?/addGroup" use:enhance>
-		<button type="submit" class="btn primary">+ Add household</button>
-	</form>
+	<button type="button" class="btn primary" onclick={openAdd}>+ Add household</button>
 </div>
-
-<datalist id="rel-groups">
-	{#each data.relationshipGroups as rg}
-		<option value={rg}></option>
-	{/each}
-</datalist>
 
 {#each filtered as h (h.id)}
 	{@const replied = h.members.filter((m) => m.rsvpStatus !== 'pending').length}
@@ -149,12 +169,19 @@
 						<option value="B">Bride</option>
 						<option value="X">Both</option>
 					</select>
-					<input
-						list="rel-groups"
+					<select
+						class="rel-sel"
 						value={m.relationshipGroup}
-						placeholder="Group"
-						onchange={(e) => save('guest', m.id, 'relationshipGroup', e.currentTarget.value)}
-					/>
+						onchange={(e) => onRelChange(m.id, m.relationshipGroup, e)}
+					>
+						{#each data.relationshipGroups as rg}
+							<option value={rg}>{rg}</option>
+						{/each}
+						{#if !data.relationshipGroups.includes(m.relationshipGroup)}
+							<option value={m.relationshipGroup}>{m.relationshipGroup}</option>
+						{/if}
+						<option value={NEW_GROUP}>+ New group…</option>
+					</select>
 					<input
 						value={m.relation ?? ''}
 						placeholder="—"
@@ -226,6 +253,77 @@
 		</div>
 	</section>
 {/each}
+
+{#if showAdd}
+	<div
+		class="overlay"
+		role="presentation"
+		onclick={(e) => {
+			if (e.target === e.currentTarget) closeAdd();
+		}}
+	>
+		<div class="modal" role="dialog" aria-modal="true" aria-label="Add household">
+			<h2>Add household</h2>
+			<form
+				method="POST"
+				action="?/addGroup"
+				use:enhance={() => {
+					return async ({ result, update }) => {
+						if (result.type === 'success') {
+							q = addName.trim(); // filter the list straight to the new household
+							showAdd = false;
+							addName = '';
+							await update();
+						} else {
+							await update();
+						}
+					};
+				}}
+			>
+				<label class="f">
+					<span>Household name *</span>
+					<input name="name" bind:value={addName} placeholder="e.g. The Smiths" required />
+				</label>
+
+				<div class="grid2">
+					<label class="f">
+						<span>First guest (optional)</span>
+						<input name="firstGuest" placeholder="Add one guest now…" />
+					</label>
+					<label class="f">
+						<span>Side</span>
+						<select name="side">
+							<option value="X">Both</option>
+							<option value="B">Bride</option>
+							<option value="G">Groom</option>
+						</select>
+					</label>
+				</div>
+
+				<label class="f">
+					<span>Address</span>
+					<textarea name="address" rows="2" placeholder="Postal address for invitations…"></textarea>
+				</label>
+
+				<div class="grid2">
+					<label class="f">
+						<span>Email</span>
+						<input name="email" type="email" placeholder="—" />
+					</label>
+					<label class="f">
+						<span>Phone</span>
+						<input name="phone" placeholder="—" />
+					</label>
+				</div>
+
+				<div class="modal-actions">
+					<button type="button" class="btn ghost" onclick={closeAdd}>Cancel</button>
+					<button type="submit" class="btn primary" disabled={!addName.trim()}>Add household</button>
+				</div>
+			</form>
+		</div>
+	</div>
+{/if}
 
 <style>
 	.stats {
@@ -491,6 +589,82 @@
 		}
 		.members .row.head {
 			display: none;
+		}
+	}
+
+	/* ---------------- Add-household modal ---------------- */
+	.overlay {
+		position: fixed;
+		inset: 0;
+		background: rgba(33, 31, 26, 0.4);
+		display: grid;
+		place-items: center;
+		padding: 20px;
+		z-index: 100;
+	}
+	.modal {
+		background: var(--card);
+		border: 1px solid var(--line);
+		border-radius: 16px;
+		padding: 24px 24px 20px;
+		width: 100%;
+		max-width: 520px;
+		box-shadow: 0 24px 60px rgba(33, 31, 26, 0.22);
+		max-height: 90vh;
+		overflow: auto;
+	}
+	.modal h2 {
+		font-family: var(--serif);
+		font-weight: 600;
+		font-size: 24px;
+		margin: 0 0 16px;
+		color: var(--ink);
+	}
+	.modal .f {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		margin-bottom: 12px;
+	}
+	.modal .f > span {
+		font-size: 9.5px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--muted);
+		font-weight: 600;
+	}
+	.modal input,
+	.modal select,
+	.modal textarea {
+		border: 1px solid var(--line);
+		border-radius: 8px;
+		padding: 9px 11px;
+		font: inherit;
+		font-size: 14px;
+		background: #fff;
+		color: var(--ink);
+		width: 100%;
+		box-sizing: border-box;
+		resize: vertical;
+	}
+	.modal .grid2 {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 12px;
+	}
+	.modal-actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: 10px;
+		margin-top: 16px;
+	}
+	.modal .btn:disabled {
+		opacity: 0.5;
+		cursor: default;
+	}
+	@media (max-width: 520px) {
+		.modal .grid2 {
+			grid-template-columns: 1fr;
 		}
 	}
 </style>

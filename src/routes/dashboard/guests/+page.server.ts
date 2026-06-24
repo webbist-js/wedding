@@ -27,7 +27,31 @@ export const actions: Actions = {
 	addGroup: async ({ request }) => {
 		const f = await request.formData();
 		const name = String(f.get('name') ?? '').trim() || 'New household';
-		await db.insert(inviteGroups).values({ name, token: makeToken() });
+		const address = String(f.get('address') ?? '').trim() || null;
+		const email = String(f.get('email') ?? '').trim() || null;
+		const phone = String(f.get('phone') ?? '').trim() || null;
+		const firstGuest = String(f.get('firstGuest') ?? '').trim();
+		const sideRaw = String(f.get('side') ?? 'X');
+		const side = sideRaw === 'G' || sideRaw === 'B' || sideRaw === 'X' ? sideRaw : 'X';
+
+		const [row] = await db
+			.insert(inviteGroups)
+			.values({ name, token: makeToken(), address, email, phone })
+			.returning({ id: inviteGroups.id });
+
+		if (firstGuest) {
+			await db.insert(guests).values({
+				groupId: row.id,
+				name: firstGuest,
+				side,
+				relationshipGroup: 'Other',
+				attendanceType: 'day',
+				isChild: false,
+				isPlusOne: false
+			});
+		}
+
+		return { added: row.id, name };
 	},
 	removeGroup: async ({ request }) => {
 		const f = await request.formData();
