@@ -2,7 +2,7 @@ import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db/index';
 import { guests, seatAssignments, seatingTables, settings } from '$lib/server/db/schema';
 import { asc, eq } from 'drizzle-orm';
-import { TABLE_KINDS, isTableKind } from '$lib/seating';
+import { TABLE_KINDS, isTableKind, COUPLE } from '$lib/seating';
 import {
 	setSetting,
 	parseCoupleSeat,
@@ -108,5 +108,41 @@ export const actions: Actions = {
 		await db.delete(seatAssignments);
 		await setSetting('seatBride', '');
 		await setSetting('seatGroom', '');
+	},
+
+	// Seat every unassigned guest/couple member into the next table with a free
+	// seat, in table order. Existing assignments are left untouched.
+	autofill: async () => {
+		const setRows = await db.select().from(settings);
+		const s = Object.fromEntries(setRows.map((r) => [r.key, r.value]));
+		const mode = s.seatMode ?? 'day';
+
+		const allG = await db.select().from(guests);
+		const seats = await db.select().from(seatAssignments);
+		const seated = new Set(seats.map((x) => x.guestId));
+		const tables = await db
+			.select()
+			.from(seatingTables)
+			.orderBy(asc(seatingTables.sort), asc(seatingTables.number));
+
+		const queue: Occupant[] = [];
+		for (const g of allG) {
+			if (g.rsvpStatus !== 'yes') continue;
+			if (mode === 'day' && g.attendanceType !== 'day') continue;
+			if (!seated.has(g.id)) queue.push({ kind: 'guest', id: g.id });
+		}
+		for (const c of COUPLE) {
+			if (!s[c.settingKey]) queue.push({ kind: 'couple', key: c.key });
+		}
+
+		for (const occ of queue) {
+			for (const t of tables) {
+				const free = await firstFreeSeat(t.number);
+				if (free != null) {
+					await placeOccupant(occ, t.number, free);
+					break;
+				}
+			}
+		}
 	}
 };
