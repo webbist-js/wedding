@@ -64,6 +64,24 @@
 	function closeAdd() {
 		showAdd = false;
 	}
+
+	// <main> carries a persistent load-animation transform, which makes it the
+	// containing block for position:fixed children — so the modal would centre
+	// on the list, not the viewport. Reparent it to the SvelteKit app root (the
+	// topmost child of <body>): outside <main>, but still inside Svelte's event-
+	// delegation root so backdrop/cancel clicks keep firing.
+	function portal(node: HTMLElement) {
+		let root: HTMLElement = node;
+		while (root.parentElement && root.parentElement !== document.body) {
+			root = root.parentElement;
+		}
+		root.appendChild(node);
+		return {
+			destroy() {
+				node.remove();
+			}
+		};
+	}
 </script>
 
 <SectionHeading>Guest list</SectionHeading><Rule />
@@ -258,6 +276,7 @@
 	<div
 		class="overlay"
 		role="presentation"
+		use:portal
 		onclick={(e) => {
 			if (e.target === e.currentTarget) closeAdd();
 		}}
