@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
 
+	export interface NoteComment {
+		id: number;
+		body: string;
+		authorName?: string | null;
+		updatedAt: Date | string | number | null;
+	}
 	export interface NoteRow {
 		id: number;
 		body: string;
@@ -12,6 +18,9 @@
 		// Optional, supplied by the hub so the note can link back to where it was flagged.
 		contextLabel?: string | null;
 		contextHref?: string | null;
+		authorName?: string | null;
+		lastEditedByName?: string | null;
+		comments?: NoteComment[];
 	}
 
 	let {
@@ -77,6 +86,20 @@
 		await post({ op: 'delete', id });
 	}
 
+	let openComments = $state<Record<number, boolean>>({});
+	let commentDraft = $state<Record<number, string>>({});
+
+	async function addComment(noteId: number) {
+		const body = (commentDraft[noteId] ?? '').trim();
+		if (!body) return;
+		await post({ op: 'comment.create', noteId, body });
+		commentDraft[noteId] = '';
+	}
+	async function removeComment(id: number) {
+		if (!confirm('Delete this comment?')) return;
+		await post({ op: 'comment.delete', id });
+	}
+
 	const fmt = (d: NoteRow['updatedAt']) => {
 		if (!d) return '';
 		const date = d instanceof Date ? d : new Date(d);
@@ -102,7 +125,7 @@
 							{#if n.contextHref}<a class="ctx" href={n.contextHref}>{n.contextLabel}</a>{:else}<span class="ctx">{n.contextLabel}</span>{/if}
 							·
 						{/if}
-						{fmt(n.updatedAt)}
+						{n.authorName ? n.authorName : 'Imported'}{n.lastEditedByName && n.lastEditedByName !== n.authorName ? ` · edited by ${n.lastEditedByName}` : ''} · {fmt(n.updatedAt)}
 					</span>
 					<span class="acts">
 						<button class="link" title={n.pinned ? 'Unpin' : 'Pin'} onclick={() => togglePin(n)}>
@@ -110,8 +133,26 @@
 						</button>
 						<button class="link" onclick={() => startEdit(n)}>Edit</button>
 						<button class="link danger" onclick={() => remove(n.id)}>Delete</button>
+						<button class="link" onclick={() => (openComments[n.id] = !openComments[n.id])}>Comments{(n.comments?.length ?? 0) ? ` (${n.comments?.length})` : ''}</button>
 					</span>
 				</div>
+					{#if openComments[n.id]}
+						<div class="thread">
+							{#each n.comments ?? [] as c (c.id)}
+								<div class="comment">
+									<p>{c.body}</p>
+									<div class="cfoot">
+										<span>{c.authorName ?? 'Imported'} · {fmt(c.updatedAt)}</span>
+										<button class="link danger" onclick={() => removeComment(c.id)}>Delete</button>
+									</div>
+								</div>
+							{/each}
+							<div class="add">
+								<textarea bind:value={commentDraft[n.id]} rows="1" placeholder="Add a comment…"></textarea>
+								<button class="mini primary" disabled={busy || !(commentDraft[n.id] ?? '').trim()} onclick={() => addComment(n.id)}>Comment</button>
+							</div>
+						</div>
+					{/if}
 			{/if}
 		</div>
 	{/each}
@@ -222,6 +263,29 @@
 	.mini:disabled {
 		opacity: 0.5;
 		cursor: default;
+	}
+	.thread {
+		margin-top: 8px;
+		padding-top: 8px;
+		border-top: 1px dashed var(--line);
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+	.comment p {
+		margin: 0;
+		font-size: 12.5px;
+		line-height: 1.45;
+		white-space: pre-wrap;
+	}
+	.cfoot {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 8px;
+		font-size: 10.5px;
+		color: var(--muted);
+		margin-top: 2px;
 	}
 	.compact .note {
 		padding: 8px 10px;
