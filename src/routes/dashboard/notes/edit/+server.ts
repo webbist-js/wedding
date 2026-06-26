@@ -64,6 +64,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	if (op === 'delete') {
 		const id = Number(data.id);
 		if (!id) throw error(400, 'bad id');
+		// Remove child comments first — note_comments.note_id references notes(id)
+		// and libSQL enforces the FK, so the parent can't be deleted while they exist.
+		await db.delete(noteComments).where(eq(noteComments.noteId, id));
 		await db.delete(notes).where(eq(notes.id, id));
 		await recordAudit(locals, { action: 'delete', entity: 'note', entityId: id, summary: 'Deleted a note' });
 		return json({ ok: true });
