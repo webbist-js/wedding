@@ -7,7 +7,7 @@ import { env } from '$env/dynamic/private';
 import { notifySupplierBooked } from '$lib/server/slack';
 import { recordAudit } from '$lib/server/audit';
 
-const TEXT = new Set(['category', 'name', 'contact', 'phone', 'email', 'website', 'address', 'stage', 'followUpDate', 'description', 'notes']);
+const TEXT = new Set(['category', 'name', 'contact', 'phone', 'email', 'website', 'address', 'stage', 'followUpDate']);
 const NUM = new Set(['quotedAmount', 'depositAmount', 'priority']);
 const BOOL = new Set(['depositPaid']);
 

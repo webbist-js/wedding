@@ -29,8 +29,6 @@
   const stageTone = (s: string) =>
     s === 'Booked' ? 'green' : s === 'Shortlisted' || s === 'Quoted' ? 'tan' : 'neut';
 
-  let openNotes = $state<Record<number, boolean>>({});
-
   async function save(id: number, field: string, value: unknown) {
     await fetch('/dashboard/vendors/edit', {
       method: 'POST',
@@ -85,9 +83,6 @@
         Deposit paid — booked &amp; chosen supplier
       </label>
 
-      <textarea class="desc" rows="2" placeholder="Notes, quote details, what they offer…"
-        value={v.description ?? ''} onchange={(e) => save(v.id, 'description', e.currentTarget.value)}></textarea>
-
       <div class="actions">
         {#each apptsByVendor[v.id] ?? [] as a (a.id)}
           <a class="chip booked-chip" href="/dashboard/calendar" title={a.title}>
@@ -95,16 +90,12 @@
           </a>
         {/each}
         <a class="chip dashed" href={`/dashboard/calendar?supplier=${v.id}`}>{@render calIcon()} Book appointment</a>
-        <button class="chip" onclick={() => (openNotes[v.id] = !openNotes[v.id])}>
-          {@render noteIcon()} Notes{(notesByVendor[v.id] ?? []).length ? ` · ${notesByVendor[v.id].length}` : ''}
-        </button>
       </div>
 
-      {#if openNotes[v.id] || (notesByVendor[v.id] ?? []).length}
-        <div class="notes-area">
-          <Notes notes={notesByVendor[v.id] ?? []} category="Suppliers" entityType="vendor" entityId={v.id} compact addLabel="Add note" />
-        </div>
-      {/if}
+      <div class="notes-area">
+        <p class="notes-head">{@render noteIcon()} Notes{(notesByVendor[v.id] ?? []).length ? ` · ${notesByVendor[v.id].length}` : ''}</p>
+        <Notes notes={notesByVendor[v.id] ?? []} category="Suppliers" entityType="vendor" entityId={v.id} compact addLabel="Add note" />
+      </div>
     </article>
   {/each}
 
@@ -143,7 +134,6 @@
   .grid input, .grid select { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font: inherit; font-size: 13px; background: #fff; min-width: 0; }
 
   .deposit-toggle { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 13px; color: var(--body); cursor: pointer; }
-  .desc { display: block; width: 100%; margin-top: 12px; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font: inherit; font-size: 13px; resize: vertical; box-sizing: border-box; }
 
   .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line2); }
   .chip { display: inline-flex; align-items: center; gap: 6px; background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 6px 13px; font: inherit; font-size: 10.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--sage-deep); text-decoration: none; cursor: pointer; }
@@ -154,6 +144,8 @@
   .booked-chip:hover { border-color: var(--terra); background: var(--terra-bg); }
 
   .notes-area { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line2); }
+  .notes-head { display: flex; align-items: center; gap: 6px; margin: 0 0 10px; font-size: 10.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--sage-deep); font-weight: 600; }
+  .notes-head :global(.ico) { flex: none; }
 
   .add { margin-top: 4px; }
   .add button { background: var(--sage); color: #fff; border: 0; border-radius: 8px; padding: 9px 16px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; cursor: pointer; }

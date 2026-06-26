@@ -36,7 +36,6 @@ export interface SeedVendor {
   contact?: string;
   stage: string;
   depositPaid?: boolean;
-  notes?: string;
 }
 
 export interface SeedPhase {
@@ -210,22 +209,22 @@ export const SEED_QUOTE: SeedQuoteLine[] = [
 ];
 
 export const SEED_VENDORS: SeedVendor[] = [
-  { category: 'Venue & Catering', name: 'The Tithe Barn', contact: 'Laura · 01756 631000', stage: 'Booked', depositPaid: true, notes: 'Deposit paid. All food in-house. Dog-friendly.' },
-  { category: 'Registrar', name: 'North Yorkshire (Skipton)', contact: 'registrars.skipton@northyorks.gov.uk', stage: 'Booked', depositPaid: true, notes: '£50 deposit · ref 149599481 · ceremony 2.30pm' },
-  { category: 'Photographer', name: 'Adam Lowndes', contact: 'hello@adamlowndes.co.uk', stage: 'Booked', depositPaid: true, notes: 'Confirmed' },
-  { category: 'Photographer (alt)', name: 'Hamish Irvine', contact: 'info@hamishirvine.com', stage: 'Shortlisted', notes: "Shoots the venue's own gallery" },
-  { category: 'Florist', name: 'Bureau Botany / Flowers in my Head / Yorkshire Floral Co', contact: 'hello@bureaubotany.co.uk', stage: 'Shortlisted', notes: 'Shortlist — to book' },
-  { category: 'Music / DJ', name: 'Mark Green / Dom Wood', contact: '07865 050212', stage: 'Shortlisted', notes: 'Shortlist — to book' },
-  { category: 'Hair & Makeup', name: 'Immy May', contact: 'immymay.co.uk', stage: 'Shortlisted', notes: 'Book + trial' },
-  { category: 'Cake', name: 'Little Cake', contact: 'littlecake.co.uk', stage: 'Shortlisted', notes: 'Shortlist' },
-  { category: 'Transport', name: 'Yorkshire Wedding Car Co', contact: '—', stage: 'Shortlisted', notes: 'Shortlist' },
-  { category: 'Accommodation', name: 'The Devonshire Arms', contact: '01756 718111', stage: 'Shortlisted', notes: 'Guest block-booking' },
-  { category: 'Wedding rings', name: "Forge & Lumber (Alex) + Katie's", contact: 'info@forgeandlumber.com', stage: 'Booked', depositPaid: true, notes: "Alex: £240, size P. Katie's bought. Both complete." },
-  { category: 'Confetti', name: 'Wedfetti / Confetti Bee', contact: '—', stage: 'Shortlisted', notes: 'Fresh petals only (venue rule)' },
-  { category: 'Dog handler', name: 'Yorkshire Paws & Co', contact: '—', stage: 'Lead', notes: 'Optional — for Bodie' },
-  { category: 'Magician', name: 'Oliver Parker (Leeds Magician)', contact: '—', stage: 'Lead', notes: 'Maybe' },
-  { category: 'Attire', name: 'Stacees / Azazie (bridesmaids), groomsmen, Bodie outfit', contact: '—', stage: 'Lead', notes: 'Dusty rose theme' },
-  { category: 'Stationery / Favours / Décor', name: '—', contact: '—', stage: 'Lead', notes: 'To research' }
+  { category: 'Venue & Catering', name: 'The Tithe Barn', contact: 'Laura · 01756 631000', stage: 'Booked', depositPaid: true },
+  { category: 'Registrar', name: 'North Yorkshire (Skipton)', contact: 'registrars.skipton@northyorks.gov.uk', stage: 'Booked', depositPaid: true },
+  { category: 'Photographer', name: 'Adam Lowndes', contact: 'hello@adamlowndes.co.uk', stage: 'Booked', depositPaid: true },
+  { category: 'Photographer (alt)', name: 'Hamish Irvine', contact: 'info@hamishirvine.com', stage: 'Shortlisted' },
+  { category: 'Florist', name: 'Bureau Botany / Flowers in my Head / Yorkshire Floral Co', contact: 'hello@bureaubotany.co.uk', stage: 'Shortlisted' },
+  { category: 'Music / DJ', name: 'Mark Green / Dom Wood', contact: '07865 050212', stage: 'Shortlisted' },
+  { category: 'Hair & Makeup', name: 'Immy May', contact: 'immymay.co.uk', stage: 'Shortlisted' },
+  { category: 'Cake', name: 'Little Cake', contact: 'littlecake.co.uk', stage: 'Shortlisted' },
+  { category: 'Transport', name: 'Yorkshire Wedding Car Co', contact: '—', stage: 'Shortlisted' },
+  { category: 'Accommodation', name: 'The Devonshire Arms', contact: '01756 718111', stage: 'Shortlisted' },
+  { category: 'Wedding rings', name: "Forge & Lumber (Alex) + Katie's", contact: 'info@forgeandlumber.com', stage: 'Booked', depositPaid: true },
+  { category: 'Confetti', name: 'Wedfetti / Confetti Bee', contact: '—', stage: 'Shortlisted' },
+  { category: 'Dog handler', name: 'Yorkshire Paws & Co', contact: '—', stage: 'Lead' },
+  { category: 'Magician', name: 'Oliver Parker (Leeds Magician)', contact: '—', stage: 'Lead' },
+  { category: 'Attire', name: 'Stacees / Azazie (bridesmaids), groomsmen, Bodie outfit', contact: '—', stage: 'Lead' },
+  { category: 'Stationery / Favours / Décor', name: '—', contact: '—', stage: 'Lead' }
 ];
 
 export const SEED_TIMELINE: SeedPhase[] = [

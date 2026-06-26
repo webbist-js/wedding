@@ -218,7 +218,6 @@ export async function seed(): Promise<void> {
 				contact: v.contact ?? null,
 				stage: v.stage,
 				depositPaid: v.depositPaid ?? false,
-				notes: v.notes ?? null,
 				sort: i
 			});
 		}

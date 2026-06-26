@@ -92,8 +92,6 @@ export const vendors = sqliteTable('vendors', {
   depositPaid: integer('deposit_paid', { mode: 'boolean' }).notNull().default(false),
   followUpDate: text('follow_up_date'), // ISO YYYY-MM-DD
   priority: integer('priority').notNull().default(2), // 1 high … 3 low
-  description: text('description'),
-  notes: text('notes'),
   sort: integer('sort').notNull().default(0)
 });
 
