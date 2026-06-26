@@ -2,6 +2,7 @@ import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db/index';
 import { vendors, appointments, notes } from '$lib/server/db/schema';
 import { asc, desc, eq } from 'drizzle-orm';
+import { recordAudit } from '$lib/server/audit';
 
 export const load: PageServerLoad = async () => ({
   vendors: await db.select().from(vendors).orderBy(asc(vendors.sort)),
@@ -24,11 +25,18 @@ export const load: PageServerLoad = async () => ({
 });
 
 export const actions: Actions = {
-  add: async () => {
-    await db.insert(vendors).values({ category: 'New', stage: 'Lead', sort: 999 });
+  add: async ({ locals }) => {
+    const [row] = await db
+      .insert(vendors)
+      .values({ category: 'New', stage: 'Lead', sort: 999 })
+      .returning({ id: vendors.id });
+    await recordAudit(locals, { action: 'create', entity: 'vendor', entityId: row.id, summary: 'Added a vendor' });
   },
-  remove: async ({ request }) => {
+  remove: async ({ request, locals }) => {
     const f = await request.formData();
-    await db.delete(vendors).where(eq(vendors.id, Number(f.get('id'))));
+    const id = Number(f.get('id'));
+    const [v] = await db.select({ category: vendors.category }).from(vendors).where(eq(vendors.id, id));
+    await db.delete(vendors).where(eq(vendors.id, id));
+    await recordAudit(locals, { action: 'delete', entity: 'vendor', entityId: id, summary: `Removed ${v?.category ?? 'a vendor'}` });
   }
 };

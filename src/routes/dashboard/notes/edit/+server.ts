@@ -4,6 +4,7 @@ import { db } from '$lib/server/db/index';
 import { notes, noteComments } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import { isNoteCategory, isEntityType, categoryForEntity } from '$lib/notes';
+import { recordAudit } from '$lib/server/audit';
 
 // Single shared endpoint for note CRUD, used by both the Notes hub and the
 // reusable <Notes> widget on other dashboard pages. POST JSON { op, … }.
@@ -30,6 +31,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			.insert(notes)
 			.values({ body, category, entityType, entityId, createdAt: now, updatedAt: now, authorId: locals.user.id, lastEditedById: locals.user.id })
 			.returning({ id: notes.id });
+		await recordAudit(locals, { action: 'create', entity: 'note', entityId: row.id, summary: body.slice(0, 60) });
 		return json({ ok: true, id: row.id });
 	}
 
@@ -39,6 +41,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		if (!id) throw error(400, 'bad id');
 		if (!body) throw error(400, 'empty note');
 		await db.update(notes).set({ body, updatedAt: new Date(), lastEditedById: locals.user.id }).where(eq(notes.id, id));
+		await recordAudit(locals, { action: 'update', entity: 'note', entityId: id, summary: 'Edited a note' });
 		return json({ ok: true });
 	}
 
@@ -54,6 +57,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const id = Number(data.id);
 		if (!id) throw error(400, 'bad id');
 		await db.update(notes).set({ pinned: !!data.pinned }).where(eq(notes.id, id));
+		await recordAudit(locals, { action: 'update', entity: 'note', entityId: id, summary: data.pinned ? 'Pinned a note' : 'Unpinned a note' });
 		return json({ ok: true });
 	}
 
@@ -61,6 +65,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const id = Number(data.id);
 		if (!id) throw error(400, 'bad id');
 		await db.delete(notes).where(eq(notes.id, id));
+		await recordAudit(locals, { action: 'delete', entity: 'note', entityId: id, summary: 'Deleted a note' });
 		return json({ ok: true });
 	}
 
@@ -73,6 +78,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			.insert(noteComments)
 			.values({ noteId, authorId: locals.user.id, body, createdAt: now, updatedAt: now })
 			.returning({ id: noteComments.id });
+		await recordAudit(locals, { action: 'create', entity: 'comment', entityId: noteId, summary: body.slice(0, 60) });
 		return json({ ok: true, id: row.id });
 	}
 
@@ -81,6 +87,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const body = String(data.body ?? '').trim();
 		if (!id || !body) throw error(400, 'bad comment');
 		await db.update(noteComments).set({ body, updatedAt: new Date() }).where(eq(noteComments.id, id));
+		await recordAudit(locals, { action: 'update', entity: 'comment', entityId: id, summary: 'Edited a comment' });
 		return json({ ok: true });
 	}
 
@@ -88,6 +95,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const id = Number(data.id);
 		if (!id) throw error(400, 'bad id');
 		await db.delete(noteComments).where(eq(noteComments.id, id));
+		await recordAudit(locals, { action: 'delete', entity: 'comment', entityId: id, summary: 'Deleted a comment' });
 		return json({ ok: true });
 	}
 

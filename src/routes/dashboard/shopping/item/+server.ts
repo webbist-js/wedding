@@ -3,6 +3,7 @@ import { json, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db/index';
 import { shoppingItems } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
+import { recordAudit } from '$lib/server/audit';
 
 // Field-level autosave for a shopping item.
 export const POST: RequestHandler = async ({ request, locals }) => {
@@ -17,5 +18,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	else throw error(400, 'bad field');
 
 	await db.update(shoppingItems).set(set).where(eq(shoppingItems.id, Number(id)));
+	await recordAudit(locals, { action: 'update', entity: 'shopping', entityId: Number(id), summary: 'Updated the shopping list' });
 	return json({ ok: true });
 };

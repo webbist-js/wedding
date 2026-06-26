@@ -27,7 +27,8 @@
       items: [
         ['/dashboard/timeline', 'Timeline', 'list'],
         ['/dashboard/calendar', 'Calendar', 'calendar'],
-        ['/dashboard/notes', 'Notes', 'note']
+        ['/dashboard/notes', 'Notes', 'note'],
+        ['/dashboard/activity', 'Activity', 'list']
       ]
     }
   ];
@@ -44,7 +45,8 @@
     '/dashboard/invites': { title: 'Invites & QR codes', subtitle: 'Share links and printable codes' },
     '/dashboard/timeline': { title: 'Timeline', subtitle: 'Your road to 2 April 2027' },
     '/dashboard/calendar': { title: 'Calendar', subtitle: 'Appointments & supplier meetings' },
-    '/dashboard/notes': { title: 'Research & notes', subtitle: 'Everything you’ve found' }
+    '/dashboard/notes': { title: 'Research & notes', subtitle: 'Everything you’ve found' },
+    '/dashboard/activity': { title: 'Activity', subtitle: 'Who changed what, and when' }
   };
   const meta = $derived(META[page.url.pathname] ?? { title: 'Dashboard', subtitle: '' });
 

@@ -3,6 +3,7 @@ import { json, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db/index';
 import { budgetLines } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
+import { recordAudit } from '$lib/server/audit';
 
 // Accept a flat array of all budget line ids in their new order and rewrite
 // the sort column. The page groups them by section so the caller computes
@@ -18,5 +19,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			.set({ sort: i })
 			.where(eq(budgetLines.id, Number(ids[i])));
 	}
+	await recordAudit(locals, { action: 'update', entity: 'budget_line', summary: 'Reordered the budget' });
 	return json({ ok: true });
 };

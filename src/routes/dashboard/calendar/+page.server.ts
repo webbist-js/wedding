@@ -5,6 +5,7 @@ import { asc, eq } from 'drizzle-orm';
 import { error } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { notifyAppointment } from '$lib/server/slack';
+import { recordAudit } from '$lib/server/audit';
 
 export const load: PageServerLoad = async () => {
 	const rows = await db
@@ -49,7 +50,8 @@ export const actions: Actions = {
 		const f = await request.formData();
 		const v = vals(f);
 		if (!v.date) return; // a date is required
-		await db.insert(appointments).values({ ...v, createdAt: new Date() });
+		const [appt] = await db.insert(appointments).values({ ...v, createdAt: new Date() }).returning({ id: appointments.id });
+		await recordAudit(locals, { action: 'create', entity: 'appointment', entityId: appt.id, summary: v.title });
 
 		// Best-effort Slack ping that a new appointment was booked.
 		let supplierName: string | null = null;
@@ -79,10 +81,13 @@ export const actions: Actions = {
 		const v = vals(f);
 		if (!v.date) return;
 		await db.update(appointments).set(v).where(eq(appointments.id, id));
+		await recordAudit(locals, { action: 'update', entity: 'appointment', entityId: id, summary: v.title });
 	},
 	remove: async ({ request, locals }) => {
 		if (!locals.authed) throw error(401);
 		const f = await request.formData();
-		await db.delete(appointments).where(eq(appointments.id, Number(f.get('id'))));
+		const id = Number(f.get('id'));
+		await db.delete(appointments).where(eq(appointments.id, id));
+		await recordAudit(locals, { action: 'delete', entity: 'appointment', entityId: id, summary: 'Removed an appointment' });
 	}
 };

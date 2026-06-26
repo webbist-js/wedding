@@ -5,6 +5,7 @@ import { vendors } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import { env } from '$env/dynamic/private';
 import { notifySupplierBooked } from '$lib/server/slack';
+import { recordAudit } from '$lib/server/audit';
 
 const TEXT = new Set(['category', 'name', 'contact', 'phone', 'email', 'website', 'address', 'stage', 'followUpDate', 'description', 'notes']);
 const NUM = new Set(['quotedAmount', 'depositAmount', 'priority']);
@@ -28,6 +29,13 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	else set = { [field]: String(value ?? '') || null };
 
 	await db.update(vendors).set(set).where(eq(vendors.id, Number(id)));
+
+	await recordAudit(locals, {
+		action: 'update',
+		entity: 'vendor',
+		entityId: Number(id),
+		summary: `${prev.category}${prev.name ? ' · ' + prev.name : ''}: ${field}`
+	});
 
 	if (field === 'depositPaid' && !!value && !prev.depositPaid) {
 		const base = env.PUBLIC_BASE_URL ?? '';

@@ -3,6 +3,7 @@ import { json, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db/index';
 import { budgetLines } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
+import { recordAudit } from '$lib/server/audit';
 
 const NUMERIC = new Set(['budgeted', 'confirmed', 'paid']);
 const TEXT = new Set(['category', 'status', 'section']);
@@ -24,5 +25,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		.update(budgetLines)
 		.set(set)
 		.where(eq(budgetLines.id, Number(id)));
+	await recordAudit(locals, { action: 'update', entity: 'budget_line', entityId: Number(id), summary: `${row.category}: ${field}` });
 	return json({ ok: true });
 };
