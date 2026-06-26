@@ -74,12 +74,25 @@ export const timelineItems = sqliteTable('timeline_items', {
   sort: integer('sort').notNull().default(0)
 });
 
-export const suppliers = sqliteTable('suppliers', {
+export const vendors = sqliteTable('vendors', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   category: text('category').notNull(),
   name: text('name'),
+  // Freeform legacy contact line, kept alongside the structured fields below.
   contact: text('contact'),
-  status: text('status').notNull().default('todo'),
+  phone: text('phone'),
+  email: text('email'),
+  website: text('website'),
+  address: text('address'),
+  // CRM pipeline: Lead | Enquired | Quoted | Shortlisted | Booked.
+  stage: text('stage').notNull().default('Lead'),
+  quotedAmount: real('quoted_amount'),
+  depositAmount: real('deposit_amount'),
+  // The "chosen supplier" tickbox: deposit paid => this is a booked supplier.
+  depositPaid: integer('deposit_paid', { mode: 'boolean' }).notNull().default(false),
+  followUpDate: text('follow_up_date'), // ISO YYYY-MM-DD
+  priority: integer('priority').notNull().default(2), // 1 high … 3 low
+  description: text('description'),
   notes: text('notes'),
   sort: integer('sort').notNull().default(0)
 });
@@ -93,7 +106,7 @@ export const appointments = sqliteTable('appointments', {
   time: text('time'), // optional, freeform e.g. "2.30pm"
   location: text('location'),
   notes: text('notes'),
-  supplierId: integer('supplier_id').references(() => suppliers.id),
+  vendorId: integer('vendor_id').references(() => vendors.id),
   createdAt: integer('created_at', { mode: 'timestamp' }),
   // Comma-separated reminder thresholds already sent ('week' | 'day' | 'day-of').
   notificationsSent: text('notifications_sent').notNull().default('')
@@ -182,5 +195,33 @@ export const notes = sqliteTable('notes', {
   pinned: integer('pinned', { mode: 'boolean' }).notNull().default(false),
   sort: integer('sort').notNull().default(0),
   createdAt: integer('created_at', { mode: 'timestamp' }),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }),
+  authorId: integer('author_id').references(() => users.id),
+  lastEditedById: integer('last_edited_by_id').references(() => users.id)
+});
+
+export const users = sqliteTable('users', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  slug: text('slug').notNull().unique(), // 'alex' | 'katie'
+  name: text('name').notNull()
+});
+
+export const noteComments = sqliteTable('note_comments', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  noteId: integer('note_id').notNull().references(() => notes.id),
+  authorId: integer('author_id').references(() => users.id),
+  body: text('body').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }),
   updatedAt: integer('updated_at', { mode: 'timestamp' })
+});
+
+// Append-only log of dashboard mutations, surfaced on the Activity page.
+export const auditLog = sqliteTable('audit_log', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').references(() => users.id), // null = system/cron
+  action: text('action').notNull(), // 'create' | 'update' | 'delete'
+  entity: text('entity').notNull(), // 'vendor' | 'note' | 'comment' | …
+  entityId: integer('entity_id'),
+  summary: text('summary').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' })
 });

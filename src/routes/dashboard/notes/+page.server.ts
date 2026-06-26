@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db/index';
-import { notes, suppliers, inviteGroups, budgetLines, timelineItems } from '$lib/server/db/schema';
-import { desc } from 'drizzle-orm';
+import { notes, vendors, inviteGroups, budgetLines, timelineItems, noteComments, users } from '$lib/server/db/schema';
+import { asc, desc } from 'drizzle-orm';
 import { ENTITY_KINDS, type EntityType, isEntityType } from '$lib/notes';
 
 export const load: PageServerLoad = async () => {
@@ -15,9 +15,9 @@ export const load: PageServerLoad = async () => {
 	const needed = new Set(rows.map((r) => r.entityType).filter(isEntityType));
 	const labels: Partial<Record<EntityType, Record<number, string>>> = {};
 
-	if (needed.has('supplier')) {
-		const s = await db.select({ id: suppliers.id, category: suppliers.category, name: suppliers.name }).from(suppliers);
-		labels.supplier = Object.fromEntries(
+	if (needed.has('vendor')) {
+		const s = await db.select({ id: vendors.id, category: vendors.category, name: vendors.name }).from(vendors);
+		labels.vendor = Object.fromEntries(
 			s.map((r) => [r.id, r.name ? `${r.category} · ${r.name}` : r.category])
 		);
 	}
@@ -34,6 +34,14 @@ export const load: PageServerLoad = async () => {
 		labels.timeline = Object.fromEntries(t.map((r) => [r.id, r.label]));
 	}
 
+	const [people, comments] = await Promise.all([
+		db.select({ id: users.id, name: users.name }).from(users),
+		db.select().from(noteComments).orderBy(asc(noteComments.createdAt))
+	]);
+	const nameById = Object.fromEntries(people.map((p) => [p.id, p.name]));
+	const commentsByNote: Record<number, typeof comments> = {};
+	for (const c of comments) (commentsByNote[c.noteId] ??= []).push(c);
+
 	const enriched = rows.map((r) => {
 		let contextLabel: string | null = null;
 		let contextHref: string | null = null;
@@ -46,7 +54,17 @@ export const load: PageServerLoad = async () => {
 				contextLabel = kind.label;
 			}
 		}
-		return { ...r, contextLabel, contextHref };
+		return {
+			...r,
+			contextLabel,
+			contextHref,
+			authorName: r.authorId != null ? (nameById[r.authorId] ?? null) : null,
+			lastEditedByName: r.lastEditedById != null ? (nameById[r.lastEditedById] ?? null) : null,
+			comments: (commentsByNote[r.id] ?? []).map((c) => ({
+				...c,
+				authorName: c.authorId != null ? (nameById[c.authorId] ?? null) : null
+			}))
+		};
 	});
 
 	return { notes: enriched };

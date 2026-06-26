@@ -1,6 +1,7 @@
 import type { RequestHandler } from './$types';
 import { json, error } from '@sveltejs/kit';
 import { parseOccupant, placeOccupant, firstFreeSeat } from '$lib/server/seating';
+import { recordAudit } from '$lib/server/audit';
 
 // Seat placement. Body: { occupant: "guest:12"|"couple:bride", tableNo, seatNo }.
 // - tableNo null → unseat.
@@ -18,5 +19,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	if (table != null && seat == null) seat = await firstFreeSeat(table);
 
 	await placeOccupant(o, table, seat);
+	await recordAudit(locals, { action: 'update', entity: 'seating', summary: 'Updated a seat assignment' });
 	return json({ ok: true });
 };

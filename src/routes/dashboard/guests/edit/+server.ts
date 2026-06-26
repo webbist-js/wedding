@@ -3,6 +3,7 @@ import { json, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db/index';
 import { inviteGroups, guests } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
+import { recordAudit } from '$lib/server/audit';
 
 const GROUP_TEXT = new Set(['name']);
 // Guest-CRM contact fields on the household — admin-only, not part of the seed,
@@ -20,6 +21,13 @@ const GUEST_BOOL = new Set(['isChild', 'isPlusOne']);
 export const POST: RequestHandler = async ({ request, locals }) => {
 	if (!locals.authed) throw error(401);
 	const { kind, id, field, value } = await request.json();
+	if (kind !== 'group' && kind !== 'guest') throw error(400, 'bad kind');
+	await recordAudit(locals, {
+		action: 'update',
+		entity: kind === 'group' ? 'invite' : 'guest',
+		entityId: Number(id),
+		summary: `Edited ${kind} ${field}`
+	});
 
 	if (kind === 'group') {
 		if (GROUP_TEXT.has(field)) {

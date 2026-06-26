@@ -30,11 +30,12 @@ export interface SeedQuoteLine {
   bond?: boolean;
 }
 
-export interface SeedSupplier {
+export interface SeedVendor {
   category: string;
   name?: string;
   contact?: string;
-  status: string;
+  stage: string;
+  depositPaid?: boolean;
   notes?: string;
 }
 
@@ -208,23 +209,23 @@ export const SEED_QUOTE: SeedQuoteLine[] = [
   { label: 'Refundable bond', section: 'Hire', scope: 'fixed', price: 500.0, confirmed: false, bond: true }
 ];
 
-export const SEED_SUPPLIERS: SeedSupplier[] = [
-  { category: 'Venue & Catering', name: 'The Tithe Barn', contact: 'Laura · 01756 631000', status: 'booked', notes: 'Deposit paid. All food in-house. Dog-friendly.' },
-  { category: 'Registrar', name: 'North Yorkshire (Skipton)', contact: 'registrars.skipton@northyorks.gov.uk', status: 'booked', notes: '£50 deposit · ref 149599481 · ceremony 2.30pm' },
-  { category: 'Photographer', name: 'Adam Lowndes', contact: 'hello@adamlowndes.co.uk', status: 'booked', notes: 'Confirmed' },
-  { category: 'Photographer (alt)', name: 'Hamish Irvine', contact: 'info@hamishirvine.com', status: 'short', notes: "Shoots the venue's own gallery" },
-  { category: 'Florist', name: 'Bureau Botany / Flowers in my Head / Yorkshire Floral Co', contact: 'hello@bureaubotany.co.uk', status: 'short', notes: 'Shortlist — to book' },
-  { category: 'Music / DJ', name: 'Mark Green / Dom Wood', contact: '07865 050212', status: 'short', notes: 'Shortlist — to book' },
-  { category: 'Hair & Makeup', name: 'Immy May', contact: 'immymay.co.uk', status: 'short', notes: 'Book + trial' },
-  { category: 'Cake', name: 'Little Cake', contact: 'littlecake.co.uk', status: 'short', notes: 'Shortlist' },
-  { category: 'Transport', name: 'Yorkshire Wedding Car Co', contact: '—', status: 'short', notes: 'Shortlist' },
-  { category: 'Accommodation', name: 'The Devonshire Arms', contact: '01756 718111', status: 'short', notes: 'Guest block-booking' },
-  { category: 'Wedding rings', name: "Forge & Lumber (Alex) + Katie's", contact: 'info@forgeandlumber.com', status: 'booked', notes: "Alex: £240, size P. Katie's bought. Both complete." },
-  { category: 'Confetti', name: 'Wedfetti / Confetti Bee', contact: '—', status: 'short', notes: 'Fresh petals only (venue rule)' },
-  { category: 'Dog handler', name: 'Yorkshire Paws & Co', contact: '—', status: 'todo', notes: 'Optional — for Bodie' },
-  { category: 'Magician', name: 'Oliver Parker (Leeds Magician)', contact: '—', status: 'todo', notes: 'Maybe' },
-  { category: 'Attire', name: 'Stacees / Azazie (bridesmaids), groomsmen, Bodie outfit', contact: '—', status: 'todo', notes: 'Dusty rose theme' },
-  { category: 'Stationery / Favours / Décor', name: '—', contact: '—', status: 'todo', notes: 'To research' }
+export const SEED_VENDORS: SeedVendor[] = [
+  { category: 'Venue & Catering', name: 'The Tithe Barn', contact: 'Laura · 01756 631000', stage: 'Booked', depositPaid: true, notes: 'Deposit paid. All food in-house. Dog-friendly.' },
+  { category: 'Registrar', name: 'North Yorkshire (Skipton)', contact: 'registrars.skipton@northyorks.gov.uk', stage: 'Booked', depositPaid: true, notes: '£50 deposit · ref 149599481 · ceremony 2.30pm' },
+  { category: 'Photographer', name: 'Adam Lowndes', contact: 'hello@adamlowndes.co.uk', stage: 'Booked', depositPaid: true, notes: 'Confirmed' },
+  { category: 'Photographer (alt)', name: 'Hamish Irvine', contact: 'info@hamishirvine.com', stage: 'Shortlisted', notes: "Shoots the venue's own gallery" },
+  { category: 'Florist', name: 'Bureau Botany / Flowers in my Head / Yorkshire Floral Co', contact: 'hello@bureaubotany.co.uk', stage: 'Shortlisted', notes: 'Shortlist — to book' },
+  { category: 'Music / DJ', name: 'Mark Green / Dom Wood', contact: '07865 050212', stage: 'Shortlisted', notes: 'Shortlist — to book' },
+  { category: 'Hair & Makeup', name: 'Immy May', contact: 'immymay.co.uk', stage: 'Shortlisted', notes: 'Book + trial' },
+  { category: 'Cake', name: 'Little Cake', contact: 'littlecake.co.uk', stage: 'Shortlisted', notes: 'Shortlist' },
+  { category: 'Transport', name: 'Yorkshire Wedding Car Co', contact: '—', stage: 'Shortlisted', notes: 'Shortlist' },
+  { category: 'Accommodation', name: 'The Devonshire Arms', contact: '01756 718111', stage: 'Shortlisted', notes: 'Guest block-booking' },
+  { category: 'Wedding rings', name: "Forge & Lumber (Alex) + Katie's", contact: 'info@forgeandlumber.com', stage: 'Booked', depositPaid: true, notes: "Alex: £240, size P. Katie's bought. Both complete." },
+  { category: 'Confetti', name: 'Wedfetti / Confetti Bee', contact: '—', stage: 'Shortlisted', notes: 'Fresh petals only (venue rule)' },
+  { category: 'Dog handler', name: 'Yorkshire Paws & Co', contact: '—', stage: 'Lead', notes: 'Optional — for Bodie' },
+  { category: 'Magician', name: 'Oliver Parker (Leeds Magician)', contact: '—', stage: 'Lead', notes: 'Maybe' },
+  { category: 'Attire', name: 'Stacees / Azazie (bridesmaids), groomsmen, Bodie outfit', contact: '—', stage: 'Lead', notes: 'Dusty rose theme' },
+  { category: 'Stationery / Favours / Décor', name: '—', contact: '—', stage: 'Lead', notes: 'To research' }
 ];
 
 export const SEED_TIMELINE: SeedPhase[] = [

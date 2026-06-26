@@ -3,6 +3,7 @@ import { json, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db/index';
 import { quoteLines, settings } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
+import { recordAudit } from '$lib/server/audit';
 
 const SETTING_KEYS = ['dayGuests', 'eveGuests', 'minSpend'];
 const SCOPES = new Set(['day', 'eve', 'fixed', 'custom']);
@@ -10,6 +11,7 @@ const SCOPES = new Set(['day', 'eve', 'fixed', 'custom']);
 export const POST: RequestHandler = async ({ request, locals }) => {
   if (!locals.authed) throw error(401);
   const body = await request.json();
+  await recordAudit(locals, { action: 'update', entity: 'venue', summary: 'Edited the venue quote' });
 
   // Add a new quote line — returns its id so the client can track it.
   if (body.op === 'add') {

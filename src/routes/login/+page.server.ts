@@ -1,15 +1,19 @@
 import type { Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
-import { verifyPasscode, signSession } from '$lib/server/auth';
+import { signSession } from '$lib/server/auth';
+import { resolvePasscodeSlug } from '$lib/server/users';
 
 export const actions: Actions = {
 	default: async ({ request, cookies }) => {
 		const data = await request.formData();
 		const passcode = String(data.get('passcode') ?? '');
-		const ok = await verifyPasscode(passcode, env.ADMIN_PASSCODE_HASH ?? '');
-		if (!ok) return fail(401, { error: 'That passcode is not right.' });
-		cookies.set('session', signSession(env.SESSION_SECRET ?? ''), {
+		const slug = await resolvePasscodeSlug(passcode, {
+			alex: env.PASSCODE_HASH_ALEX,
+			katie: env.PASSCODE_HASH_KATIE
+		});
+		if (!slug) return fail(401, { error: 'That passcode is not right.' });
+		cookies.set('session', signSession(env.SESSION_SECRET ?? '', slug), {
 			path: '/',
 			httpOnly: true,
 			sameSite: 'lax',

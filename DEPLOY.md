@@ -37,9 +37,12 @@ DATABASE_URL='libsql://…' DATABASE_AUTH_TOKEN='…' npm run db:seed
 # Session signing secret:
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
-# Dashboard passcode hash (replace YOUR-PASSCODE):
+# Per-user passcode hashes — run once per person (replace YOUR-PASSCODE):
 node -e "const c=require('crypto');const s=c.randomBytes(16).toString('hex');console.log(s+':'+c.scryptSync('YOUR-PASSCODE',s,32).toString('hex'))"
 ```
+
+Generate one hash for Alex and one for Katie; the passcode entered at login
+determines who is signed in (drives note authorship + the audit log).
 
 ## 4. Deploy to Vercel
 
@@ -53,7 +56,8 @@ Set these Environment Variables (Production) in the Vercel project:
 | `DATABASE_URL` | `libsql://…turso.io` |
 | `DATABASE_AUTH_TOKEN` | from step 2 |
 | `SESSION_SECRET` | from step 3 |
-| `ADMIN_PASSCODE_HASH` | from step 3 |
+| `PASSCODE_HASH_ALEX` | from step 3 (Alex's passcode) |
+| `PASSCODE_HASH_KATIE` | from step 3 (Katie's passcode) |
 | `PUBLIC_BASE_URL` | `https://sherdley-bennett.wedding` |
 | `SLACK_WEBHOOK_URL` | your `#wedding` incoming webhook |
 | `CRON_SECRET` | any random string (Vercel auto-sends it to the cron) |
@@ -82,7 +86,13 @@ in the AI phase.
 
 ## Notes
 - **Migrations on future deploys:** run `npm run db:migrate` against Turso whenever
-  `src/lib/server/db/schema.ts` changes (currently up to `0009`).
+  `src/lib/server/db/schema.ts` changes (currently up to `0015`).
+- **Migration `0015_vendors_notes_audit`** renames `suppliers`→`vendors`, seeds the
+  `alex`/`katie` users, adds the comments + audit-log tables, and maps old supplier
+  statuses to the new `stage`/`deposit_paid` fields. It is data-preserving (uses
+  `ALTER TABLE … RENAME`, never drop+create) and safe to run against Turso. After
+  running it, set `PASSCODE_HASH_ALEX` / `PASSCODE_HASH_KATIE` (and remove the old
+  `ADMIN_PASSCODE_HASH`).
 - **If the DB fails to load on Vercel** (native-binding error): switch the client
   in `src/lib/server/db/index.ts` to `import { createClient } from '@libsql/client/web'`
   — pure HTTP, no native module. Only needed if the auto-client misbehaves on serverless.

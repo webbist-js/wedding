@@ -7,7 +7,7 @@ import {
 	budgetLines,
 	timelinePhases,
 	timelineItems,
-	suppliers,
+	vendors,
 	quoteLines,
 	stationeryItems,
 	settings,
@@ -17,7 +17,7 @@ import {
 import {
 	SEED_GUESTS,
 	SEED_QUOTE,
-	SEED_SUPPLIERS,
+	SEED_VENDORS,
 	SEED_TIMELINE,
 	SEED_BUDGET,
 	SEED_STATIONERY,
@@ -210,14 +210,15 @@ export async function seed(): Promise<void> {
 		}
 	}
 
-	if ((await db.select().from(suppliers).limit(1)).length === 0) {
-		for (const [i, s] of SEED_SUPPLIERS.entries()) {
-			await db.insert(suppliers).values({
-				category: s.category,
-				name: s.name ?? null,
-				contact: s.contact ?? null,
-				status: s.status,
-				notes: s.notes ?? null,
+	if ((await db.select().from(vendors).limit(1)).length === 0) {
+		for (const [i, v] of SEED_VENDORS.entries()) {
+			await db.insert(vendors).values({
+				category: v.category,
+				name: v.name ?? null,
+				contact: v.contact ?? null,
+				stage: v.stage,
+				depositPaid: v.depositPaid ?? false,
+				notes: v.notes ?? null,
 				sort: i
 			});
 		}

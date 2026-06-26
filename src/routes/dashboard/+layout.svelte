@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
-  let { children } = $props();
+  let { children, data } = $props();
 
   // Grouped navigation. Every section stays reachable; groups just tidy the rail.
   const NAV: { title?: string; items: [string, string, string][] }[] = [
@@ -18,7 +18,7 @@
       items: [
         ['/dashboard/guests', 'Guests', 'users'],
         ['/dashboard/seating', 'Seating', 'seat'],
-        ['/dashboard/suppliers', 'Suppliers', 'briefcase'],
+        ['/dashboard/vendors', 'Vendors', 'briefcase'],
         ['/dashboard/invites', 'Invites', 'qr']
       ]
     },
@@ -27,7 +27,8 @@
       items: [
         ['/dashboard/timeline', 'Timeline', 'list'],
         ['/dashboard/calendar', 'Calendar', 'calendar'],
-        ['/dashboard/notes', 'Notes', 'note']
+        ['/dashboard/notes', 'Notes', 'note'],
+        ['/dashboard/activity', 'Activity', 'list']
       ]
     }
   ];
@@ -40,11 +41,12 @@
     '/dashboard/shopping': { title: 'Shopping list', subtitle: 'Things to buy — feeds the budget' },
     '/dashboard/guests': { title: 'Guest list', subtitle: 'Households, contacts & RSVPs' },
     '/dashboard/seating': { title: 'Seating chart', subtitle: 'Plan tables and the floor layout' },
-    '/dashboard/suppliers': { title: 'Suppliers', subtitle: 'Who’s booked, who’s next' },
+    '/dashboard/vendors': { title: 'Vendors', subtitle: 'Your shortlist, quotes & chosen suppliers' },
     '/dashboard/invites': { title: 'Invites & QR codes', subtitle: 'Share links and printable codes' },
     '/dashboard/timeline': { title: 'Timeline', subtitle: 'Your road to 2 April 2027' },
     '/dashboard/calendar': { title: 'Calendar', subtitle: 'Appointments & supplier meetings' },
-    '/dashboard/notes': { title: 'Research & notes', subtitle: 'Everything you’ve found' }
+    '/dashboard/notes': { title: 'Research & notes', subtitle: 'Everything you’ve found' },
+    '/dashboard/activity': { title: 'Activity', subtitle: 'Who changed what, and when' }
   };
   const meta = $derived(META[page.url.pathname] ?? { title: 'Dashboard', subtitle: '' });
 
@@ -116,6 +118,7 @@
         <div class="cd-num">{days} <span>days to go</span></div>
         <div class="cd-date">{dateLabel} · 2.30pm</div>
       </div>
+      {#if data?.user}<p class="whoami">Signed in as <strong>{data.user.name}</strong></p>{/if}
       <form method="POST" action="/logout" class="signout">
         <button type="submit">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3M16 17l5-5-5-5M21 12H9"/></svg>
@@ -184,6 +187,8 @@
   .cd-num { font-family: var(--serif); font-weight: 600; font-size: 26px; color: var(--sage); line-height: 1; }
   .cd-num span { font-family: var(--sans); font-size: 9.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--sidebar-faint); font-weight: 600; margin-left: 4px; }
   .cd-date { margin-top: 6px; font-size: 10.5px; letter-spacing: .08em; color: var(--sidebar-faint); }
+  .whoami { margin: 6px 4px 2px; font-size: 10.5px; letter-spacing: .04em; color: var(--sidebar-faint); }
+  .whoami strong { color: var(--sidebar-active); font-weight: 600; }
   .signout button {
     display: flex; align-items: center; gap: 10px; width: 100%; background: none; border: 0;
     color: var(--sidebar-faint); font: inherit; font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
