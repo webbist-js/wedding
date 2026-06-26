@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db/index';
-import { notes, suppliers, inviteGroups, budgetLines, timelineItems } from '$lib/server/db/schema';
+import { notes, vendors, inviteGroups, budgetLines, timelineItems } from '$lib/server/db/schema';
 import { desc } from 'drizzle-orm';
 import { ENTITY_KINDS, type EntityType, isEntityType } from '$lib/notes';
 
@@ -15,9 +15,9 @@ export const load: PageServerLoad = async () => {
 	const needed = new Set(rows.map((r) => r.entityType).filter(isEntityType));
 	const labels: Partial<Record<EntityType, Record<number, string>>> = {};
 
-	if (needed.has('supplier')) {
-		const s = await db.select({ id: suppliers.id, category: suppliers.category, name: suppliers.name }).from(suppliers);
-		labels.supplier = Object.fromEntries(
+	if (needed.has('vendor')) {
+		const s = await db.select({ id: vendors.id, category: vendors.category, name: vendors.name }).from(vendors);
+		labels.vendor = Object.fromEntries(
 			s.map((r) => [r.id, r.name ? `${r.category} · ${r.name}` : r.category])
 		);
 	}

@@ -1,7 +1,7 @@
 import { and, eq, isNotNull } from 'drizzle-orm';
 import { env } from '$env/dynamic/private';
 import { db } from './db/index';
-import { timelineItems, timelinePhases, appointments, suppliers } from './db/schema';
+import { timelineItems, timelinePhases, appointments, vendors } from './db/schema';
 import {
 	notifyTimelineItem,
 	notifyAppointment,
@@ -114,11 +114,11 @@ export async function runAppointmentCheck(now: Date = new Date()): Promise<{ sen
 			location: appointments.location,
 			notes: appointments.notes,
 			notificationsSent: appointments.notificationsSent,
-			supplierCategory: suppliers.category,
-			supplierName: suppliers.name
+			supplierCategory: vendors.category,
+			supplierName: vendors.name
 		})
 		.from(appointments)
-		.leftJoin(suppliers, eq(appointments.supplierId, suppliers.id));
+		.leftJoin(vendors, eq(appointments.vendorId, vendors.id));
 
 	let sent = 0;
 	for (const a of rows) {

@@ -3,7 +3,7 @@ import { allGuests, summarise, type GuestRow } from '$lib/server/queries';
 import { db } from '$lib/server/db/index';
 import {
 	appointments,
-	suppliers,
+	vendors,
 	budgetLines,
 	shoppingItems,
 	settings,
@@ -47,10 +47,10 @@ export const load: PageServerLoad = async () => {
 		)
 		.map((i) => ({ label: i.label, phase: phaseTitle.get(i.phaseId) ?? '' }));
 
-	// Suppliers booked so far.
-	const allSuppliers = await db.select().from(suppliers).orderBy(asc(suppliers.sort));
-	const booked = allSuppliers
-		.filter((x) => x.status === 'booked')
+	// Vendors confirmed as chosen suppliers (deposit paid) so far.
+	const allVendors = await db.select().from(vendors).orderBy(asc(vendors.sort));
+	const booked = allVendors
+		.filter((x) => x.depositPaid)
 		.map((x) => ({ category: x.category, name: x.name }));
 
 	const today = new Date().toISOString().slice(0, 10);
@@ -60,11 +60,11 @@ export const load: PageServerLoad = async () => {
 			title: appointments.title,
 			date: appointments.date,
 			time: appointments.time,
-			supplierName: suppliers.name,
-			supplierCategory: suppliers.category
+			supplierName: vendors.name,
+			supplierCategory: vendors.category
 		})
 		.from(appointments)
-		.leftJoin(suppliers, eq(appointments.supplierId, suppliers.id))
+		.leftJoin(vendors, eq(appointments.vendorId, vendors.id))
 		.where(gte(appointments.date, today))
 		.orderBy(asc(appointments.date), asc(appointments.time))
 		.limit(4);
