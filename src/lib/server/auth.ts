@@ -14,19 +14,25 @@ export async function verifyPasscode(passcode: string, stored: string): Promise<
 	return check.length === expected.length && timingSafeEqual(check, expected);
 }
 
-// Session cookie value is "issuedAt.signature". Verifies integrity, not expiry-by-default.
-export function signSession(secret: string): string {
-	const payload = String(Date.now());
+// Session cookie value is "slug.issuedAt.signature". Verifies integrity and
+// returns the signed-in user's slug (not expiry-by-default).
+export function signSession(secret: string, slug: string): string {
+	const payload = `${slug}.${Date.now()}`;
 	const sig = createHmac('sha256', secret).update(payload).digest('base64url');
 	return `${payload}.${sig}`;
 }
 
-export function verifySession(token: string | undefined, secret: string): boolean {
-	if (!token) return false;
-	const [payload, sig] = token.split('.');
-	if (!payload || !sig) return false;
+export function verifySession(token: string | undefined, secret: string): { slug: string } | null {
+	if (!token) return null;
+	const cut = token.lastIndexOf('.');
+	if (cut < 0) return null;
+	const payload = token.slice(0, cut);
+	const sig = token.slice(cut + 1);
+	const [slug, issuedAt] = payload.split('.');
+	if (!slug || !issuedAt) return null;
 	const expected = createHmac('sha256', secret).update(payload).digest('base64url');
 	const a = Buffer.from(sig);
 	const b = Buffer.from(expected);
-	return a.length === b.length && timingSafeEqual(a, b);
+	if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
+	return { slug };
 }

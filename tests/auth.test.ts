@@ -15,16 +15,19 @@ describe('passcode', () => {
 });
 
 describe('session cookie', () => {
-	it('round-trips a valid signed token', () => {
-		const token = signSession(SECRET);
-		expect(verifySession(token, SECRET)).toBe(true);
+	it('round-trips a valid signed token and returns the slug', () => {
+		const token = signSession(SECRET, 'alex');
+		expect(verifySession(token, SECRET)).toEqual({ slug: 'alex' });
 	});
 	it('rejects a tampered token', () => {
-		const token = signSession(SECRET) + 'x';
-		expect(verifySession(token, SECRET)).toBe(false);
+		const token = signSession(SECRET, 'alex') + 'x';
+		expect(verifySession(token, SECRET)).toBeNull();
 	});
 	it('rejects a token signed with a different secret', () => {
-		const token = signSession('other');
-		expect(verifySession(token, SECRET)).toBe(false);
+		const token = signSession('other', 'katie');
+		expect(verifySession(token, SECRET)).toBeNull();
+	});
+	it('returns null for a missing token', () => {
+		expect(verifySession(undefined, SECRET)).toBeNull();
 	});
 });
