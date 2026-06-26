@@ -18,7 +18,7 @@
       items: [
         ['/dashboard/guests', 'Guests', 'users'],
         ['/dashboard/seating', 'Seating', 'seat'],
-        ['/dashboard/suppliers', 'Suppliers', 'briefcase'],
+        ['/dashboard/vendors', 'Vendors', 'briefcase'],
         ['/dashboard/invites', 'Invites', 'qr']
       ]
     },
@@ -40,7 +40,7 @@
     '/dashboard/shopping': { title: 'Shopping list', subtitle: 'Things to buy — feeds the budget' },
     '/dashboard/guests': { title: 'Guest list', subtitle: 'Households, contacts & RSVPs' },
     '/dashboard/seating': { title: 'Seating chart', subtitle: 'Plan tables and the floor layout' },
-    '/dashboard/suppliers': { title: 'Suppliers', subtitle: 'Who’s booked, who’s next' },
+    '/dashboard/vendors': { title: 'Vendors', subtitle: 'Your shortlist, quotes & chosen suppliers' },
     '/dashboard/invites': { title: 'Invites & QR codes', subtitle: 'Share links and printable codes' },
     '/dashboard/timeline': { title: 'Timeline', subtitle: 'Your road to 2 April 2027' },
     '/dashboard/calendar': { title: 'Calendar', subtitle: 'Appointments & supplier meetings' },
