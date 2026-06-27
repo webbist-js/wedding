@@ -88,8 +88,8 @@ export const WEDDING_PARTY: PartyCouple[] = [
 		lead: true,
 		tagline: "Katie's oldest friend & his better half",
 		members: [
-			{ name: 'Adam Seaton Shaw', role: 'Man of Honour', photo: portrait('adam-seaton-shaw') },
-			{ name: 'Lysanne Seaton Shaw', role: 'Bridesmaid', photo: portrait('lysanne-seaton-shaw') }
+			{ name: 'Adam Seaton Shaw', role: 'Man of Honour', photo: '/party/adam-seaton-shaw.jpg', focus: 'center 22%' },
+			{ name: 'Lysanne Seaton Shaw', role: 'Bridesmaid', photo: '/party/lysanne-seaton-shaw.jpg', focus: 'center 28%' }
 		],
 		story:
 			"Adam has been Katie's friend since their school days — keeper of every secret and the first " +
