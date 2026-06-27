@@ -190,6 +190,7 @@
 		left: 50%;
 		transform: translate(-50%, -50%);
 		z-index: 3;
+		pointer-events: none;
 		font-size: clamp(64px, 8vw, 104px);
 		line-height: 1;
 		color: var(--terra);
@@ -199,6 +200,11 @@
 	/* ---------- Lead chapter copy ---------- */
 	.lead-chapters {
 		margin-top: clamp(20px, 4vw, 40px);
+	}
+	/* The front portrait sits 22% lower (.duo-a margin-top), so a centred amp
+	   lands on its face. Drop it to collar/chest level, still between the pair. */
+	.lead-chapters .duo-amp {
+		top: 64%;
 	}
 	.side-flag {
 		font-family: var(--sans);
