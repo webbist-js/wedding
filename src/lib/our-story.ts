@@ -11,6 +11,7 @@ export interface StoryChapter {
 	image: string; // placeholder — replace with a real photo
 	align: 'left' | 'right'; // which side the image sits on (desktop)
 	focus?: string; // object-position for the crop (e.g. 'center 30%')
+	aspect?: string; // override the frame aspect-ratio (default 4/5) for wide shots
 }
 
 export const HERO_IMAGE = '/story/hero.jpg';
@@ -87,6 +88,7 @@ export interface FutureWish {
 	body: string;
 	image: string;
 	focus?: string;
+	aspect?: string; // override the frame aspect-ratio (default 4/5) for wide shots
 	align: 'left' | 'right';
 }
 
@@ -120,7 +122,8 @@ export const FUTURE_WISHES: FutureWish[] = [
 			'Commercial tickets, window seats only, snacks freeze-dried. Bodie supervises the launch from ' +
 			'the back garden and declines, on principle, to be impressed.',
 		image: '/story/wish-space.png',
-		focus: 'center 40%',
+		focus: 'center',
+		aspect: '4 / 3',
 		align: 'left'
 	},
 	{

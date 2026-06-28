@@ -73,7 +73,7 @@
 			<article class="chapter" class:left={c.align === 'left'}>
 				<div class="chapter-art">
 					<span class="chapter-index" data-speed="0.05" aria-hidden="true">{c.index}</span>
-					<div class="frame chapter-frame" data-reveal>
+					<div class="frame chapter-frame" data-reveal style={c.aspect ? `aspect-ratio:${c.aspect}` : undefined}>
 						<img src={c.image} data-speed="0.06" alt={c.title} loading="lazy" style={c.focus ? `object-position:${c.focus}` : undefined} />
 					</div>
 				</div>
@@ -101,7 +101,7 @@
 			<article class="chapter" class:left={w.align === 'left'}>
 				<div class="chapter-art">
 					<span class="chapter-index" data-speed="0.05" aria-hidden="true">{w.index}</span>
-					<div class="frame chapter-frame" data-reveal>
+					<div class="frame chapter-frame" data-reveal style={w.aspect ? `aspect-ratio:${w.aspect}` : undefined}>
 						<img src={w.image} data-speed="0.06" alt={w.title} loading="lazy" style={w.focus ? `object-position:${w.focus}` : undefined} />
 					</div>
 				</div>
