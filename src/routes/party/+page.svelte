@@ -49,7 +49,6 @@
 						<figure class="ed-frame duo-b" data-reveal style="--d:.1s">
 							<img src={c.members[1].photo} data-speed="0.09" alt={c.members[1].name} loading="lazy" style={c.members[1].focus ? `object-position:${c.members[1].focus}` : undefined} />
 						</figure>
-						<span class="duo-amp script" aria-hidden="true">&amp;</span>
 					</div>
 				</div>
 
@@ -91,7 +90,6 @@
 					<figure class="ed-frame duo-b">
 						<img src={c.members[1].photo} data-speed={(0.07 + (i % 3) * 0.01).toFixed(3)} alt={c.members[1].name} loading="lazy" style={c.members[1].focus ? `object-position:${c.members[1].focus}` : undefined} />
 					</figure>
-					<span class="duo-amp script" aria-hidden="true">&amp;</span>
 				</div>
 				<h3 class="rest-names">
 					{first(c.members[0].name)} <span class="amp">&amp;</span>
@@ -184,27 +182,10 @@
 		border: 6px solid var(--bg);
 		box-shadow: 0 24px 50px rgba(33, 31, 26, 0.2);
 	}
-	.duo-amp {
-		position: absolute;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		z-index: 3;
-		pointer-events: none;
-		font-size: clamp(64px, 8vw, 104px);
-		line-height: 1;
-		color: var(--terra);
-		text-shadow: 0 2px 10px rgba(251, 250, 246, 0.9);
-	}
 
 	/* ---------- Lead chapter copy ---------- */
 	.lead-chapters {
 		margin-top: clamp(20px, 4vw, 40px);
-	}
-	/* The front portrait sits 22% lower (.duo-a margin-top), so a centred amp
-	   lands on its face. Drop it to collar/chest level, still between the pair. */
-	.lead-chapters .duo-amp {
-		top: 64%;
 	}
 	.side-flag {
 		font-family: var(--sans);
@@ -285,9 +266,6 @@
 	.rest-couple .duo {
 		max-width: 320px;
 		margin: 0 auto 26px;
-	}
-	.rest-couple .duo-amp {
-		font-size: clamp(48px, 5vw, 68px);
 	}
 	.rest-names {
 		font-family: var(--serif);
