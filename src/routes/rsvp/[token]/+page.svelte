@@ -253,11 +253,7 @@
 						</span>
 						<span class="type">
 							·
-							{#if m.isChild}
-								Child
-							{:else}
-								{m.attendanceType === 'day' ? 'Day & evening' : 'Evening reception'}
-							{/if}
+							{#if m.isChild}Child · {/if}{m.attendanceType === 'day' ? 'Day & evening' : 'Evening reception'}
 						</span>
 					</legend>
 
