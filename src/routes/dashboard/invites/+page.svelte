@@ -1,6 +1,19 @@
 <script lang="ts">
 	let { data } = $props();
 
+	let q = $state('');
+	let filtered = $derived(
+		!q
+			? data.rows
+			: data.rows.filter((r) => {
+					const needle = q.toLowerCase();
+					return (
+						r.name.toLowerCase().includes(needle) ||
+						r.members.some((m) => m.name.toLowerCase().includes(needle))
+					);
+				})
+	);
+
 	async function saveMessage(id: number, message: string) {
 		await fetch('/dashboard/invites/message', {
 			method: 'POST',
@@ -28,8 +41,16 @@
 	share the link, or download the QR code as a PNG for the printed save-the-dates.
 </p>
 
+<div class="ctrls">
+	<input class="srch" bind:value={q} placeholder="Search households or names…" />
+</div>
+
+{#if filtered.length === 0}
+	<p class="empty">No households match “{q}”.</p>
+{/if}
+
 <div class="cards">
-	{#each data.rows as r (r.id)}
+	{#each filtered as r (r.id)}
 		<div class="invite">
 			<div class="top">
 				<div class="qr">{@html r.qr}</div>
@@ -84,6 +105,31 @@
 		color: var(--body);
 		max-width: 560px;
 		margin-bottom: 24px;
+	}
+
+	.ctrls {
+		display: flex;
+		gap: 12px;
+		align-items: center;
+		margin-bottom: 22px;
+		flex-wrap: wrap;
+	}
+	.srch {
+		flex: 1;
+		min-width: 220px;
+		border: 1px solid var(--line);
+		border-radius: 10px;
+		padding: 10px 14px;
+		font: inherit;
+		background: var(--card);
+	}
+	.srch:focus {
+		outline: none;
+		border-color: var(--sage);
+	}
+	.empty {
+		color: var(--muted);
+		margin-bottom: 22px;
 	}
 
 	.pager {
