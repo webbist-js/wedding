@@ -264,7 +264,7 @@
 						<div class="plusfields">
 							<label class="field">
 								Their name
-								<input name="name_{m.id}" placeholder="e.g. Sam Bennett" />
+								<input name="name_{m.id}" placeholder="Name" />
 							</label>
 							<label class="field">
 								Relation (optional)
