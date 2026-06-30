@@ -52,7 +52,7 @@ export const MENU = {
 	canapes: [
 		'Halloumi, rosemary & olive oil',
 		'Honey roasted sausages, spicy ketchup',
-		'Tomato on toast'
+		'Nduja toast, goat’s curd'
 	],
 	starter: 'Leek & potato soup, Cashel blue',
 	main: 'Rotisserie chicken with herb butter & tarragon cream',

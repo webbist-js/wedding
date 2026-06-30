@@ -193,7 +193,7 @@ export const SEED_QUOTE: SeedQuoteLine[] = [
   { label: 'Prosecco di Valdobbiadene, glass', section: 'Drinks', scope: 'day', price: 0, included: true },
   { label: 'Canapé — halloumi, rosemary & olive oil', section: 'Menu', scope: 'day', price: 0, included: true },
   { label: 'Canapé — honey roasted sausages, spicy ketchup', section: 'Menu', scope: 'day', price: 0, included: true },
-  { label: 'Canapé — tomato on toast', section: 'Menu', scope: 'day', price: 0, included: true },
+  { label: 'Canapé — nduja toast, goat’s curd', section: 'Menu', scope: 'day', price: 0, included: true },
   { label: 'Starter — leek & potato soup, Cashel blue', section: 'Menu', scope: 'day', price: 12.0, confirmed: false },
   { label: 'Main — rotisserie chicken, herb butter / tarragon cream', section: 'Menu', scope: 'day', price: 44.0, confirmed: false },
   { label: 'Side — tender stem broccoli, chilli & garlic', section: 'Menu', scope: 'day', price: 0, included: true },
