@@ -607,6 +607,13 @@
 			display: none;
 		}
 	}
+	/* Phones: two wider columns so the select values (e.g. "Bride's family",
+	   "Evening guest") aren't clipped in cramped 110px cells. */
+	@media (max-width: 480px) {
+		.members .row {
+			grid-template-columns: 1fr 1fr;
+		}
+	}
 
 	/* ---------------- Add-household modal ---------------- */
 	.overlay {

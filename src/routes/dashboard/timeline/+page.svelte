@@ -216,7 +216,7 @@
   .items { padding-bottom: 12px; }
   .task { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line2); border-left: 2px solid transparent; }
   .task.drop-over { border-left-color: var(--sage); background: var(--sage-soft); }
-  .task .label { flex: 1; font-size: 14px; color: var(--body); }
+  .task .label { flex: 1; min-width: 0; font-size: 14px; color: var(--body); overflow-wrap: anywhere; }
   .task.done .label { color: var(--muted); text-decoration: line-through; }
   .check { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--rule); background: transparent; cursor: pointer; padding: 0; flex: none; transition: background-color .12s, border-color .12s; }
   .check.on { background: var(--sage); border-color: var(--sage); }
@@ -236,11 +236,11 @@
   .rm:hover { color: var(--terra); }
 
   .additem { display: flex; gap: 8px; margin-top: 12px; }
-  .additem input { flex: 1; border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; font: inherit; font-size: 13px; }
+  .additem input { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; font: inherit; font-size: 13px; }
   .additem button { background: var(--sage); color: #fff; border: 0; border-radius: 8px; width: 40px; font-size: 18px; cursor: pointer; }
 
   .addphase { display: flex; gap: 8px; margin-top: 18px; margin-left: 30px; }
-  .addphase input { border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; font: inherit; font-size: 13px; }
+  .addphase input { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; font: inherit; font-size: 13px; }
   .addphase button { background: var(--sage); color: #fff; border: 0; border-radius: 8px; padding: 9px 16px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; cursor: pointer; }
 
   @media (max-width: 640px) {
