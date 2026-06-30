@@ -36,6 +36,9 @@ export const actions: Actions = {
     const f = await request.formData();
     const id = Number(f.get('id'));
     const [v] = await db.select({ category: vendors.category }).from(vendors).where(eq(vendors.id, id));
+    // Detach any calendar appointments from this vendor before deletion so we
+    // preserve the appointments themselves while satisfying the FK constraint.
+    await db.update(appointments).set({ vendorId: null }).where(eq(appointments.vendorId, id));
     await db.delete(vendors).where(eq(vendors.id, id));
     await recordAudit(locals, { action: 'delete', entity: 'vendor', entityId: id, summary: `Removed ${v?.category ?? 'a vendor'}` });
   }
