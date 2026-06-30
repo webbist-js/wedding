@@ -219,6 +219,9 @@
   .mobilebar { display: none; }
   .scrim { display: none; }
   @media (max-width: 900px) {
+    /* Stack the shell so the mobile bar is a full-width top bar rather than a
+       flex sibling sitting as a column to the left of the content. */
+    .shell { flex-direction: column; }
     .mobilebar {
       display: flex; align-items: center; gap: 14px; position: sticky; top: 0; z-index: 30;
       background: var(--sidebar); color: var(--sidebar-active); padding: 12px 16px;
