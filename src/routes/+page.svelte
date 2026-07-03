@@ -211,7 +211,10 @@
 		align-items: center;
 		justify-content: center;
 		text-align: center;
-		padding: 120px clamp(20px, 5vw, 64px) 60px;
+		/* Bottom padding reserves room for the absolutely-positioned scroll cue
+		   (bottom 28px + ~66px cue) so it can't overlap .hero-meta when the
+		   hero content fills the viewport on small screens. */
+		padding: 120px clamp(20px, 5vw, 64px) 130px;
 		position: relative;
 	}
 	.hero-eyebrow {
