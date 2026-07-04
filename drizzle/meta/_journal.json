@@ -148,6 +148,13 @@
       "when": 1782329436098,
       "tag": "0020_drop_decor_section",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1782329436099,
+      "tag": "0021_clear_favour_move_notes",
+      "breakpoints": true
     }
   ]
 }
