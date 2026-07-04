@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 import { json, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db/index';
-import { vendors } from '$lib/server/db/schema';
+import { vendors, payments } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import { env } from '$env/dynamic/private';
 import { notifySupplierBooked } from '$lib/server/slack';
@@ -38,6 +38,17 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	});
 
 	if (field === 'depositPaid' && !!value && !prev.depositPaid) {
+		// First deposit event: record the money as a payment (once, evented — not
+		// a sync; deleting/adjusting the payment later is fine).
+		const existing = await db.select().from(payments).where(eq(payments.vendorId, Number(id)));
+		if (existing.length === 0 && prev.depositAmount) {
+			await db.insert(payments).values({
+				amount: prev.depositAmount,
+				note: 'Deposit',
+				vendorId: Number(id),
+				createdAt: new Date()
+			});
+		}
 		const base = env.PUBLIC_BASE_URL ?? '';
 		await notifySupplierBooked({
 			category: prev.category,

@@ -2,6 +2,7 @@
   import Notes from '$lib/components/Notes.svelte';
   import type { NoteRow } from '$lib/components/Notes.svelte';
   import { enhance } from '$app/forms';
+  import { invalidateAll } from '$app/navigation';
   let { data } = $props();
 
   const STAGES = ['Lead', 'Enquired', 'Quoted', 'Shortlisted', 'Booked'];
@@ -35,6 +36,37 @@
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ id, field, value })
     });
+    // Deposit flips can create a payment row server-side — refresh to show it.
+    if (field === 'depositPaid') await invalidateAll();
+  }
+
+  const gbp = (n: number) => '£' + n.toLocaleString('en-GB', { maximumFractionDigits: 2 });
+
+  async function addPayment(vendorId: number, form: HTMLFormElement) {
+    const f = new FormData(form);
+    const amount = Number(f.get('amount'));
+    if (!amount) return;
+    await fetch('/dashboard/budget/payments', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        op: 'add',
+        amount,
+        paidOn: String(f.get('paidOn') ?? '') || null,
+        note: String(f.get('note') ?? '') || null,
+        vendorId
+      })
+    });
+    form.reset();
+    await invalidateAll();
+  }
+  async function removePayment(id: number) {
+    await fetch('/dashboard/budget/payments', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ op: 'remove', id })
+    });
+    await invalidateAll();
   }
 </script>
 
@@ -43,6 +75,7 @@
 
 <div class="list">
   {#each data.vendors as v (v.id)}
+    {@const vPays = data.payments.filter((p) => p.vendorId === v.id)}
     <article class="vendor" class:chosen={v.depositPaid}>
       <div class="top">
         <input class="cat" value={v.category} placeholder="Category"
@@ -82,6 +115,24 @@
           onchange={(e) => save(v.id, 'depositPaid', e.currentTarget.checked)} />
         Deposit paid — booked &amp; chosen supplier
       </label>
+
+      <div class="payments">
+        <span class="pay-title">
+          Payments{#if vPays.length}&nbsp;· {gbp(vPays.reduce((a, p) => a + p.amount, 0))} paid{/if}
+        </span>
+        {#each vPays as p (p.id)}
+          <span class="pay-item">
+            £{p.amount.toLocaleString('en-GB')}{p.paidOn ? ` · ${fmt(p.paidOn)}` : ''}{p.note ? ` · ${p.note}` : ''}
+            <button class="pay-rm" title="Remove payment" onclick={() => removePayment(p.id)}>×</button>
+          </span>
+        {/each}
+        <form class="pay-add" onsubmit={(e) => { e.preventDefault(); addPayment(v.id, e.currentTarget); }}>
+          <input name="amount" type="number" step="0.01" min="0.01" placeholder="£" required />
+          <input name="paidOn" type="date" />
+          <input name="note" placeholder="What for?" />
+          <button>+ Payment</button>
+        </form>
+      </div>
 
       <div class="actions">
         {#each apptsByVendor[v.id] ?? [] as a (a.id)}
@@ -134,6 +185,15 @@
   .grid input, .grid select { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font: inherit; font-size: 13px; background: #fff; min-width: 0; }
 
   .deposit-toggle { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 13px; color: var(--body); cursor: pointer; }
+  .payments { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line2); }
+  .pay-title { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .pay-item { font-size: 12.5px; background: var(--sage-soft); border-radius: 8px; padding: 4px 8px; color: var(--body); font-variant-numeric: tabular-nums; }
+  .pay-rm { border: 0; background: none; color: var(--terra); cursor: pointer; font-size: 13px; padding: 0 0 0 4px; }
+  .pay-add { display: flex; gap: 6px; margin-left: auto; }
+  .pay-add input { border: 1px solid var(--line); border-radius: 6px; padding: 5px 7px; font: inherit; font-size: 12.5px; }
+  .pay-add input[name='amount'] { width: 80px; }
+  .pay-add input[name='note'] { width: 120px; }
+  .pay-add button { border: 0; border-radius: 6px; background: var(--sage); color: #fff; font-size: 12.5px; font-weight: 600; padding: 5px 10px; cursor: pointer; }
 
   .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line2); }
   .chip { display: inline-flex; align-items: center; gap: 6px; background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 6px 13px; font: inherit; font-size: 10.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--sage-deep); text-decoration: none; cursor: pointer; }

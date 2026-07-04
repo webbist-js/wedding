@@ -1,8 +1,9 @@
 import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db/index';
-import { vendors, appointments, notes } from '$lib/server/db/schema';
+import { vendors, appointments, notes, budgetLines, payments } from '$lib/server/db/schema';
 import { asc, desc, eq } from 'drizzle-orm';
 import { recordAudit } from '$lib/server/audit';
+import { linkedConfirmed } from '$lib/money';
 
 export const load: PageServerLoad = async () => ({
   vendors: await db.select().from(vendors).orderBy(asc(vendors.sort)),
@@ -21,7 +22,8 @@ export const load: PageServerLoad = async () => ({
     .select()
     .from(notes)
     .where(eq(notes.entityType, 'vendor'))
-    .orderBy(desc(notes.pinned), desc(notes.updatedAt), desc(notes.id))
+    .orderBy(desc(notes.pinned), desc(notes.updatedAt), desc(notes.id)),
+  payments: await db.select().from(payments).orderBy(asc(payments.id))
 });
 
 export const actions: Actions = {
@@ -39,6 +41,25 @@ export const actions: Actions = {
     // Detach any calendar appointments from this vendor before deletion so we
     // preserve the appointments themselves while satisfying the FK constraint.
     await db.update(appointments).set({ vendorId: null }).where(eq(appointments.vendorId, id));
+    // Money safety: freeze the derived confirmed figure into any linked budget
+    // line, unlink it, and re-attach this vendor's payments to that line (or
+    // leave them vendor-less if no line) — spend history survives the delete.
+    const [vRow] = await db.select().from(vendors).where(eq(vendors.id, id));
+    const [linked] = await db.select().from(budgetLines).where(eq(budgetLines.vendorId, id));
+    if (linked && vRow) {
+      await db
+        .update(budgetLines)
+        .set({
+          vendorId: null,
+          confirmed: linkedConfirmed(vRow),
+          status: vRow.depositPaid ? 'Deposit' : linked.status
+        })
+        .where(eq(budgetLines.id, linked.id));
+    }
+    await db
+      .update(payments)
+      .set({ vendorId: null, budgetLineId: linked?.id ?? null })
+      .where(eq(payments.vendorId, id));
     await db.delete(vendors).where(eq(vendors.id, id));
     await recordAudit(locals, { action: 'delete', entity: 'vendor', entityId: id, summary: `Removed ${v?.category ?? 'a vendor'}` });
   }
