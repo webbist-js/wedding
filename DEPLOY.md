@@ -96,3 +96,13 @@ in the AI phase.
 - **If the DB fails to load on Vercel** (native-binding error): switch the client
   in `src/lib/server/db/index.ts` to `import { createClient } from '@libsql/client/web'`
   — pure HTTP, no native module. Only needed if the auto-client misbehaves on serverless.
+
+## Gallery (Vercel Blob)
+
+1. Vercel project → Storage → Create → **Blob** → connect to this project.
+   This injects `BLOB_READ_WRITE_TOKEN` into the deployment automatically.
+2. Set `GALLERY_PASSWORD` in the project env vars.
+3. **Plan:** Blob on Hobby hard-caps at 1GB storage / 10GB transfer and then
+   blocks — upgrade to Pro before the wedding. Downgrade after.
+4. Print the QR from `/dashboard/gallery` (error-correction H, 1024px).
+5. Test the whole loop from a phone on mobile data before printing.
