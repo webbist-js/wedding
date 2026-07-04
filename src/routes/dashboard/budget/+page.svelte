@@ -5,19 +5,54 @@
 	let { data } = $props();
 	const gbp = (n: number) => '£' + n.toLocaleString('en-GB', { maximumFractionDigits: 0 });
 
-	let earmark = $derived(data.lines.reduce((a, l) => a + l.budgeted, 0));
-	let confirmed = $derived(data.lines.reduce((a, l) => a + l.confirmed, 0));
-	let paid = $derived(data.lines.reduce((a, l) => a + l.paid, 0));
+	let earmark = $derived(data.totals.budgeted);
+	let confirmed = $derived(data.totals.confirmed);
+	let paid = $derived(data.totals.paid);
 	let remaining = $derived(data.target - confirmed);
 	let overBudget = $derived(remaining < 0);
 
-	async function saveField(id: number, field: string, value: string | number) {
+	async function saveField(id: number, field: string, value: string | number | null) {
 		await fetch('/dashboard/budget/line', {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
 			body: JSON.stringify({ id, field, value })
 		});
 	}
+
+	// ---- Payments ledger (expander under a row's Paid cell) ----
+	let openPayments = $state<number | null>(null);
+	async function addPayment(line: (typeof data.lines)[number], form: HTMLFormElement) {
+		const f = new FormData(form);
+		const amount = Number(f.get('amount'));
+		if (!amount) return;
+		await fetch('/dashboard/budget/payments', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({
+				op: 'add',
+				amount,
+				paidOn: String(f.get('paidOn') ?? '') || null,
+				note: String(f.get('note') ?? '') || null,
+				...(line.link?.type === 'vendor' ? { vendorId: line.link.vendorId } : { budgetLineId: line.id })
+			})
+		});
+		form.reset();
+		await invalidateAll();
+	}
+	async function removePayment(id: number) {
+		await fetch('/dashboard/budget/payments', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ op: 'remove', id })
+		});
+		await invalidateAll();
+	}
+	async function linkVendor(id: number, vendorId: string) {
+		await saveField(id, 'vendorId', vendorId || null);
+		await invalidateAll();
+	}
+	const fmtDate = (d: string) =>
+		new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 	async function toggleStatio(id: number, done: boolean) {
 		await fetch('/dashboard/stationery', {
 			method: 'POST',
@@ -132,16 +167,16 @@
 			{#each sectionLines as line (line.id)}
 				<div
 					class="row"
-					class:venue={line.isShopping}
+					class:venue={line.id < 0}
 					class:drop-over={dragOverId === line.id}
-					draggable={!line.isShopping}
+					draggable={line.id > 0}
 					ondragstart={(e) => onDragStart(e, line.id)}
 					ondragover={(e) => onDragOver(e, line.id)}
 					ondragleave={onDragLeave}
 					ondrop={(e) => onDrop(e, line.id)}
 				>
-					<span class="grip" aria-hidden="true">{line.isShopping ? '' : '≡'}</span>
-					{#if line.isShopping}
+					<span class="grip" aria-hidden="true">{line.id < 0 ? '' : '≡'}</span>
+					{#if line.link?.type === 'shopping'}
 						<span class="cat venue-cat">{line.category} <Pill tone="green">Synced</Pill></span>
 						<span class="readonly num">{gbp(line.budgeted)}</span>
 						<span class="readonly num">{gbp(line.confirmed)}</span>
@@ -150,37 +185,66 @@
 						<span class="locked">Everything else</span>
 						<a class="shop-link" href="/dashboard/shopping" title="Edit shopping list">Edit →</a>
 					{:else}
-						<input
-							class="cat"
-							value={line.category}
-							onchange={(e) => saveField(line.id, 'category', e.currentTarget.value)}
-						/>
+						<span class="catwrap">
+							<input
+								class="cat"
+								value={line.category}
+								onchange={(e) => saveField(line.id, 'category', e.currentTarget.value)}
+							/>
+							{#if line.link?.type === 'venue'}
+								<a class="src-chip" href="/dashboard/venue" title="Figures come from the venue quote">from Venue ↗</a>
+							{:else if line.link?.type === 'vendor'}
+								<a class="src-chip" href="/dashboard/vendors" title="Figures come from this vendor">⭲ {line.link.vendorName}</a>
+							{/if}
+							{#if line.link?.type !== 'venue'}
+								<select
+									class="linksel"
+									title="Link this line to a vendor"
+									value={line.link?.type === 'vendor' ? String(line.link.vendorId) : ''}
+									onchange={(e) => linkVendor(line.id, e.currentTarget.value)}
+								>
+									<option value="">— manual —</option>
+									{#each data.vendorOptions as v}
+										<option value={String(v.id)}>{v.label}</option>
+									{/each}
+								</select>
+							{/if}
+						</span>
 						<input
 							class="num"
 							type="number"
 							value={line.budgeted}
 							onchange={(e) => saveField(line.id, 'budgeted', e.currentTarget.value)}
 						/>
-						<input
-							class="num"
-							type="number"
-							value={line.confirmed}
-							onchange={(e) => saveField(line.id, 'confirmed', e.currentTarget.value)}
-						/>
-						<input
-							class="num"
-							type="number"
-							value={line.paid}
-							onchange={(e) => saveField(line.id, 'paid', e.currentTarget.value)}
-						/>
-						<select
-							onchange={(e) => saveField(line.id, 'status', e.currentTarget.value)}
-							value={line.status}
+						{#if line.editable}
+							<input
+								class="num"
+								type="number"
+								value={line.confirmed}
+								onchange={(e) => saveField(line.id, 'confirmed', e.currentTarget.value)}
+							/>
+						{:else}
+							<span class="readonly num" title="Derived from the linked source">{gbp(line.confirmed)}</span>
+						{/if}
+						<button
+							class="paybtn num"
+							title="Payments"
+							onclick={() => (openPayments = openPayments === line.id ? null : line.id)}
 						>
-							{#each statusOptions as opt}
-								<option value={opt} selected={opt === line.status}>{opt}</option>
-							{/each}
-						</select>
+							{gbp(line.paid)} <span class="caret">{openPayments === line.id ? '▴' : '▾'}</span>
+						</button>
+						{#if line.editable}
+							<select
+								onchange={(e) => saveField(line.id, 'status', e.currentTarget.value)}
+								value={line.status}
+							>
+								{#each statusOptions as opt}
+									<option value={opt} selected={opt === line.status}>{opt}</option>
+								{/each}
+							</select>
+						{:else}
+							<span class="locked">{line.status}</span>
+						{/if}
 						<select
 							onchange={(e) => saveField(line.id, 'section', e.currentTarget.value)}
 							value={line.section}
@@ -189,12 +253,35 @@
 								<option value={s} selected={s === line.section}>{s}</option>
 							{/each}
 						</select>
-						<form method="POST" action="?/remove" use:enhance class="rmf">
-							<input type="hidden" name="id" value={line.id} />
-							<button type="submit" title="Remove" aria-label="Remove">×</button>
-						</form>
+						{#if line.link?.type === 'venue'}
+							<span></span>
+						{:else}
+							<form method="POST" action="?/remove" use:enhance class="rmf">
+								<input type="hidden" name="id" value={line.id} />
+								<button type="submit" title="Remove" aria-label="Remove">×</button>
+							</form>
+						{/if}
 					{/if}
 				</div>
+				{#if openPayments === line.id && line.id > 0}
+					<div class="payrow">
+						{#if line.payments.length === 0}
+							<span class="pay-empty">No payments recorded yet.</span>
+						{/if}
+						{#each line.payments as p (p.id)}
+							<span class="pay-item">
+								£{p.amount.toLocaleString('en-GB')}{p.paidOn ? ` · ${fmtDate(p.paidOn)}` : ''}{p.note ? ` · ${p.note}` : ''}
+								<button class="pay-rm" title="Remove payment" onclick={() => removePayment(p.id)}>×</button>
+							</span>
+						{/each}
+						<form class="pay-add" onsubmit={(e) => { e.preventDefault(); addPayment(line, e.currentTarget); }}>
+							<input name="amount" type="number" step="0.01" min="0.01" placeholder="£" required />
+							<input name="paidOn" type="date" />
+							<input name="note" placeholder="What for?" />
+							<button>+ Payment</button>
+						</form>
+					</div>
+				{/if}
 			{/each}
 
 			<form method="POST" action="?/add" use:enhance class="addrow">
@@ -412,6 +499,114 @@
 		color: var(--faint);
 		font-size: 12px;
 		font-style: italic;
+	}
+	.catwrap {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		min-width: 0;
+	}
+	.catwrap .cat {
+		flex: 1;
+		min-width: 60px;
+	}
+	.src-chip {
+		flex: none;
+		font-size: 11px;
+		font-weight: 600;
+		color: var(--sage-deep);
+		background: var(--sage-soft);
+		border-radius: 6px;
+		padding: 3px 7px;
+		text-decoration: none;
+		white-space: nowrap;
+		max-width: 140px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.linksel {
+		flex: none;
+		width: 26px;
+		color: transparent;
+		background: transparent !important;
+		border-color: var(--line2) !important;
+		cursor: pointer;
+	}
+	.paybtn {
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		padding: 6px 8px;
+		font: inherit;
+		font-size: 13px;
+		background: #fff;
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+		cursor: pointer;
+		color: var(--sage-deep);
+		white-space: nowrap;
+	}
+	.paybtn .caret {
+		color: var(--muted);
+		font-size: 10px;
+	}
+	.payrow {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 8px;
+		padding: 10px 12px 12px 32px;
+		border-bottom: 1px solid var(--line2);
+		background: var(--sage-soft);
+	}
+	.pay-empty {
+		color: var(--muted);
+		font-size: 12.5px;
+		font-style: italic;
+	}
+	.pay-item {
+		font-size: 12.5px;
+		background: #fff;
+		border: 1px solid var(--line);
+		border-radius: 8px;
+		padding: 4px 8px;
+		color: var(--body);
+		font-variant-numeric: tabular-nums;
+	}
+	.pay-rm {
+		border: 0;
+		background: none;
+		color: var(--terra);
+		cursor: pointer;
+		font-size: 13px;
+		padding: 0 0 0 4px;
+	}
+	.pay-add {
+		display: flex;
+		gap: 6px;
+		margin-left: auto;
+	}
+	.pay-add input {
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		padding: 5px 7px;
+		font: inherit;
+		font-size: 12.5px;
+	}
+	.pay-add input[name='amount'] {
+		width: 80px;
+	}
+	.pay-add input[name='note'] {
+		width: 130px;
+	}
+	.pay-add button {
+		border: 0;
+		border-radius: 6px;
+		background: var(--sage);
+		color: #fff;
+		font-size: 12.5px;
+		font-weight: 600;
+		padding: 5px 10px;
+		cursor: pointer;
 	}
 	.row.venue .venue-cat {
 		display: flex;

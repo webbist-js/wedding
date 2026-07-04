@@ -1,45 +1,20 @@
 import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db/index';
-import { budgetLines, stationeryItems, settings, shoppingItems } from '$lib/server/db/schema';
+import { budgetLines, stationeryItems, settings, vendors, payments } from '$lib/server/db/schema';
 import { asc, eq } from 'drizzle-orm';
 import { BUDGET_SECTIONS } from '$lib/server/db/data';
-
-// The shopping list surfaces in the budget as one synced, read-only line.
-const SHOPPING_BUDGET_CATEGORY = 'Shopping list';
-const SHOPPING_BUDGET_SECTION = 'Everything else';
+import { effectiveBudget } from '$lib/server/budget';
 
 export const load: PageServerLoad = async () => {
-	const lines = await db.select().from(budgetLines).orderBy(asc(budgetLines.sort));
+	// All money figures come from the shared rollup — the budget page never
+	// computes its own totals (see lib/server/budget.ts).
+	const { lines, totals, target, basis } = await effectiveBudget();
 	const statio = await db.select().from(stationeryItems).orderBy(asc(stationeryItems.sort));
-	const setRows = await db.select().from(settings);
-	const s = Object.fromEntries(setRows.map((r) => [r.key, r.value]));
-	const target = Number(s.target ?? 30000);
-
-	const rows = lines.map((l) => ({ ...l, isShopping: false }));
-
-	// Inject the shopping-list total as a synced line under "Everything else".
-	const shopping = await db.select().from(shoppingItems);
-	const shopTotal = shopping.reduce((a, i) => a + i.cost * i.qty, 0);
-	const shopPaid = shopping.filter((i) => i.bought).reduce((a, i) => a + i.cost * i.qty, 0);
-	rows.push({
-		id: -1,
-		category: SHOPPING_BUDGET_CATEGORY,
-		section: SHOPPING_BUDGET_SECTION,
-		budgeted: shopTotal,
-		confirmed: shopTotal,
-		paid: shopPaid,
-		status: 'Shopping',
-		sort: 1_000_000_000,
-		isShopping: true
-	});
-
-	return {
-		sections: BUDGET_SECTIONS,
-		lines: rows,
-		statio,
-		target,
-		shoppingCount: shopping.length
-	};
+	const vendorOptions = (await db.select().from(vendors).orderBy(asc(vendors.sort))).map((v) => ({
+		id: v.id,
+		label: v.name ? `${v.category} — ${v.name}` : v.category
+	}));
+	return { sections: BUDGET_SECTIONS, lines, totals, target, basis, statio, vendorOptions };
 };
 
 export const actions: Actions = {
@@ -54,14 +29,17 @@ export const actions: Actions = {
 			section,
 			budgeted: 0,
 			confirmed: 0,
-			paid: 0,
 			status: 'Estimate',
 			sort: maxSort + 1
 		});
 	},
 	remove: async ({ request }) => {
 		const f = await request.formData();
-		await db.delete(budgetLines).where(eq(budgetLines.id, Number(f.get('id'))));
+		const id = Number(f.get('id'));
+		// A line's directly-attached payments go with it (vendor payments carry
+		// no line id and survive on the vendor).
+		await db.delete(payments).where(eq(payments.budgetLineId, id));
+		await db.delete(budgetLines).where(eq(budgetLines.id, id));
 	},
 	setTarget: async ({ request }) => {
 		const f = await request.formData();
