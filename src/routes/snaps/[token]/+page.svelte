@@ -55,8 +55,12 @@
 			if (fileInput) fileInput.value = '';
 			if (cameraInput) cameraInput.value = '';
 			confetti({ particleCount: 120, spread: 75, origin: { y: 0.7 } });
-		} catch {
-			uploadError = 'Hmm, that didn’t send — the barn Wi-Fi can be shy. Give it another go!';
+		} catch (e) {
+			// Keep the playful line but append the real reason — otherwise upload
+			// failures are undiagnosable from a guest's phone.
+			const detail = e instanceof Error ? e.message : String(e);
+			console.error('gallery upload failed:', e);
+			uploadError = `Hmm, that didn’t send — the barn Wi-Fi can be shy. Give it another go! (${detail})`;
 		} finally {
 			busy = false;
 		}
