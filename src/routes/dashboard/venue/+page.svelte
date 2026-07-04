@@ -1,12 +1,19 @@
 <script lang="ts">
   import { computeQuote, lineQty } from '$lib/quote';
+  import type { CostBasis } from '$lib/headcount';
   let { data } = $props();
-  let day = $state(data.day), eve = $state(data.eve), min = $state(data.min);
-  let lines = $state(data.lines.map((l) => ({ ...l })));
-  let result = $derived(computeQuote(lines as any, { day, eve, min }));
 
-  // The venue's original headline quote (80 covers).
-  const ORIGINAL_QUOTE = 17319.4;
+  // Which headcounts price the quote: typed numbers, everyone invited, or
+  // RSVP-confirmed guests. The chosen basis also drives the Budget's Venue line.
+  let basis = $state<CostBasis>(data.basis);
+  let manual = $state({ ...data.manual });
+  let min = $state(data.min);
+  let lines = $state(data.lines.map((l) => ({ ...l })));
+
+  const active = $derived(basis === 'manual' ? manual : data.counts[basis]);
+  const result = $derived(computeQuote(lines as any, { ...active, min }));
+  const estimateGrand = $derived(computeQuote(lines as any, { ...data.counts.estimate, min }).grand);
+  const confirmedGrand = $derived(computeQuote(lines as any, { ...data.counts.confirmed, min }).grand);
 
   const gbp = (n: number) => '£' + n.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const SCOPE_LABEL: Record<string, string> = {
@@ -18,10 +25,10 @@
     let food = 0, fixed = 0;
     for (const l of lines) {
       if (l.bond) continue;
-      const t = lineQty(l as any, { day, eve, min }) * l.price;
+      const t = lineQty(l as any, { ...active, min }) * l.price;
       if (l.scope === 'fixed') fixed += t; else food += t;
     }
-    return { food, hire: fixed + result.bond, vs: result.grand - ORIGINAL_QUOTE };
+    return { food, hire: fixed + result.bond, vs: result.grand - data.originalQuote };
   });
 
   async function post(payload: unknown) {
@@ -29,33 +36,64 @@
       method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload)
     });
   }
-  function saveLine(line: any, field: 'label' | 'scope' | 'price' | 'qty' | 'bond') {
+  function saveLine(line: any, field: 'label' | 'scope' | 'meal' | 'price' | 'qty' | 'bond') {
     post({ id: line.id, field, value: line[field] });
   }
   async function addLine() {
     const res = await post({ op: 'add' });
     const { id } = await res.json();
-    lines = [...lines, { id, label: 'New item', section: 'Custom', scope: 'fixed', price: 0, qty: null, included: false, confirmed: true, bond: false, sort: 999 }];
+    lines = [...lines, { id, label: 'New item', section: 'Custom', scope: 'fixed', meal: 'any', price: 0, qty: null, included: false, confirmed: true, bond: false, sort: 999 }];
   }
   function removeLine(line: any) {
     post({ op: 'remove', id: line.id });
     lines = lines.filter((l) => l.id !== line.id);
   }
-  function saveSetting(setting: 'dayGuests' | 'eveGuests' | 'minSpend', value: number) {
+  function saveSetting(setting: 'dayGuests' | 'eveGuests' | 'minSpend' | 'vegGuests', value: number) {
     post({ setting, value });
   }
+  function saveBasis() {
+    post({ setting: 'venueCostBasis', value: basis });
+  }
   function reset() {
-    day = 61; eve = 90; min = 16455;
-    saveSetting('dayGuests', day); saveSetting('eveGuests', eve); saveSetting('minSpend', min);
+    manual = { day: 61, eve: 90, veg: 6 }; min = 16455;
+    saveSetting('dayGuests', manual.day); saveSetting('eveGuests', manual.eve);
+    saveSetting('vegGuests', manual.veg); saveSetting('minSpend', min);
   }
 </script>
 
 <div class="ctrls">
-  <label>Day guests <input type="number" bind:value={day} onchange={() => saveSetting('dayGuests', day)} /></label>
-  <label>Evening guests (total) <input type="number" bind:value={eve} onchange={() => saveSetting('eveGuests', eve)} /></label>
+  <label>Cost basis
+    <select class="basis" bind:value={basis} onchange={saveBasis}>
+      <option value="manual">Manual counts</option>
+      <option value="estimate">All invited (estimate)</option>
+      <option value="confirmed">RSVP confirmed</option>
+    </select>
+  </label>
+  {#if basis === 'manual'}
+    <label>Day guests <input type="number" bind:value={manual.day} onchange={() => saveSetting('dayGuests', manual.day)} /></label>
+    <label>Evening guests (total) <input type="number" bind:value={manual.eve} onchange={() => saveSetting('eveGuests', manual.eve)} /></label>
+    <label>Vegetarian (day) <input type="number" bind:value={manual.veg} onchange={() => saveSetting('vegGuests', manual.veg)} /></label>
+  {:else}
+    <span class="derived-counts">
+      <strong>{active.day}</strong> day · <strong>{active.eve}</strong> evening · <strong>{active.veg}</strong> veg
+      <em>from the guest list — {basis === 'confirmed' ? 'RSVP yes only' : 'everyone who hasn’t declined'}</em>
+    </span>
+  {/if}
   <label>Min. spend (£) <input type="number" bind:value={min} onchange={() => saveSetting('minSpend', min)} /></label>
   <button class="reset" type="button" onclick={reset}>Reset</button>
-  <span class="auto">edits save automatically</span>
+  <span class="auto">edits save automatically · this basis drives the Budget’s Venue line</span>
+</div>
+
+<div class="card compare">
+  <div class="c" class:active={basis === 'estimate'}>
+    <span>All invited (estimate)</span><strong>{gbp(estimateGrand)}</strong>
+  </div>
+  <div class="c" class:active={basis === 'confirmed'}>
+    <span>RSVP confirmed so far</span><strong>{gbp(confirmedGrand)}</strong>
+  </div>
+  <div class="c">
+    <span>Original 80-cover quote</span><strong>{gbp(data.originalQuote)}</strong>
+  </div>
 </div>
 
 <div class="card">
@@ -69,7 +107,7 @@
   </div>
 
   {#each lines as line, i (line.id)}
-    {@const qty = lineQty(line as any, { day, eve, min })}
+    {@const qty = lineQty(line as any, { ...active, min })}
     {#if line.section !== lines[i - 1]?.section}
       <div class="band">{line.section}</div>
     {/if}
@@ -77,6 +115,13 @@
       <span class="itemcell">
         <input class="label" bind:value={line.label} onblur={() => saveLine(line, 'label')} placeholder="Item" />
         {#if !line.confirmed}<span class="confirm">Confirm</span>{/if}
+        {#if line.scope === 'day'}
+          <select class="meal" class:mealset={line.meal !== 'any'} bind:value={line.meal} onchange={() => saveLine(line, 'meal')} title="Who this per-head price applies to">
+            <option value="any">everyone</option>
+            <option value="veg">veg only</option>
+            <option value="nonveg">non-veg only</option>
+          </select>
+        {/if}
       </span>
       <select class="scope" bind:value={line.scope} onchange={() => saveLine(line, 'scope')}>
         {#each Object.entries(SCOPE_LABEL) as [val, lbl]}<option value={val}>{lbl}</option>{/each}
@@ -104,7 +149,7 @@
   <div class="row"><span>Hire, ceremony &amp; extras</span><span>{gbp(breakdown.hire)}</span></div>
   <div class="row grand"><span>Estimated total</span><span>{gbp(result.grand)}</span></div>
   <p class="vs">
-    Original 80-cover quote: {gbp(ORIGINAL_QUOTE)} ·
+    Original 80-cover quote: {gbp(data.originalQuote)} ·
     {#if breakdown.vs > 0}<span class="up">{gbp(breakdown.vs)} higher vs quote</span>
     {:else if breakdown.vs < 0}<span class="down">{gbp(-breakdown.vs)} under quote</span>
     {:else}in line with quote{/if}
@@ -125,6 +170,19 @@
   .ctrls { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 18px; }
   .ctrls label { display: grid; gap: 6px; font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
   .ctrls input { border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; width: 120px; font: inherit; font-size: 16px; background: #fff; }
+  .ctrls .basis { border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; font: inherit; font-size: 14px; background: #fff; cursor: pointer; }
+  .derived-counts { font-size: 14px; color: var(--body); padding: 9px 0; }
+  .derived-counts strong { color: var(--ink); font-size: 16px; }
+  .derived-counts em { display: block; font-style: normal; font-size: 11px; color: var(--muted); }
+  .compare { display: flex; flex-wrap: wrap; gap: 0; padding: 0; overflow: hidden; }
+  .compare .c { flex: 1; min-width: 160px; display: grid; gap: 2px; padding: 14px 18px; border-right: 1px solid var(--line2); }
+  .compare .c:last-child { border-right: 0; }
+  .compare .c.active { background: var(--sage-soft); }
+  .compare .c span { font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .compare .c strong { font-family: var(--serif); font-size: 22px; color: var(--ink); }
+  .meal { flex: none; border: 1px solid transparent; background: transparent; color: var(--faint); font: inherit; font-size: 11px; padding: 3px 2px; border-radius: 6px; cursor: pointer; }
+  .meal.mealset { color: var(--sage-deep); background: var(--sage-soft); }
+  .meal:focus { outline: none; border-color: var(--line); background: #fff; }
   .reset { background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 9px 16px; font: inherit; font-size: 11px;
     letter-spacing: .08em; text-transform: uppercase; color: var(--muted); cursor: pointer; }
   .reset:hover { border-color: var(--sage); color: var(--sage-deep); }
