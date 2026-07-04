@@ -3,8 +3,7 @@
   import Pill from '$lib/components/Pill.svelte';
   let { data } = $props();
 
-  const gbp = (n: number) => '£' + n.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const gbp0 = (n: number) => '£' + n.toLocaleString('en-GB', { maximumFractionDigits: 0 });
+  import { gbp } from '$lib/money';
 
   let days = $state(0);
   $effect(() => {
@@ -12,7 +11,13 @@
   });
 
   let b = $derived(data.budget);
-  const pctOf = (n: number) => (b.target > 0 ? Math.min(100, (n / b.target) * 100) : 0);
+  // Same bar maths as the Budget page's "Where the money is" — one source of
+  // truth for the numbers (effectiveBudget) AND for how they're presented.
+  const overTarget = $derived(b.earmarked - b.target);
+  const barTotal = $derived(Math.max(b.target, b.earmarked, b.confirmed, 1));
+  const pctOf = (n: number) => (100 * n) / barTotal;
+  const confirmedUnpaid = $derived(Math.max(0, b.confirmed - b.paid));
+  const stillEstimated = $derived(Math.max(0, b.earmarked - b.confirmed));
 
   let invited = $derived(data.summary.total);
   let yes = $derived(data.summary.rsvpYes);
@@ -47,7 +52,7 @@
   <div class="stat"><div class="v">{data.summary.total}</div><div class="l">Total guests</div></div>
   <div class="stat"><div class="v">{data.summary.day} / {data.summary.evening}</div><div class="l">Day / evening</div></div>
   <div class="stat"><div class="v sage">{data.summary.rsvpYes}</div><div class="l">RSVP'd yes</div></div>
-  <div class="stat"><div class="v">{gbp0(b.confirmed)}</div><div class="l">Confirmed spend</div></div>
+  <div class="stat"><div class="v">{gbp(b.confirmed)}</div><div class="l">Confirmed spend</div></div>
 </div>
 
 <Alert title="Notice of marriage — timing matters">
@@ -61,18 +66,19 @@
     <div class="phead"><h3>Budget at a glance</h3><a href="/dashboard/budget">Open →</a></div>
     <div class="bignum">{gbp(b.confirmed)}</div>
     <p class="sub">
-      confirmed of {gbp(b.target)} target —
-      {#if b.remaining >= 0}<span class="down">{gbp(b.remaining)} remaining</span>
-      {:else}<span class="up">{gbp(-b.remaining)} over budget</span>{/if}
+      confirmed · {gbp(b.earmarked)} earmarked of {gbp(b.target)} target —
+      {#if overTarget > 0}<span class="up">{gbp(overTarget)} over target</span>
+      {:else}<span class="down">{gbp(-overTarget)} under target</span>{/if}
     </p>
     <div class="bar">
       <span style={`width:${pctOf(b.paid)}%`} class="s1"></span>
-      <span style={`width:${pctOf(Math.max(0, b.confirmed - b.paid))}%`} class="s3"></span>
+      <span style={`width:${pctOf(confirmedUnpaid)}%`} class="s3"></span>
+      <span style={`width:${pctOf(stillEstimated)}%`} class="s4"></span>
     </div>
     <div class="legend">
       <span><i class="d1"></i> Paid <b>{gbp(b.paid)}</b></span>
-      <span><i class="d3"></i> Confirmed <b>{gbp(b.confirmed)}</b></span>
-      <span><i class="d4"></i> Target <b>{gbp(b.target)}</b></span>
+      <span><i class="d3"></i> Confirmed, unpaid <b>{gbp(confirmedUnpaid)}</b></span>
+      <span><i class="d4"></i> Still estimated <b>{gbp(stillEstimated)}</b></span>
     </div>
   </section>
 
@@ -163,10 +169,10 @@
   .sub .down { color: var(--sage-deep); font-weight: 600; }
   .bar { display: flex; height: 12px; border-radius: 999px; overflow: hidden; background: var(--line2); margin-bottom: 14px; }
   .bar span { display: block; height: 100%; }
-  .bar .s1 { background: var(--sage-deep); } .bar .s3 { background: var(--sage); }
+  .bar .s1 { background: var(--sage-deep); } .bar .s3 { background: var(--sage); opacity: .55; } .bar .s4 { background: var(--rule); opacity: .5; }
   .legend { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 12px; color: var(--body); }
   .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
-  .legend .d1 { background: var(--sage-deep); } .legend .d3 { background: var(--sage); } .legend .d4 { background: var(--line2); border: 1px solid var(--line); }
+  .legend .d1 { background: var(--sage-deep); } .legend .d3 { background: var(--sage); opacity: .55; } .legend .d4 { background: var(--rule); opacity: .6; }
   .legend b { color: var(--ink); }
 
   /* Rings */
