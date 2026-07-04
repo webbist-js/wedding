@@ -3,6 +3,7 @@
   import type { NoteRow } from '$lib/components/Notes.svelte';
   import { enhance } from '$app/forms';
   import { invalidateAll } from '$app/navigation';
+  import { gbp } from '$lib/money';
   let { data } = $props();
 
   const STAGES = ['Lead', 'Enquired', 'Quoted', 'Shortlisted', 'Booked'];
@@ -39,8 +40,6 @@
     // Deposit flips can create a payment row server-side — refresh to show it.
     if (field === 'depositPaid') await invalidateAll();
   }
-
-  const gbp = (n: number) => '£' + n.toLocaleString('en-GB', { maximumFractionDigits: 2 });
 
   async function addPayment(vendorId: number, form: HTMLFormElement) {
     const f = new FormData(form);
@@ -122,7 +121,7 @@
         </span>
         {#each vPays as p (p.id)}
           <span class="pay-item">
-            £{p.amount.toLocaleString('en-GB')}{p.paidOn ? ` · ${fmt(p.paidOn)}` : ''}{p.note ? ` · ${p.note}` : ''}
+            {gbp(p.amount)}{p.paidOn ? ` · ${fmt(p.paidOn)}` : ''}{p.note ? ` · ${p.note}` : ''}
             <button class="pay-rm" title="Remove payment" onclick={() => removePayment(p.id)}>×</button>
           </span>
         {/each}

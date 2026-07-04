@@ -1,5 +1,20 @@
 import { describe, it, expect } from 'vitest';
-import { isCommitted, linkedConfirmed, sumPayments, derivedStatus } from '../src/lib/money';
+import { isCommitted, linkedConfirmed, sumPayments, derivedStatus, gbp } from '../src/lib/money';
+
+describe('gbp', () => {
+	it('keeps whole pounds clean', () => {
+		expect(gbp(16)).toBe('£16');
+		expect(gbp(30000)).toBe('£30,000');
+	});
+	it('always shows both pence digits when fractional', () => {
+		expect(gbp(15.8)).toBe('£15.80');
+		expect(gbp(58.28)).toBe('£58.28');
+	});
+	it('ignores floating-point dust', () => {
+		expect(gbp(16.000000001)).toBe('£16');
+		expect(gbp(0.1 + 0.2)).toBe('£0.30');
+	});
+});
 
 describe('linkedConfirmed', () => {
 	it('counts a booked vendor quote', () => {

@@ -1,5 +1,20 @@
 // Pure money semantics shared by the budget rollup and its tests.
 
+// Display formatter: whole pounds stay clean (£16), anything with pence shows
+// both digits (£15.80) — never silently rounds.
+export function gbp(n: number): string {
+	const pence = Math.round(n * 100) / 100;
+	return (
+		'£' +
+		pence.toLocaleString(
+			'en-GB',
+			Number.isInteger(pence)
+				? { maximumFractionDigits: 0 }
+				: { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+		)
+	);
+}
+
 export interface VendorMoney {
 	quotedAmount?: number | null;
 	stage: string;
