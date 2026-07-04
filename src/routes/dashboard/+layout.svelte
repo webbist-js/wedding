@@ -28,6 +28,7 @@
         ['/dashboard/timeline', 'Timeline', 'list'],
         ['/dashboard/calendar', 'Calendar', 'calendar'],
         ['/dashboard/notes', 'Notes', 'note'],
+        ['/dashboard/gallery', 'Gallery', 'camera'],
         ['/dashboard/activity', 'Activity', 'list']
       ]
     }
@@ -46,6 +47,7 @@
     '/dashboard/timeline': { title: 'Timeline', subtitle: 'Your road to 2 April 2027' },
     '/dashboard/calendar': { title: 'Calendar', subtitle: 'Appointments & supplier meetings' },
     '/dashboard/notes': { title: 'Research & notes', subtitle: 'Everything you’ve found' },
+    '/dashboard/gallery': { title: 'Photo gallery', subtitle: 'Guest snaps, the QR code & moderation' },
     '/dashboard/activity': { title: 'Activity', subtitle: 'Who changed what, and when' }
   };
   const meta = $derived(META[page.url.pathname] ?? { title: 'Dashboard', subtitle: '' });
@@ -81,6 +83,7 @@
     {:else if name === 'list'}<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/>
     {:else if name === 'calendar'}<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/>
     {:else if name === 'note'}<path d="M6 3h9l5 5v13a0 0 0 0 1 0 0H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v6h6M9 13h6M9 17h4"/>
+    {:else if name === 'camera'}<path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/>
     {/if}
   </svg>
 {/snippet}
