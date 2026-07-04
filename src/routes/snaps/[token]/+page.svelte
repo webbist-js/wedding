@@ -81,7 +81,7 @@
 			disabled={busy}
 			onchange={(e) => (files = e.currentTarget.files)}
 		/>
-		📸 {files?.length ? `${files.length} ready — tap Send below!` : 'Snap or pick your photos'}
+		{files?.length ? `${files.length} ready — tap Send below!` : 'Snap or pick your photos'}
 	</label>
 
 	{#if files?.length}
@@ -89,7 +89,7 @@
 			<input type="text" placeholder="Who’s this from? (optional)" maxlength="80" bind:value={name} />
 			<input type="text" placeholder="Say something lovely… (optional)" maxlength="280" bind:value={caption} />
 			<button class="send" onclick={send} disabled={busy}>
-				{#if busy}Sending {progress.done + 1} of {progress.total}…{:else}Send to the album 💌{/if}
+				{#if busy}Sending {progress.done + 1} of {progress.total}…{:else}Send to the album{/if}
 			</button>
 		</div>
 	{/if}
@@ -97,7 +97,7 @@
 	{#if cheer}<p class="cheer">{cheer}</p>{/if}
 	{#if uploadError}<p class="oops">{uploadError}</p>{/if}
 
-	<a class="gallery-link" href="/gallery">👀 Watch the gallery fill up live →</a>
+	<a class="gallery-link" href="/gallery">Watch the gallery fill up live →</a>
 </main>
 
 <style>

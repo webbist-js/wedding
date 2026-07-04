@@ -49,7 +49,7 @@
 			<p>Psst — what’s the magic word? (It’s on your menu, or ask anyone in a nice frock.)</p>
 			<form method="POST" action="?/unlock" use:enhance>
 				<input type="password" name="password" placeholder="Magic word" autocomplete="off" />
-				<button type="submit">Let me in ✨</button>
+				<button type="submit">Let me in</button>
 			</form>
 			{#if form?.wrong}<p class="oops">Not quite — try again!</p>{/if}
 		</div>
