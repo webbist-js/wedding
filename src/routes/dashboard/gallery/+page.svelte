@@ -43,7 +43,8 @@
 		no password needed. Gallery-only visitors use the link + <code>GALLERY_PASSWORD</code>.
 	</p>
 	<div class="row">
-		<a class="btn" href="/dashboard/gallery/qr">Download print QR (PNG)</a>
+		<a class="btn" href="/dashboard/gallery/qr">Download print QR (circle, SVG)</a>
+		<a class="btn ghost" href="/dashboard/gallery/qr?format=png">Square PNG</a>
 		<button class="btn ghost" onclick={() => copy(data.snapsUrl)}>Copy upload link</button>
 		<button class="btn ghost" onclick={() => copy(data.galleryUrl)}>Copy gallery link</button>
 	</div>
