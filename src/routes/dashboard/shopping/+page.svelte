@@ -110,7 +110,7 @@
   .row.head { color: var(--muted); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
   .row.head .r { text-align: right; }
   .row.done .lbl { color: var(--muted); text-decoration: line-through; }
-  .row input { border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font: inherit; font-size: 13px; background: #fff; min-width: 0; }
+  .row input:not([type='checkbox']) { border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font: inherit; font-size: 13px; background: #fff; min-width: 0; }
   .lblwrap { display: grid; gap: 2px; min-width: 0; }
   .row input.lbl { font-weight: 500; color: var(--ink); width: 100%; }
   .note { font-size: 11px; color: var(--faint); font-style: italic; padding-left: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
