@@ -12,10 +12,12 @@ import {
 	stationeryItems,
 	settings,
 	notes,
-	seatingTables
+	seatingTables,
+	payments
 } from './schema';
 import {
 	SEED_GUESTS,
+	VENUE_BUDGET_CATEGORY,
 	SEED_QUOTE,
 	SEED_VENDORS,
 	SEED_TIMELINE,
@@ -242,15 +244,28 @@ export async function seed(): Promise<void> {
 
 	if ((await db.select().from(budgetLines).limit(1)).length === 0) {
 		for (const [i, b] of SEED_BUDGET.entries()) {
-			await db.insert(budgetLines).values({
-				category: b.category,
-				section: b.section,
-				budgeted: b.budgeted,
-				confirmed: b.confirmed,
-				paid: b.paid,
-				status: b.status,
-				sort: i
-			});
+			const [row] = await db
+				.insert(budgetLines)
+				.values({
+					category: b.category,
+					section: b.section,
+					budgeted: b.budgeted,
+					confirmed: b.confirmed,
+					status: b.status,
+					sort: i,
+					sourceType: b.category === VENUE_BUDGET_CATEGORY ? 'venue' : null
+				})
+				.returning({ id: budgetLines.id });
+			// Seeded paid figures become opening entries in the payments ledger —
+			// `paid` is derived from payments everywhere now.
+			if (b.paid > 0) {
+				await db.insert(payments).values({
+					amount: b.paid,
+					note: 'Opening balance (seeded)',
+					budgetLineId: row.id,
+					createdAt: new Date()
+				});
+			}
 		}
 	}
 

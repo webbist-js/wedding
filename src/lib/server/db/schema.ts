@@ -48,7 +48,11 @@ export const budgetLines = sqliteTable('budget_lines', {
   section: text('section').notNull().default('Everything else'),
   budgeted: real('budgeted').notNull().default(0),
   confirmed: real('confirmed').notNull().default(0),
-  paid: real('paid').notNull().default(0),
+  // Linked lines derive confirmed/paid at read time (see lib/server/budget.ts):
+  // vendorId → pulls from that vendor; sourceType 'venue' → pulls from the
+  // quote calculator. Paid figures live in `payments` for every line.
+  vendorId: integer('vendor_id').references(() => vendors.id),
+  sourceType: text('source_type', { enum: ['venue'] }),
   status: text('status').notNull().default('todo'),
   sort: integer('sort').notNull().default(0)
 });
@@ -141,6 +145,10 @@ export const quoteLines = sqliteTable('quote_lines', {
   label: text('label').notNull(),
   section: text('section').notNull(),
   scope: text('scope', { enum: ['day', 'eve', 'fixed', 'custom'] }).notNull(),
+  // Per-head meal dimension: 'veg'/'nonveg' lines multiply by the veg /
+  // (day − veg) headcount instead of the full day count. Only meaningful on
+  // scope 'day' lines.
+  meal: text('meal', { enum: ['any', 'veg', 'nonveg'] }).notNull().default('any'),
   price: real('price').notNull().default(0),
   qty: integer('qty'),
   included: integer('included', { mode: 'boolean' }).notNull().default(false),
@@ -171,6 +179,18 @@ export const shoppingItems = sqliteTable('shopping_items', {
   bought: integer('bought', { mode: 'boolean' }).notNull().default(false),
   notes: text('notes'),
   sort: integer('sort').notNull().default(0)
+});
+
+// Every individual payment ("track every penny"). Attached to a vendor OR a
+// budget line — the budget's paid figures are sums over this table.
+export const payments = sqliteTable('payments', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  amount: real('amount').notNull(),
+  paidOn: text('paid_on'), // ISO YYYY-MM-DD
+  note: text('note'),
+  vendorId: integer('vendor_id').references(() => vendors.id),
+  budgetLineId: integer('budget_line_id').references(() => budgetLines.id),
+  createdAt: integer('created_at', { mode: 'timestamp' })
 });
 
 // Free-form notes. A note always belongs to a `category` (the dashboard section

@@ -414,6 +414,9 @@ export const SEED_SETTINGS: Record<string, string> = {
   dayGuests: '61',
   eveGuests: '90',
   minSpend: '16455',
+  vegGuests: '6',
+  venueCostBasis: 'estimate',
+  venueOriginalQuote: '17319.4',
   tableCount: '7',
   seatMode: 'day',
   // The couple's own seats (table number, or empty when unseated).
