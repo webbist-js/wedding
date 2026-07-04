@@ -1,36 +1,24 @@
 import type { PageServerLoad } from './$types';
 import { allGuests, summarise, type GuestRow } from '$lib/server/queries';
 import { db } from '$lib/server/db/index';
-import {
-	appointments,
-	vendors,
-	budgetLines,
-	shoppingItems,
-	settings,
-	timelinePhases,
-	timelineItems
-} from '$lib/server/db/schema';
+import { appointments, vendors, timelinePhases, timelineItems } from '$lib/server/db/schema';
+import { effectiveBudget } from '$lib/server/budget';
 import { asc, eq, gte } from 'drizzle-orm';
 
 export const load: PageServerLoad = async () => {
 	const guests = await allGuests();
 	const summary = summarise(guests as unknown as GuestRow[]);
 
-	const setRows = await db.select().from(settings);
-	const s = Object.fromEntries(setRows.map((r) => [r.key, r.value]));
-	const target = Number(s.target ?? 30000);
-
-	// Budget at a glance: roll up all budget lines + the shopping list (mirrors
-	// what the Budget tab shows). Money on the overview is budget-driven, not just
-	// the venue quote.
-	const blines = await db.select().from(budgetLines);
-	const shopping = await db.select().from(shoppingItems);
-	const shopTotal = shopping.reduce((a, i) => a + i.cost * i.qty, 0);
-	const shopPaid = shopping.filter((i) => i.bought).reduce((a, i) => a + i.cost * i.qty, 0);
-	const earmarked = blines.reduce((a, l) => a + l.budgeted, 0) + shopTotal;
-	const confirmed = blines.reduce((a, l) => a + l.confirmed, 0) + shopTotal;
-	const paid = blines.reduce((a, l) => a + l.paid, 0) + shopPaid;
-	const budget = { target, earmarked, confirmed, paid, remaining: target - confirmed };
+	// Budget at a glance: the shared rollup guarantees the overview always
+	// matches the Budget tab (vendor links, venue quote, shopping, payments).
+	const { totals, target } = await effectiveBudget();
+	const budget = {
+		target,
+		earmarked: totals.budgeted,
+		confirmed: totals.confirmed,
+		paid: totals.paid,
+		remaining: target - totals.confirmed
+	};
 
 	// Timeline progress + next steps.
 	const phases = await db.select().from(timelinePhases).orderBy(asc(timelinePhases.sort));
