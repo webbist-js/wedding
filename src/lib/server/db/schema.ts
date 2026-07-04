@@ -213,6 +213,24 @@ export const noteComments = sqliteTable('note_comments', {
   updatedAt: integer('updated_at', { mode: 'timestamp' })
 });
 
+// Guest-uploaded photos & videos (the wedding-day live gallery). Rows are
+// registered after a direct-to-Vercel-Blob client upload; `blobPathname` is
+// unique so registration is idempotent (both the client register call and
+// Blob's onUploadCompleted callback may fire for the same upload).
+export const galleryItems = sqliteTable('gallery_items', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	blobUrl: text('blob_url').notNull(),
+	blobPathname: text('blob_pathname').notNull().unique(),
+	kind: text('kind', { enum: ['photo', 'video'] }).notNull(),
+	contentType: text('content_type'),
+	size: integer('size'),
+	uploaderName: text('uploader_name'),
+	caption: text('caption'),
+	// Hidden items stay in storage but never appear in the public feed.
+	hidden: integer('hidden', { mode: 'boolean' }).notNull().default(false),
+	createdAt: integer('created_at', { mode: 'timestamp' })
+});
+
 // Append-only log of dashboard mutations, surfaced on the Activity page.
 export const auditLog = sqliteTable('audit_log', {
   id: integer('id').primaryKey({ autoIncrement: true }),
