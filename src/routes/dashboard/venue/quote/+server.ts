@@ -5,7 +5,7 @@ import { quoteLines, settings } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import { recordAudit } from '$lib/server/audit';
 
-const SETTING_KEYS = ['dayGuests', 'eveGuests', 'minSpend'];
+const SETTING_KEYS = ['dayGuests', 'eveGuests', 'minSpend', 'vegGuests'];
 const SCOPES = new Set(['day', 'eve', 'fixed', 'custom']);
 
 export const POST: RequestHandler = async ({ request, locals }) => {
@@ -25,6 +25,14 @@ export const POST: RequestHandler = async ({ request, locals }) => {
   // Remove a quote line.
   if (body.op === 'remove') {
     await db.delete(quoteLines).where(eq(quoteLines.id, Number(body.id)));
+    return json({ ok: true });
+  }
+
+  // Cost basis is a string setting, not numeric.
+  if (body.setting === 'venueCostBasis') {
+    const v = String(body.value ?? '');
+    if (!['manual', 'estimate', 'confirmed'].includes(v)) throw error(400, 'bad basis');
+    await db.update(settings).set({ value: v }).where(eq(settings.key, 'venueCostBasis'));
     return json({ ok: true });
   }
 
@@ -53,6 +61,15 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     await db
       .update(quoteLines)
       .set({ scope: v as 'day' | 'eve' | 'fixed' | 'custom' })
+      .where(eq(quoteLines.id, Number(id)));
+    return json({ ok: true });
+  }
+  if (field === 'meal') {
+    const v = String(value ?? '');
+    if (!['any', 'veg', 'nonveg'].includes(v)) throw error(400, 'bad meal');
+    await db
+      .update(quoteLines)
+      .set({ meal: v as 'any' | 'veg' | 'nonveg' })
       .where(eq(quoteLines.id, Number(id)));
     return json({ ok: true });
   }
