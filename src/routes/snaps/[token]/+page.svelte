@@ -17,6 +17,7 @@
 
 	let files = $state<FileList | null>(null);
 	let fileInput = $state<HTMLInputElement | null>(null);
+	let cameraInput = $state<HTMLInputElement | null>(null);
 	let name = $state('');
 	let caption = $state('');
 	let busy = $state(false);
@@ -52,6 +53,7 @@
 			caption = '';
 			files = null;
 			if (fileInput) fileInput.value = '';
+			if (cameraInput) cameraInput.value = '';
 			confetti({ particleCount: 120, spread: 75, origin: { y: 0.7 } });
 		} catch {
 			uploadError = 'Hmm, that didn’t send — the barn Wi-Fi can be shy. Give it another go!';
@@ -71,17 +73,29 @@
 		the candid ones are always the best ones.
 	</p>
 
+	<!-- Two inputs on purpose: iOS ignores `capture` when `multiple` is set, so
+	     the straight-to-camera path must be a single-file input. -->
 	<label class="snap-btn" class:busy>
+		<input
+			bind:this={cameraInput}
+			type="file"
+			accept="image/*"
+			capture="environment"
+			disabled={busy}
+			onchange={(e) => (files = e.currentTarget.files)}
+		/>
+		{files?.length ? `${files.length} ready — tap Send below!` : 'Open the camera'}
+	</label>
+	<label class="roll-btn" class:busy>
 		<input
 			bind:this={fileInput}
 			type="file"
 			accept="image/*,video/*"
-			capture="environment"
 			multiple
 			disabled={busy}
 			onchange={(e) => (files = e.currentTarget.files)}
 		/>
-		{files?.length ? `${files.length} ready — tap Send below!` : 'Snap or pick your photos'}
+		or pick photos &amp; videos from your camera roll
 	</label>
 
 	{#if files?.length}
@@ -130,6 +144,22 @@
 		opacity: 0.6;
 	}
 	.snap-btn input {
+		display: none;
+	}
+	.roll-btn {
+		display: block;
+		margin-top: 12px;
+		color: var(--sage-deep);
+		font-size: 14px;
+		font-weight: 600;
+		cursor: pointer;
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
+	.roll-btn.busy {
+		opacity: 0.6;
+	}
+	.roll-btn input {
 		display: none;
 	}
 	.meta {
