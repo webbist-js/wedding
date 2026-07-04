@@ -44,13 +44,12 @@ export interface SeedPhase {
   items: { label: string; done: boolean }[];
 }
 
-export type BudgetSection = 'Essentials' | 'Décor & flowers' | 'Stationery' | 'Favours' | 'Everything else';
+export type BudgetSection = 'Essentials' | 'Décor & flowers' | 'Stationery' | 'Everything else';
 
 export const BUDGET_SECTIONS: BudgetSection[] = [
   'Essentials',
   'Décor & flowers',
   'Stationery',
-  'Favours',
   'Everything else'
 ];
 
@@ -325,7 +324,6 @@ export const SEED_BUDGET: SeedBudgetLine[] = [
 
   { category: 'Stationery', section: 'Stationery', budgeted: 500, confirmed: 0, paid: 0, status: 'Estimate' },
 
-  { category: 'Favours', section: 'Favours', budgeted: 200, confirmed: 0, paid: 0, status: 'Estimate' },
 
   { category: 'Music / DJ', section: 'Everything else', budgeted: 600, confirmed: 0, paid: 0, status: 'Estimate' },
   { category: 'Cake', section: 'Everything else', budgeted: 350, confirmed: 0, paid: 0, status: 'Estimate' },
