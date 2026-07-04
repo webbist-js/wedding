@@ -1,5 +1,8 @@
 export interface QuoteLineCalc {
   scope: 'day' | 'eve' | 'fixed' | 'custom';
+  // Per-head meal dimension — only meaningful on 'day' lines: 'veg' lines
+  // multiply by the veg headcount, 'nonveg' by (day − veg).
+  meal?: 'any' | 'veg' | 'nonveg';
   price: number;
   qty: number | null;
   bond: boolean;
@@ -8,6 +11,7 @@ export interface QuoteInputs {
   day: number;
   eve: number;
   min: number;
+  veg: number;
 }
 export interface QuoteResult {
   spend: number;
@@ -17,7 +21,11 @@ export interface QuoteResult {
 }
 
 export function lineQty(line: QuoteLineCalc, i: QuoteInputs): number {
-  if (line.scope === 'day') return i.day;
+  if (line.scope === 'day') {
+    if (line.meal === 'veg') return i.veg;
+    if (line.meal === 'nonveg') return Math.max(0, i.day - i.veg);
+    return i.day;
+  }
   if (line.scope === 'eve') return i.eve;
   if (line.scope === 'fixed') return 1;
   return line.qty ?? 0;

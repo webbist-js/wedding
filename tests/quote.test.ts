@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeQuote } from '../src/lib/quote';
+import { computeQuote, lineQty } from '../src/lib/quote';
 
 const lines = [
   { scope: 'day', price: 50, qty: null, bond: false },
@@ -11,17 +11,33 @@ const lines = [
 
 describe('computeQuote', () => {
   it('sums chargeable spend by scope', () => {
-    const r = computeQuote(lines as any, { day: 61, eve: 90, min: 0 });
+    const r = computeQuote(lines as any, { day: 61, eve: 90, min: 0, veg: 0 });
     expect(r.spend).toBeCloseTo(61 * 50 + 90 * 15 + 2900 + 56 * 2.4);
   });
   it('separates the refundable bond', () => {
-    const r = computeQuote(lines as any, { day: 61, eve: 90, min: 0 });
+    const r = computeQuote(lines as any, { day: 61, eve: 90, min: 0, veg: 0 });
     expect(r.bond).toBe(500);
   });
   it('applies a minimum-spend top-up only when below minimum', () => {
-    const low = computeQuote(lines as any, { day: 1, eve: 1, min: 20000 });
+    const low = computeQuote(lines as any, { day: 1, eve: 1, min: 20000, veg: 0 });
     expect(low.topup).toBeGreaterThan(0);
-    const high = computeQuote(lines as any, { day: 61, eve: 90, min: 0 });
+    const high = computeQuote(lines as any, { day: 61, eve: 90, min: 0, veg: 0 });
     expect(high.topup).toBe(0);
+  });
+});
+
+describe('meal-aware lineQty', () => {
+  const i = { day: 60, eve: 90, min: 0, veg: 8 };
+  it('veg day line uses the veg count', () => {
+    expect(lineQty({ scope: 'day', meal: 'veg', price: 40, qty: null, bond: false }, i)).toBe(8);
+  });
+  it('nonveg day line uses day minus veg', () => {
+    expect(lineQty({ scope: 'day', meal: 'nonveg', price: 44, qty: null, bond: false }, i)).toBe(52);
+  });
+  it('any day line uses the full day count', () => {
+    expect(lineQty({ scope: 'day', price: 50, qty: null, bond: false }, i)).toBe(60);
+  });
+  it('meal is ignored off day scope', () => {
+    expect(lineQty({ scope: 'eve', meal: 'veg', price: 15, qty: null, bond: false }, i)).toBe(90);
   });
 });
