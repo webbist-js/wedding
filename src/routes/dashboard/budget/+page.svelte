@@ -124,7 +124,6 @@
 
 	const ADD_HINTS: Record<string, string> = {
 		Essentials: 'Add an essential — attire, rings, ceremony…',
-		'Décor & flowers': 'Add décor — florist, styling, confetti…',
 		Stationery: 'Add stationery — invites, signage, menus…',
 		'Everything else': 'Add a line — cake, transport, extras…'
 	};

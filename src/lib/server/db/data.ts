@@ -44,11 +44,10 @@ export interface SeedPhase {
   items: { label: string; done: boolean }[];
 }
 
-export type BudgetSection = 'Essentials' | 'Décor & flowers' | 'Stationery' | 'Everything else';
+export type BudgetSection = 'Essentials' | 'Stationery' | 'Everything else';
 
 export const BUDGET_SECTIONS: BudgetSection[] = [
   'Essentials',
-  'Décor & flowers',
   'Stationery',
   'Everything else'
 ];
@@ -318,9 +317,9 @@ export const SEED_BUDGET: SeedBudgetLine[] = [
   { category: 'Bridesmaid dresses', section: 'Essentials', budgeted: 600, confirmed: 0, paid: 0, status: 'Estimate' },
   { category: 'Hair & makeup', section: 'Essentials', budgeted: 600, confirmed: 0, paid: 0, status: 'Estimate' },
 
-  { category: 'Florist & flowers', section: 'Décor & flowers', budgeted: 1500, confirmed: 0, paid: 0, status: 'Estimate' },
-  { category: 'Décor & styling', section: 'Décor & flowers', budgeted: 800, confirmed: 0, paid: 0, status: 'Estimate' },
-  { category: 'Confetti (fresh petals)', section: 'Décor & flowers', budgeted: 80, confirmed: 0, paid: 0, status: 'Estimate' },
+  { category: 'Florist & flowers', section: 'Everything else', budgeted: 1500, confirmed: 0, paid: 0, status: 'Estimate' },
+  { category: 'Décor & styling', section: 'Everything else', budgeted: 800, confirmed: 0, paid: 0, status: 'Estimate' },
+  { category: 'Confetti (fresh petals)', section: 'Everything else', budgeted: 80, confirmed: 0, paid: 0, status: 'Estimate' },
 
   { category: 'Stationery', section: 'Stationery', budgeted: 500, confirmed: 0, paid: 0, status: 'Estimate' },
 

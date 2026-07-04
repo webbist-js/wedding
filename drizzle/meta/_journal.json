@@ -141,6 +141,13 @@
       "when": 1782329436097,
       "tag": "0019_deprecate_favours",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1782329436098,
+      "tag": "0020_drop_decor_section",
+      "breakpoints": true
     }
   ]
 }
