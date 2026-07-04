@@ -1,6 +1,6 @@
 import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db/index';
-import { budgetLines, stationeryItems, settings, vendors, payments } from '$lib/server/db/schema';
+import { budgetLines, settings, vendors, payments } from '$lib/server/db/schema';
 import { asc, eq } from 'drizzle-orm';
 import { BUDGET_SECTIONS } from '$lib/server/db/data';
 import { effectiveBudget } from '$lib/server/budget';
@@ -9,12 +9,11 @@ export const load: PageServerLoad = async () => {
 	// All money figures come from the shared rollup — the budget page never
 	// computes its own totals (see lib/server/budget.ts).
 	const { lines, totals, target, basis } = await effectiveBudget();
-	const statio = await db.select().from(stationeryItems).orderBy(asc(stationeryItems.sort));
 	const vendorOptions = (await db.select().from(vendors).orderBy(asc(vendors.sort))).map((v) => ({
 		id: v.id,
 		label: v.name ? `${v.category} — ${v.name}` : v.category
 	}));
-	return { sections: BUDGET_SECTIONS, lines, totals, target, basis, statio, vendorOptions };
+	return { sections: BUDGET_SECTIONS, lines, totals, target, basis, vendorOptions };
 };
 
 export const actions: Actions = {

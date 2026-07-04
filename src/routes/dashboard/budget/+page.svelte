@@ -53,14 +53,6 @@
 	}
 	const fmtDate = (d: string) =>
 		new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-	async function toggleStatio(id: number, done: boolean) {
-		await fetch('/dashboard/stationery', {
-			method: 'POST',
-			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ id, done })
-		});
-	}
-
 	const statusOptions = ['Estimate', 'To book', 'Booked', 'Deposit', 'Paid', 'Optional'];
 
 	// ---- Drag & drop reordering (within a section) ----
@@ -289,25 +281,6 @@
 				<input name="category" placeholder={`Add a line in ${section}…`} />
 				<button>+ Add</button>
 			</form>
-
-			{#if section === 'Stationery'}
-				<div class="statio">
-					<p class="sublabel">What you'll need (tick as you go)</p>
-					<div class="statio-grid">
-						{#each data.statio as item}
-							<label class="statio-item">
-								<input
-									type="checkbox"
-									checked={item.done}
-									onchange={(e) =>
-										toggleStatio(item.id, (e.target as HTMLInputElement).checked)}
-								/>
-								{item.label}
-							</label>
-						{/each}
-					</div>
-				</div>
-			{/if}
 		</div>
 	</section>
 {/each}
@@ -663,33 +636,6 @@
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		font-weight: 500;
-	}
-
-	.statio {
-		margin-top: 18px;
-		padding: 18px 4px 4px;
-		border-top: 1px solid var(--line2);
-	}
-	.sublabel {
-		font-weight: 500;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		font-size: 10.5px;
-		color: var(--muted);
-		margin: 0 0 12px;
-	}
-	.statio-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-		gap: 6px 16px;
-	}
-	.statio-item {
-		font-size: 13.5px;
-		color: var(--body);
-		padding: 3px 0;
-		display: flex;
-		align-items: center;
-		gap: 8px;
 	}
 
 	@media (max-width: 800px) {
