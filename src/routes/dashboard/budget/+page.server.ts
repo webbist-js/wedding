@@ -8,12 +8,12 @@ import { effectiveBudget } from '$lib/server/budget';
 export const load: PageServerLoad = async () => {
 	// All money figures come from the shared rollup — the budget page never
 	// computes its own totals (see lib/server/budget.ts).
-	const { lines, totals, target, basis } = await effectiveBudget();
+	const { lines, totals, target, basis, shoppingCount } = await effectiveBudget();
 	const vendorOptions = (await db.select().from(vendors).orderBy(asc(vendors.sort))).map((v) => ({
 		id: v.id,
 		label: v.name ? `${v.category} — ${v.name}` : v.category
 	}));
-	return { sections: BUDGET_SECTIONS, lines, totals, target, basis, vendorOptions };
+	return { sections: BUDGET_SECTIONS, lines, totals, target, basis, vendorOptions, shoppingCount };
 };
 
 export const actions: Actions = {

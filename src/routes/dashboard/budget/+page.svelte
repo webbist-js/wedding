@@ -5,12 +5,79 @@
 	import { gbp } from '$lib/money';
 	let { data } = $props();
 
-	let earmark = $derived(data.totals.budgeted);
-	let confirmed = $derived(data.totals.confirmed);
-	let paid = $derived(data.totals.paid);
-	let remaining = $derived(data.target - confirmed);
-	let overBudget = $derived(remaining < 0);
+	type Line = (typeof data.lines)[number];
 
+	// ---- Split the rollup: synced sources become cards, the rest fill the grid.
+	const venueLine = $derived(data.lines.find((l) => l.link?.type === 'venue'));
+	const shoppingLine = $derived(data.lines.find((l) => l.link?.type === 'shopping'));
+	const gridLines = $derived(
+		data.lines.filter((l) => l.link?.type !== 'venue' && l.link?.type !== 'shopping')
+	);
+
+	// ---- Headline figures
+	const earmark = $derived(data.totals.budgeted);
+	const confirmed = $derived(data.totals.confirmed);
+	const paid = $derived(data.totals.paid);
+	const overTarget = $derived(earmark - data.target);
+
+	// ---- "Where the money is" stacked bar (out of target or earmark, whichever is bigger)
+	const bar = $derived.by(() => {
+		const total = Math.max(data.target, earmark, confirmed, 1);
+		const confirmedUnpaid = Math.max(0, confirmed - paid);
+		const stillEstimated = Math.max(0, earmark - confirmed);
+		const pct = (n: number) => (100 * n) / total;
+		return {
+			paid: pct(paid),
+			confirmedUnpaid: pct(confirmedUnpaid),
+			stillEstimated: pct(stillEstimated),
+			amounts: { paid, confirmedUnpaid, stillEstimated }
+		};
+	});
+
+	// ---- Spend by area (Venue · each section · Shopping), earmark-weighted
+	const AREA_COLOURS = ['#6f7d59', '#c2a18a', '#b05c3f', '#7e74a8', '#c08a86', '#cbbd9e'];
+	const areas = $derived.by(() => {
+		const out: { label: string; budgeted: number; confirmed: number }[] = [];
+		if (venueLine)
+			out.push({
+				label: 'Venue',
+				budgeted: venueLine.budgeted || venueLine.confirmed,
+				confirmed: venueLine.confirmed
+			});
+		for (const s of data.sections) {
+			const ls = gridLines.filter((l) => l.section === s);
+			if (!ls.length) continue;
+			out.push({
+				label: s,
+				budgeted: ls.reduce((a, l) => a + l.budgeted, 0),
+				confirmed: ls.reduce((a, l) => a + l.confirmed, 0)
+			});
+		}
+		if (shoppingLine)
+			out.push({
+				label: 'Shopping',
+				budgeted: shoppingLine.budgeted,
+				confirmed: shoppingLine.confirmed
+			});
+		return out.sort((a, b) => b.budgeted - a.budgeted);
+	});
+	const areaTotal = $derived(Math.max(1, areas.reduce((a, x) => a + x.budgeted, 0)));
+
+	// Donut geometry: r=54, stroke=16 in a 140 viewBox.
+	const R = 54;
+	const CIRC = 2 * Math.PI * R;
+	const donutSegs = $derived.by(() => {
+		let cum = 0;
+		return areas.map((a, i) => {
+			const frac = a.budgeted / areaTotal;
+			const seg = { frac, offset: cum, colour: AREA_COLOURS[i % AREA_COLOURS.length] };
+			cum += frac;
+			return seg;
+		});
+	});
+	const short = (n: number) => (n >= 1000 ? `£${Math.round(n / 1000)}k` : gbp(n));
+
+	// ---- Grid plumbing (unchanged behaviours)
 	async function saveField(id: number, field: string, value: string | number | null) {
 		await fetch('/dashboard/budget/line', {
 			method: 'POST',
@@ -19,9 +86,8 @@
 		});
 	}
 
-	// ---- Payments ledger (expander under a row's Paid cell) ----
 	let openPayments = $state<number | null>(null);
-	async function addPayment(line: (typeof data.lines)[number], form: HTMLFormElement) {
+	async function addPayment(line: Line, form: HTMLFormElement) {
 		const f = new FormData(form);
 		const amount = Number(f.get('amount'));
 		if (!amount) return;
@@ -53,7 +119,15 @@
 	}
 	const fmtDate = (d: string) =>
 		new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+
 	const statusOptions = ['Estimate', 'To book', 'Booked', 'Deposit', 'Paid', 'Optional'];
+
+	const ADD_HINTS: Record<string, string> = {
+		Essentials: 'Add an essential — attire, rings, ceremony…',
+		'Décor & flowers': 'Add décor — florist, styling, confetti…',
+		Stationery: 'Add stationery — invites, signage, menus…',
+		'Everything else': 'Add a line — cake, transport, extras…'
+	};
 
 	// ---- Drag & drop reordering (within a section) ----
 	let dragId = $state<number | null>(null);
@@ -93,7 +167,7 @@
 	}
 </script>
 
-
+<!-- ─── Stat cards ─────────────────────────────────────────────────────── -->
 <div class="stats">
 	<form method="POST" action="?/setTarget" use:enhance class="stat stat-edit">
 		<div class="v">
@@ -111,22 +185,151 @@
 				}}
 			/>
 		</div>
-		<div class="l">Target</div>
+		<div class="l">Target budget</div>
 	</form>
 	<div class="stat"><div class="v">{gbp(earmark)}</div><div class="l">Total earmarked</div></div>
 	<div class="stat"><div class="v">{gbp(confirmed)}</div><div class="l">Confirmed costs</div></div>
-	<div class="stat"><div class="v accent">{gbp(paid)}</div><div class="l">Paid to date</div></div>
+	<div class="stat filled"><div class="v">{gbp(paid)}</div><div class="l">Paid to date</div></div>
 	<div class="stat">
-		<div class="v" class:warning={overBudget}>
-			{overBudget ? '−' : ''}{gbp(Math.abs(remaining))}
+		<div class="v" class:warning={overTarget > 0} class:good={overTarget <= 0}>
+			{gbp(Math.abs(overTarget))}
 		</div>
-		<div class="l">{overBudget ? 'Over budget' : 'Remaining'}</div>
+		<div class="l">{overTarget > 0 ? 'Over target' : 'Under target'}</div>
 	</div>
 </div>
 
+<!-- ─── Where the money is ─────────────────────────────────────────────── -->
+<section class="card moneybar">
+	<div class="mb-head">
+		<span class="kicker">Where the money is</span>
+		<span class="mb-caption">
+			{gbp(earmark)} earmarked against a {gbp(data.target)} target —
+			<strong class:warning={overTarget > 0}>
+				{gbp(Math.abs(overTarget))} {overTarget > 0 ? 'over' : 'under'} target
+			</strong>
+		</span>
+	</div>
+	<div class="mb-track" role="img" aria-label="Budget progress bar">
+		<div class="seg paid" style={`width:${bar.paid}%`}></div>
+		<div class="seg confirmed" style={`width:${bar.confirmedUnpaid}%`}></div>
+		<div class="seg estimated" style={`width:${bar.stillEstimated}%`}></div>
+	</div>
+	<div class="mb-legend">
+		<span><i class="dot paid"></i> Paid <strong>{gbp(bar.amounts.paid)}</strong></span>
+		<span><i class="dot confirmed"></i> Confirmed, unpaid <strong>{gbp(bar.amounts.confirmedUnpaid)}</strong></span>
+		<span><i class="dot estimated"></i> Still estimated <strong>{gbp(bar.amounts.stillEstimated)}</strong></span>
+	</div>
+</section>
 
+<!-- ─── Charts row ─────────────────────────────────────────────────────── -->
+<div class="charts">
+	<section class="card chart">
+		<span class="kicker">Spend by area</span>
+		<div class="donut-wrap">
+			<svg viewBox="0 0 140 140" class="donut" aria-hidden="true">
+				{#each donutSegs as seg}
+					<circle
+						cx="70" cy="70" r={R}
+						fill="none"
+						stroke={seg.colour}
+						stroke-width="17"
+						stroke-dasharray={`${Math.max(0, seg.frac * CIRC - 1.5)} ${CIRC}`}
+						stroke-dashoffset={-seg.offset * CIRC}
+						transform="rotate(-90 70 70)"
+					/>
+				{/each}
+				<text x="70" y="67" text-anchor="middle" class="donut-total">{short(earmark)}</text>
+				<text x="70" y="82" text-anchor="middle" class="donut-sub">earmarked</text>
+			</svg>
+			<ul class="area-legend">
+				{#each areas as a, i}
+					<li>
+						<i class="dot" style={`background:${AREA_COLOURS[i % AREA_COLOURS.length]}`}></i>
+						<span class="al-label">{a.label}</span>
+						<strong>{gbp(a.budgeted)}</strong>
+					</li>
+				{/each}
+			</ul>
+		</div>
+	</section>
+
+	<section class="card chart">
+		<span class="kicker">Budgeted vs confirmed</span>
+		<div class="vs-bars">
+			{#each areas as a, i}
+				<div class="vs-row">
+					<div class="vs-meta">
+						<span>{a.label}</span>
+						<span class="vs-nums">{gbp(a.confirmed)} / {gbp(a.budgeted)}</span>
+					</div>
+					<div class="vs-track">
+						<div
+							class="vs-fill"
+							style={`width:${Math.min(100, a.budgeted > 0 ? (100 * a.confirmed) / a.budgeted : a.confirmed > 0 ? 100 : 0)}%;background:${AREA_COLOURS[i % AREA_COLOURS.length]}`}
+						></div>
+					</div>
+				</div>
+			{/each}
+		</div>
+	</section>
+</div>
+
+<!-- ─── Pulled in from elsewhere ───────────────────────────────────────── -->
+<span class="kicker standalone">Pulled in from elsewhere</span>
+<div class="synced-cards">
+	{#if venueLine}
+		<section class="card synced">
+			<div class="sy-head">
+				<span class="sy-ico" aria-hidden="true">
+					<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
+				</span>
+				<span class="sy-title">
+					<strong>Venue &amp; catering</strong>
+					<em>The Tithe Barn — live from Venue &amp; costs</em>
+				</span>
+				<Pill tone="green">Synced</Pill>
+			</div>
+			<div class="sy-stats">
+				<span><strong>{gbp(venueLine.confirmed)}</strong><em>confirmed</em></span>
+				<span><strong>{gbp(venueLine.paid)}</strong><em>paid</em></span>
+				<span class="sy-earmark">
+					<span class="money"><i>£</i><input
+						type="number"
+						value={venueLine.budgeted}
+						onchange={(e) => { saveField(venueLine.id, 'budgeted', e.currentTarget.value); invalidateAll(); }}
+						title="Venue earmark (budgeted)"
+					/></span>
+					<em>budgeted</em>
+				</span>
+				<a class="sy-open" href="/dashboard/venue">Open Venue →</a>
+			</div>
+		</section>
+	{/if}
+	{#if shoppingLine}
+		<section class="card synced">
+			<div class="sy-head">
+				<span class="sy-ico" aria-hidden="true">
+					<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.3"/><circle cx="17" cy="20" r="1.3"/><path d="M3 4h2l2.2 11h10l2-8H6"/></svg>
+				</span>
+				<span class="sy-title">
+					<strong>Shopping list</strong>
+					<em>{data.shoppingCount} items incl. favours — live from Shopping</em>
+				</span>
+				<Pill tone="green">Synced</Pill>
+			</div>
+			<div class="sy-stats">
+				<span><strong>{gbp(shoppingLine.confirmed)}</strong><em>confirmed</em></span>
+				<span><strong>{gbp(shoppingLine.paid)}</strong><em>paid</em></span>
+				<span><strong>{gbp(shoppingLine.budgeted)}</strong><em>budgeted</em></span>
+				<a class="sy-open" href="/dashboard/shopping">Open Shopping →</a>
+			</div>
+		</section>
+	{/if}
+</div>
+
+<!-- ─── Section cards ──────────────────────────────────────────────────── -->
 {#each data.sections as section}
-	{@const sectionLines = data.lines.filter((l) => l.section === section)}
+	{@const sectionLines = gridLines.filter((l) => l.section === section)}
 	{@const secBudgeted = sectionLines.reduce((a, l) => a + l.budgeted, 0)}
 	{@const secConfirmed = sectionLines.reduce((a, l) => a + l.confirmed, 0)}
 	{@const secPaid = sectionLines.reduce((a, l) => a + l.paid, 0)}
@@ -135,7 +338,7 @@
 			<span>{section}</span>
 			<span class="kcount">{sectionLines.length} {sectionLines.length === 1 ? 'line' : 'lines'}</span>
 			<span class="ktotals">
-				<span>{gbp(secBudgeted)}</span>
+				<span>{gbp(secBudgeted)} planned</span>
 				<span class="sep">·</span>
 				<span class="confirmed">{gbp(secConfirmed)} confirmed</span>
 				{#if secPaid > 0}
@@ -148,114 +351,102 @@
 			<div class="row head">
 				<span></span>
 				<span>Category</span>
-				<span class="r">Budgeted £</span>
-				<span class="r">Confirmed £</span>
-				<span class="r">Paid £</span>
+				<span class="r">Budgeted</span>
+				<span class="r">Confirmed</span>
+				<span class="r">Paid</span>
 				<span>Status</span>
-				<span>Section</span>
 				<span></span>
 			</div>
 
 			{#each sectionLines as line (line.id)}
 				<div
 					class="row"
-					class:venue={line.id < 0}
 					class:drop-over={dragOverId === line.id}
-					draggable={line.id > 0}
+					draggable={true}
 					ondragstart={(e) => onDragStart(e, line.id)}
 					ondragover={(e) => onDragOver(e, line.id)}
 					ondragleave={onDragLeave}
 					ondrop={(e) => onDrop(e, line.id)}
 				>
-					<span class="grip" aria-hidden="true">{line.id < 0 ? '' : '≡'}</span>
-					{#if line.link?.type === 'shopping'}
-						<span class="cat venue-cat">{line.category} <Pill tone="green">Synced</Pill></span>
-						<span class="readonly num">{gbp(line.budgeted)}</span>
-						<span class="readonly num">{gbp(line.confirmed)}</span>
-						<span class="readonly num">{gbp(line.paid)}</span>
-						<span class="locked">Shopping</span>
-						<span class="locked">Everything else</span>
-						<a class="shop-link" href="/dashboard/shopping" title="Edit shopping list">Edit →</a>
-					{:else}
-						<span class="catwrap">
-							<input
-								class="cat"
-								value={line.category}
-								onchange={(e) => saveField(line.id, 'category', e.currentTarget.value)}
-							/>
-							{#if line.link?.type === 'venue'}
-								<a class="src-chip" href="/dashboard/venue" title="Figures come from the venue quote">from Venue ↗</a>
-							{:else if line.link?.type === 'vendor'}
-								<a class="src-chip" href="/dashboard/vendors" title="Figures come from this vendor">⭲ {line.link.vendorName}</a>
-							{/if}
-							{#if line.link?.type !== 'venue'}
-								<select
-									class="linksel"
-									title="Link this line to a vendor"
-									value={line.link?.type === 'vendor' ? String(line.link.vendorId) : ''}
-									onchange={(e) => linkVendor(line.id, e.currentTarget.value)}
-								>
-									<option value="">— manual —</option>
-									{#each data.vendorOptions as v}
-										<option value={String(v.id)}>{v.label}</option>
-									{/each}
-								</select>
-							{/if}
-						</span>
+					<span class="grip" aria-hidden="true">≡</span>
+					<span class="catwrap">
 						<input
-							class="num"
+							class="cat"
+							value={line.category}
+							onchange={(e) => saveField(line.id, 'category', e.currentTarget.value)}
+						/>
+						{#if line.link?.type === 'vendor'}
+							<a class="src-chip" href="/dashboard/vendors" title="Figures come from this vendor">⭲ {line.link.vendorName}</a>
+						{/if}
+						<select
+							class="linksel"
+							title="Link this line to a vendor"
+							value={line.link?.type === 'vendor' ? String(line.link.vendorId) : ''}
+							onchange={(e) => linkVendor(line.id, e.currentTarget.value)}
+						>
+							<option value="">— manual —</option>
+							{#each data.vendorOptions as v}
+								<option value={String(v.id)}>{v.label}</option>
+							{/each}
+						</select>
+					</span>
+					<span class="money">
+						<i>£</i>
+						<input
 							type="number"
 							value={line.budgeted}
 							onchange={(e) => saveField(line.id, 'budgeted', e.currentTarget.value)}
 						/>
-						{#if line.editable}
+					</span>
+					{#if line.editable}
+						<span class="money">
+							<i>£</i>
 							<input
-								class="num"
 								type="number"
 								value={line.confirmed}
 								onchange={(e) => saveField(line.id, 'confirmed', e.currentTarget.value)}
 							/>
-						{:else}
-							<span class="readonly num" title="Derived from the linked source">{gbp(line.confirmed)}</span>
-						{/if}
-						<button
-							class="paybtn num"
-							title="Payments"
-							onclick={() => (openPayments = openPayments === line.id ? null : line.id)}
-						>
-							{gbp(line.paid)} <span class="caret">{openPayments === line.id ? '▴' : '▾'}</span>
-						</button>
-						{#if line.editable}
-							<select
-								onchange={(e) => saveField(line.id, 'status', e.currentTarget.value)}
-								value={line.status}
-							>
-								{#each statusOptions as opt}
-									<option value={opt} selected={opt === line.status}>{opt}</option>
-								{/each}
-							</select>
-						{:else}
-							<span class="locked">{line.status}</span>
-						{/if}
+						</span>
+					{:else}
+						<span class="readonly num" title="Derived from the linked vendor">{gbp(line.confirmed)}</span>
+					{/if}
+					<button
+						class="paybtn num"
+						title="Payments"
+						onclick={() => (openPayments = openPayments === line.id ? null : line.id)}
+					>
+						{gbp(line.paid)} <span class="caret">{openPayments === line.id ? '▴' : '▾'}</span>
+					</button>
+					{#if line.editable}
 						<select
-							onchange={(e) => saveField(line.id, 'section', e.currentTarget.value)}
+							onchange={(e) => saveField(line.id, 'status', e.currentTarget.value)}
+							value={line.status}
+						>
+							{#each statusOptions as opt}
+								<option value={opt} selected={opt === line.status}>{opt}</option>
+							{/each}
+						</select>
+					{:else}
+						<span class="locked">{line.status}</span>
+					{/if}
+					<span class="rowend">
+						<select
+							class="secsel"
+							title="Move to another section"
 							value={line.section}
+							onchange={(e) => saveField(line.id, 'section', e.currentTarget.value).then(invalidateAll)}
 						>
 							{#each data.sections as s}
 								<option value={s} selected={s === line.section}>{s}</option>
 							{/each}
 						</select>
-						{#if line.link?.type === 'venue'}
-							<span></span>
-						{:else}
-							<form method="POST" action="?/remove" use:enhance class="rmf">
-								<input type="hidden" name="id" value={line.id} />
-								<button type="submit" title="Remove" aria-label="Remove">×</button>
-							</form>
-						{/if}
-					{/if}
+						<form method="POST" action="?/remove" use:enhance class="rmf">
+							<input type="hidden" name="id" value={line.id} />
+							<button type="submit" title="Remove" aria-label="Remove">×</button>
+						</form>
+					</span>
 				</div>
-				{#if openPayments === line.id && line.id > 0}
+				{#if openPayments === line.id}
 					<div class="payrow">
 						{#if line.payments.length === 0}
 							<span class="pay-empty">No payments recorded yet.</span>
@@ -278,7 +469,7 @@
 
 			<form method="POST" action="?/add" use:enhance class="addrow">
 				<input type="hidden" name="section" value={section} />
-				<input name="category" placeholder={`Add a line in ${section}…`} />
+				<input name="category" placeholder={ADD_HINTS[section] ?? `Add a line in ${section}…`} />
 				<button>+ Add</button>
 			</form>
 		</div>
@@ -286,11 +477,24 @@
 {/each}
 
 <style>
+	.kicker {
+		font-weight: 600;
+		letter-spacing: 0.16em;
+		text-transform: uppercase;
+		font-size: 10.5px;
+		color: var(--muted);
+	}
+	.kicker.standalone {
+		display: block;
+		margin: 4px 2px 10px;
+	}
+
+	/* ── Stat cards ── */
 	.stats {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
 		gap: 14px;
-		margin-bottom: 32px;
+		margin-bottom: 18px;
 	}
 	.stat {
 		background: var(--card);
@@ -298,151 +502,373 @@
 		border-radius: 14px;
 		padding: 18px 22px;
 	}
+	.stat.filled {
+		background: var(--sage);
+		border-color: var(--sage);
+	}
+	.stat.filled .v,
+	.stat.filled .l {
+		color: #fff;
+	}
 	.stat .v {
 		font-family: var(--serif);
 		font-weight: 600;
-		font-size: 30px;
+		font-size: 28px;
 		color: var(--ink);
 		line-height: 1;
 		display: flex;
 		align-items: baseline;
 	}
-	.stat .v.accent {
-		color: var(--sage);
-	}
 	.stat .v.warning {
 		color: var(--terra);
+	}
+	.stat .v.good {
+		color: var(--sage-deep);
 	}
 	.stat .l {
 		font-weight: 500;
 		letter-spacing: 0.14em;
 		text-transform: uppercase;
-		font-size: 10.5px;
+		font-size: 10px;
 		color: var(--muted);
 		margin-top: 8px;
 	}
-	/* Editable Target stat — keeps the same card chrome as the other stats,
-	   but the input itself is borderless and uses the serif display font so
-	   it reads as the stat value. */
-	.stat-edit .v {
-		gap: 0;
+	.stat-edit input {
+		font-family: var(--serif);
+		font-weight: 600;
+		font-size: 28px;
+		color: var(--ink);
+		border: 0;
+		border-bottom: 1.5px dashed var(--rule);
+		background: transparent;
+		width: 100%;
+		min-width: 0;
+		padding: 0;
+	}
+	.stat-edit input:focus {
+		outline: none;
+		border-bottom-color: var(--sage);
 	}
 	.stat-edit .prefix {
 		font-family: var(--serif);
 		font-weight: 600;
-		font-size: 30px;
+		font-size: 28px;
 		color: var(--ink);
-		line-height: 1;
-	}
-	.stat-edit input {
-		border: 0;
-		background: transparent;
-		padding: 0;
-		font: inherit;
-		font-family: var(--serif);
-		font-weight: 600;
-		font-size: 30px;
-		color: var(--ink);
-		line-height: 1;
-		width: 100%;
-		min-width: 0;
-	}
-	.stat-edit input:focus {
-		outline: none;
-		box-shadow: 0 1px 0 var(--sage);
 	}
 
+	/* ── Money bar ── */
+	.card {
+		background: var(--card);
+		border: 1px solid var(--line);
+		border-radius: 14px;
+	}
+	.moneybar {
+		padding: 16px 20px 18px;
+		margin-bottom: 18px;
+	}
+	.mb-head {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+		gap: 12px;
+		flex-wrap: wrap;
+		margin-bottom: 12px;
+	}
+	.mb-caption {
+		font-size: 12.5px;
+		color: var(--muted);
+	}
+	.mb-caption strong.warning {
+		color: var(--terra);
+	}
+	.mb-track {
+		display: flex;
+		height: 12px;
+		border-radius: 999px;
+		overflow: hidden;
+		background: var(--line2);
+	}
+	.seg.paid {
+		background: var(--sage-deep);
+	}
+	.seg.confirmed {
+		background: var(--sage);
+		opacity: 0.55;
+	}
+	.seg.estimated {
+		background: var(--rule);
+		opacity: 0.5;
+	}
+	.mb-legend {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 18px;
+		margin-top: 10px;
+		font-size: 12px;
+		color: var(--body);
+	}
+	.dot {
+		display: inline-block;
+		width: 8px;
+		height: 8px;
+		border-radius: 2.5px;
+		margin-right: 5px;
+		vertical-align: baseline;
+	}
+	.dot.paid {
+		background: var(--sage-deep);
+	}
+	.dot.confirmed {
+		background: var(--sage);
+		opacity: 0.55;
+	}
+	.dot.estimated {
+		background: var(--rule);
+		opacity: 0.6;
+	}
+
+	/* ── Charts ── */
+	.charts {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+		gap: 18px;
+		margin-bottom: 18px;
+	}
+	.chart {
+		padding: 16px 20px 18px;
+	}
+	.donut-wrap {
+		display: flex;
+		align-items: center;
+		gap: 22px;
+		margin-top: 14px;
+		flex-wrap: wrap;
+	}
+	.donut {
+		width: 150px;
+		height: 150px;
+		flex: none;
+	}
+	.donut-total {
+		font-family: var(--serif);
+		font-weight: 600;
+		font-size: 22px;
+		fill: var(--ink);
+	}
+	.donut-sub {
+		font-size: 8.5px;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		fill: var(--muted);
+	}
+	.area-legend {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 8px;
+		flex: 1;
+		min-width: 180px;
+	}
+	.area-legend li {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 13px;
+		color: var(--body);
+	}
+	.al-label {
+		flex: 1;
+	}
+	.area-legend strong {
+		color: var(--ink);
+		font-variant-numeric: tabular-nums;
+	}
+	.vs-bars {
+		display: grid;
+		gap: 13px;
+		margin-top: 16px;
+	}
+	.vs-meta {
+		display: flex;
+		justify-content: space-between;
+		font-size: 12.5px;
+		color: var(--body);
+		margin-bottom: 5px;
+	}
+	.vs-nums {
+		color: var(--muted);
+		font-variant-numeric: tabular-nums;
+	}
+	.vs-track {
+		height: 7px;
+		border-radius: 999px;
+		background: var(--line2);
+		overflow: hidden;
+	}
+	.vs-fill {
+		height: 100%;
+		border-radius: 999px;
+	}
+
+	/* ── Synced source cards ── */
+	.synced-cards {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+		gap: 18px;
+		margin-bottom: 26px;
+	}
+	.synced {
+		background: var(--sage-soft);
+		border-color: var(--line2);
+		padding: 16px 20px;
+	}
+	.sy-head {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		margin-bottom: 14px;
+	}
+	.sy-ico {
+		flex: none;
+		width: 34px;
+		height: 34px;
+		border-radius: 10px;
+		background: #fff;
+		border: 1px solid var(--line2);
+		display: grid;
+		place-items: center;
+		color: var(--sage-deep);
+	}
+	.sy-title {
+		flex: 1;
+		display: grid;
+	}
+	.sy-title strong {
+		font-size: 14.5px;
+		color: var(--ink);
+	}
+	.sy-title em {
+		font-style: normal;
+		font-size: 12px;
+		color: var(--muted);
+	}
+	.sy-stats {
+		display: flex;
+		align-items: flex-end;
+		gap: 22px;
+		flex-wrap: wrap;
+	}
+	.sy-stats > span {
+		display: grid;
+	}
+	.sy-stats strong {
+		font-family: var(--serif);
+		font-weight: 600;
+		font-size: 21px;
+		color: var(--ink);
+		line-height: 1.1;
+	}
+	.sy-stats em {
+		font-style: normal;
+		font-size: 9.5px;
+		letter-spacing: 0.13em;
+		text-transform: uppercase;
+		color: var(--muted);
+	}
+	.sy-earmark .money input {
+		font-family: var(--serif);
+		font-weight: 600;
+		font-size: 21px;
+		width: 90px;
+	}
+	.sy-open {
+		margin-left: auto;
+		background: #fff;
+		border: 1px solid var(--line);
+		border-radius: 9px;
+		padding: 8px 14px;
+		font-size: 12px;
+		font-weight: 600;
+		color: var(--sage-deep);
+		text-decoration: none;
+		white-space: nowrap;
+	}
+
+	/* ── Section cards / grid ── */
 	.bsection {
-		margin-bottom: 32px;
-		margin-top: 32px;
+		margin-bottom: 26px;
 	}
 	.ktitle {
 		display: flex;
 		align-items: baseline;
-		gap: 12px;
-		flex-wrap: wrap;
-		font-family: var(--sans);
+		gap: 10px;
+		margin: 0 2px 10px;
 		font-weight: 600;
-		letter-spacing: 0.22em;
+		letter-spacing: 0.16em;
 		text-transform: uppercase;
 		font-size: 11.5px;
-		color: var(--sage);
-		margin: 0 0 12px 4px;
+		color: var(--ink);
 	}
-	.ktitle .kcount {
-		font-size: 10px;
-		letter-spacing: 0.16em;
+	.kcount {
 		color: var(--faint);
 		font-weight: 500;
-	}
-	.ktitle .ktotals {
-		margin-left: auto;
-		font-family: var(--serif);
-		font-style: normal;
-		font-size: 13px;
-		letter-spacing: 0;
+		letter-spacing: 0.04em;
 		text-transform: none;
-		color: var(--ink);
-		font-weight: 500;
-		display: inline-flex;
-		gap: 6px;
-		align-items: baseline;
+		font-size: 11.5px;
 	}
-	.ktitle .ktotals .confirmed { color: var(--sage-deep); }
-	.ktitle .ktotals .paid { color: var(--sage); }
-	.ktitle .ktotals .sep { color: var(--faint); }
-	.card {
-		background: var(--card);
-		border: 1px solid var(--line);
-		border-radius: 16px;
-		padding: 12px 16px;
+	.ktotals {
+		margin-left: auto;
+		font-weight: 500;
+		letter-spacing: 0.02em;
+		text-transform: none;
+		font-size: 12px;
+		color: var(--muted);
+		font-variant-numeric: tabular-nums;
+	}
+	.ktotals .confirmed {
+		color: var(--sage-deep);
+	}
+	.ktotals .paid {
+		color: var(--sage);
+	}
+	.sep {
+		margin: 0 4px;
+		color: var(--faint);
+	}
+	.bsection .card {
+		padding: 4px 16px 12px;
 	}
 
 	.row {
 		display: grid;
-		grid-template-columns: 20px minmax(180px, 1.8fr) 100px 100px 100px 120px 140px 28px;
+		grid-template-columns: 18px minmax(180px, 2fr) 110px 110px 110px 118px 106px;
 		gap: 10px;
 		align-items: center;
-		padding: 8px 4px;
+		padding: 7px 0;
 		border-bottom: 1px solid var(--line2);
-		border-top: 2px solid transparent;
-		transition: border-color 0.12s ease, background-color 0.12s ease;
-	}
-	.row[draggable='true'] {
-		cursor: grab;
-	}
-	.row[draggable='true']:active {
-		cursor: grabbing;
-	}
-	.row.drop-over {
-		border-top-color: var(--sage);
-		background: var(--sage-soft);
-	}
-	.row .grip {
-		color: var(--faint);
-		font-size: 14px;
-		line-height: 1;
-		user-select: none;
-		text-align: center;
-		opacity: 0;
-		transition: opacity 0.15s ease;
-	}
-	.row:hover .grip {
-		opacity: 1;
-	}
-	.row:last-of-type {
-		border-bottom: 0;
 	}
 	.row.head {
-		color: var(--muted);
-		font-size: 10px;
-		letter-spacing: 0.1em;
+		font-size: 9.5px;
+		letter-spacing: 0.12em;
 		text-transform: uppercase;
-		padding-bottom: 10px;
+		color: var(--muted);
+		font-weight: 600;
+		padding: 12px 0 8px;
 		border-bottom: 1px solid var(--line);
 	}
 	.row.head .r {
 		text-align: right;
+	}
+	.row[draggable='true'] .grip {
+		cursor: grab;
+	}
+	.row.drop-over {
+		box-shadow: inset 0 2px 0 var(--sage);
+	}
+	.grip {
+		color: var(--faint);
+		font-size: 12px;
 	}
 	.row input,
 	.row select {
@@ -457,21 +883,6 @@
 	.row input.cat {
 		font-weight: 500;
 		color: var(--ink);
-	}
-	.row input.num {
-		text-align: right;
-		font-variant-numeric: tabular-nums;
-	}
-	.row .readonly {
-		color: var(--body);
-		font-variant-numeric: tabular-nums;
-		padding-right: 8px;
-		text-align: right;
-	}
-	.row .locked {
-		color: var(--faint);
-		font-size: 12px;
-		font-style: italic;
 	}
 	.catwrap {
 		display: flex;
@@ -505,6 +916,70 @@
 		border-color: var(--line2) !important;
 		cursor: pointer;
 	}
+	.money {
+		display: flex;
+		align-items: center;
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		background: #fff;
+		min-width: 0;
+	}
+	.money i {
+		font-style: normal;
+		font-size: 12px;
+		color: var(--faint);
+		padding: 0 2px 0 8px;
+	}
+	.money input {
+		border: 0 !important;
+		background: transparent !important;
+		flex: 1;
+		width: 100%;
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+	}
+	.money input:focus {
+		outline: none;
+	}
+	.money:focus-within {
+		border-color: var(--sage);
+	}
+	.readonly {
+		color: var(--body);
+		font-variant-numeric: tabular-nums;
+		padding-right: 8px;
+		text-align: right;
+	}
+	.locked {
+		color: var(--faint);
+		font-size: 12px;
+		font-style: italic;
+	}
+	.rowend {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		justify-content: flex-end;
+	}
+	.secsel {
+		width: 26px;
+		color: transparent;
+		background: transparent !important;
+		border-color: var(--line2) !important;
+		cursor: pointer;
+	}
+	.rmf button {
+		background: none;
+		border: 0;
+		color: var(--faint);
+		font-size: 16px;
+		cursor: pointer;
+		line-height: 1;
+		padding: 2px 4px;
+	}
+	.rmf button:hover {
+		color: var(--terra);
+	}
 	.paybtn {
 		border: 1px solid var(--line);
 		border-radius: 6px;
@@ -527,9 +1002,10 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: 8px;
-		padding: 10px 12px 12px 32px;
+		padding: 10px 12px 12px 28px;
 		border-bottom: 1px solid var(--line2);
 		background: var(--sage-soft);
+		border-radius: 0 0 8px 8px;
 	}
 	.pay-empty {
 		color: var(--muted);
@@ -581,61 +1057,31 @@
 		padding: 5px 10px;
 		cursor: pointer;
 	}
-	.row.venue .venue-cat {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		font-weight: 600;
-		color: var(--ink);
-	}
-	.shop-link {
-		font-size: 11px;
-		color: var(--sage-deep);
-		text-decoration: none;
-		white-space: nowrap;
-	}
-	.shop-link:hover {
-		text-decoration: underline;
-	}
-	.rmf {
-		margin: 0;
-	}
-	.rmf button {
-		background: none;
-		border: 0;
-		color: var(--faint);
-		font-size: 18px;
-		cursor: pointer;
-		padding: 0;
-	}
-	.rmf button:hover {
-		color: var(--terra);
-	}
-
 	.addrow {
 		display: flex;
-		gap: 10px;
-		margin: 12px 4px 4px;
+		gap: 8px;
+		padding: 12px 0 4px;
 	}
 	.addrow input {
 		flex: 1;
 		border: 1px solid var(--line);
 		border-radius: 8px;
-		padding: 8px 12px;
+		padding: 9px 12px;
 		font: inherit;
 		font-size: 13px;
+		background: var(--bg);
 	}
 	.addrow button {
-		background: var(--sage);
-		color: #fff;
 		border: 0;
 		border-radius: 8px;
-		padding: 8px 14px;
-		cursor: pointer;
+		background: var(--sage);
+		color: #fff;
 		font-size: 11px;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
-		font-weight: 500;
+		font-weight: 600;
+		padding: 0 18px;
+		cursor: pointer;
 	}
 
 	@media (max-width: 800px) {
@@ -645,6 +1091,21 @@
 		}
 		.row.head {
 			display: none;
+		}
+		.row .grip {
+			display: none;
+		}
+		.catwrap {
+			grid-column: 1 / -1;
+		}
+		.rowend {
+			justify-content: flex-start;
+		}
+		.sy-stats {
+			gap: 14px;
+		}
+		.sy-open {
+			margin-left: 0;
 		}
 	}
 </style>

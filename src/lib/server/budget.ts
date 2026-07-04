@@ -125,5 +125,5 @@ export async function effectiveBudget() {
 		confirmed: effective.reduce((a, l) => a + l.confirmed, 0),
 		paid: effective.reduce((a, l) => a + l.paid, 0)
 	};
-	return { lines: effective, totals, target, basis, headcounts: heads };
+	return { lines: effective, totals, target, basis, headcounts: heads, shoppingCount: shopping.length };
 }
