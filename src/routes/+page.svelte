@@ -10,6 +10,7 @@
 	} from '$lib/our-story';
 	import { enhance } from '$lib/scrollfx';
 	import Topbar from '$lib/components/Topbar.svelte';
+	import CoupleName from '$lib/components/CoupleName.svelte';
 
 	let root = $state<HTMLElement>();
 
@@ -38,11 +39,12 @@
 <main class="home" bind:this={root}>
 	<!-- ============ HERO ============ -->
 	<header class="hero">
-		<p class="eyebrow hero-eyebrow" data-reveal>Together with their families</p>
+		<img class="hero-sprig" src="/flora/sprig.png" alt="" aria-hidden="true" data-reveal />
+		<p class="eyebrow hero-eyebrow" data-reveal style="--d:.06s">Together with their families</p>
 		<h1 class="hero-title">
-			<span class="line" data-reveal>Katie</span>
-			<span class="line line2" data-reveal style="--d:.08s">
-				<span class="amp script">&amp;</span> Alex
+			<span class="line" data-reveal style="--d:.12s">Katie</span>
+			<span class="line line2" data-reveal style="--d:.2s">
+				<span class="amp script">&amp;</span>Alex
 			</span>
 		</h1>
 
@@ -159,7 +161,7 @@
 
 	<!-- ============ FOOTER ============ -->
 	<footer class="home-foot">
-		<p class="foot-names script">{WEDDING.coupleName}</p>
+		<p class="foot-names"><CoupleName /></p>
 		<p class="foot-line">{WEDDING.dateLong} · {WEDDING.venueName}, Bolton Abbey</p>
 		<a class="foot-contact" href={`mailto:${WEDDING.contact.email}`}>{WEDDING.contact.email}</a>
 	</footer>
@@ -217,6 +219,15 @@
 		padding: 120px clamp(20px, 5vw, 64px) 130px;
 		position: relative;
 	}
+	.hero-sprig {
+		display: block;
+		width: auto;
+		height: clamp(76px, 10vw, 132px);
+		margin: 0 auto clamp(22px, 4vw, 42px);
+		/* Line-art sprig is pure black; nudge it toward the ink tone so it
+		   sits with the palette instead of reading as harsh black on cream. */
+		opacity: 0.82;
+	}
 	.hero-eyebrow {
 		margin: 0 0 clamp(20px, 4vw, 40px);
 	}
@@ -237,10 +248,15 @@
 		font-weight: 500;
 	}
 	.hero-title .amp {
+		/* Keep the original Style Script swash here — everything else that used
+		   .script now renders in Kristi. Inherits the title's ink colour. */
+		font-family: var(--script-amp);
 		font-style: normal;
-		color: var(--terra);
-		font-size: 0.7em;
-		padding-right: 0.08em;
+		color: inherit;
+		font-size: 0.82em;
+		/* Butt the swash ampersand right up against "Alex", as on the
+		   stationery's "&Alex" lockup. */
+		margin-right: -0.02em;
 	}
 	.hero-photo {
 		width: min(560px, 80vw);
@@ -373,7 +389,8 @@
 		font-weight: 600;
 		margin: 0 0 22px;
 		display: flex;
-		align-items: center;
+		/* Sit the italic year on the same baseline as the uppercase eyebrow. */
+		align-items: baseline;
 		gap: 14px;
 	}
 	.kicker-year {
@@ -383,7 +400,7 @@
 		font-size: 20px;
 		letter-spacing: 0;
 		text-transform: none;
-		color: var(--terra);
+		color: var(--ink);
 	}
 	.chapter-title {
 		font-family: var(--serif);
@@ -412,10 +429,11 @@
 
 	/* ---------------- Details ---------------- */
 	.details {
-		max-width: 820px;
-		margin: 0 auto;
+		width: 100%;
+		margin: 0;
 		padding: clamp(110px, 18vw, 240px) clamp(24px, 6vw, 64px) clamp(80px, 12vw, 160px);
 		text-align: center;
+		position: relative;
 	}
 	.details-title {
 		font-size: clamp(54px, 10vw, 110px);
@@ -430,6 +448,9 @@
 		border-top: 1px solid var(--line);
 		border-bottom: 1px solid var(--line);
 		padding: clamp(28px, 4vw, 44px) 0;
+		/* Keep the two columns readable even though the section is full-bleed. */
+		max-width: 860px;
+		margin-inline: auto;
 	}
 	.detail-label {
 		font-family: var(--sans);
@@ -467,6 +488,33 @@
 		background: var(--sage-deep);
 		color: #fff;
 		padding: clamp(90px, 16vw, 220px) clamp(24px, 6vw, 64px);
+		position: relative;
+		overflow: hidden;
+		isolation: isolate;
+	}
+	/* Botanical watermark on the green CTA. The line art is inverted so it
+	   reads as pale flowers, then screened over the sage so the green stays
+	   the dominant colour. */
+	.cta::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		z-index: -2;
+		background: url('/flora/botanical-field.png') center / cover no-repeat;
+		filter: invert(1);
+		mix-blend-mode: screen;
+		opacity: 0.1;
+		pointer-events: none;
+	}
+	/* Green pass layer — keeps the sage dominant over the botanical. */
+	.cta::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		background: var(--sage-deep);
+		opacity: 0.52;
+		pointer-events: none;
 	}
 	.cta-inner {
 		max-width: 1100px;

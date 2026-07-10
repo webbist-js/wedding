@@ -79,15 +79,15 @@ export const ACCOMMODATION = [
 		url: 'https://boltonabbeyescapes.co.uk/fell-hotel/'
 	},
 	{
-		name: 'Holiday cottages on the estate',
-		note: 'Meadowcroft (sleeps 8) and Norwood Cottage (sleeps 4) are 1–2 miles away — good for families or groups.',
-		url: 'https://boltonabbey.com/stay/'
-	},
-	{
 		name: 'Premier Inn Skipton North (Gargrave)',
 		note: 'Chain budget hotel a 15-minute drive away, just outside Skipton in Gargrave.',
 		phone: '0871 527 8980',
 		url: 'https://www.premierinn.com/gb/en/hotels/england/north-yorkshire/skipton/skipton-north-gargrave.html'
+	},
+	{
+		name: 'Holiday cottages on the estate',
+		note: 'Meadowcroft (sleeps 8) and Norwood Cottage (sleeps 4) are 1–2 miles away — good for families or groups.',
+		url: 'https://boltonabbey.com/stay/'
 	}
 ];
 

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
+  import CoupleName from '$lib/components/CoupleName.svelte';
   let { children, data } = $props();
 
   // Grouped navigation. Every section stays reachable; groups just tidy the rail.
@@ -94,13 +95,13 @@
     <button class="burger" onclick={() => (navOpen = !navOpen)} aria-label="Menu">
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
     </button>
-    <span class="m-word script">Katie &amp; Alex</span>
+    <span class="m-word"><CoupleName layout="inline" /></span>
     <span class="m-days">{days}d</span>
   </div>
 
   <aside class="rail" class:open={navOpen}>
     <div class="brand">
-      <span class="word script">Katie &amp; Alex</span>
+      <span class="word"><CoupleName layout="inline" /></span>
       <span class="sub">The Tithe Barn · Bolton Abbey</span>
     </div>
 

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import CoupleName from '$lib/components/CoupleName.svelte';
 
 	let { data, form } = $props();
 
@@ -56,7 +57,7 @@
 	{:else}
 		<header class="head">
 			<p class="eyebrow">Live from The Tithe Barn</p>
-			<h1 class="script">Katie &amp; Alex</h1>
+			<h1><CoupleName /></h1>
 			<p class="sub">
 				{items.length
 					? `${items.length} ${items.length === 1 ? 'memory' : 'memories'} and counting — refreshes itself, just keep watching`

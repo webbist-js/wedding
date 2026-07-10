@@ -14,9 +14,39 @@
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link
-			href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500;600&family=Style+Script&display=swap"
+			href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500;600&family=Kristi&family=Style+Script&display=swap"
 			rel="stylesheet"
 		/>
+		<style>
+			/* First-load page loader: the botanical animation plays once, then
+			   fades to reveal the page. Rendered here in app.html so it covers
+			   the very first paint before hydration. Driven by the script at the
+			   end of <body>. */
+			#ka-loader {
+				position: fixed;
+				inset: 0;
+				z-index: 2147483647;
+				background: #efece3;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				transition: opacity 0.8s ease;
+			}
+			#ka-loader video {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+				pointer-events: none;
+			}
+			#ka-loader.ka-done {
+				opacity: 0;
+			}
+			@media (prefers-reduced-motion: reduce) {
+				#ka-loader {
+					display: none;
+				}
+			}
+		</style>
 		%sveltekit.head%
 		<noscript>
 			<style>
@@ -29,5 +59,61 @@
 	</head>
 	<body data-sveltekit-preload-data="hover">
 		<div style="display: contents">%sveltekit.body%</div>
+
+		<!-- First-load botanical page loader (non-interactive, no sound). -->
+		<div id="ka-loader" aria-hidden="true">
+			<video
+				id="ka-loader-video"
+				src="/video/botanical-loader.mp4"
+				muted
+				autoplay
+				playsinline
+				preload="auto"
+			></video>
+		</div>
+		<script>
+			(function () {
+				var el = document.getElementById('ka-loader');
+				if (!el) return;
+				var path = location.pathname;
+				var isAdmin = /^\/(dashboard|login|logout)/.test(path);
+				var reduce =
+					window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+				var seen = false;
+				try {
+					seen = sessionStorage.getItem('kaLoaderSeen') === '1';
+				} catch (e) {}
+
+				// Only on the first load of a session, on public pages, when motion is allowed.
+				if (isAdmin || reduce || seen) {
+					el.parentNode && el.parentNode.removeChild(el);
+					return;
+				}
+				try {
+					sessionStorage.setItem('kaLoaderSeen', '1');
+				} catch (e) {}
+
+				var v = document.getElementById('ka-loader-video');
+				var dismissed = false;
+				function dismiss() {
+					if (dismissed) return;
+					dismissed = true;
+					el.classList.add('ka-done');
+					setTimeout(function () {
+						el.parentNode && el.parentNode.removeChild(el);
+					}, 900);
+				}
+				if (!v) {
+					dismiss();
+					return;
+				}
+				v.addEventListener('ended', dismiss);
+				v.addEventListener('error', dismiss);
+				// Safety net — never trap the guest if playback stalls or 'ended' never fires.
+				setTimeout(dismiss, 13000);
+				var playing = v.play && v.play();
+				if (playing && playing.catch) playing.catch(dismiss);
+			})();
+		</script>
 	</body>
 </html>

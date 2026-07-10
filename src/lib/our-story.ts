@@ -58,9 +58,9 @@ export const STORY_CHAPTERS: StoryChapter[] = [
 		title: 'Somewhere to call ours',
 		year: '2023',
 		body:
-			'Then came the keys to a little house of our own — too many paint swatches, a kitchen we are ' +
-			'still arguing about, and a garden that Bodie has firmly claimed as his kingdom. It is unfinished ' +
-			'and imperfect and entirely, wonderfully ours.',
+			'Then came the keys to a little house of our own — too many paint swatches, a sofa that took ' +
+			'three attempts to get through the front door, and a garden that Bodie has firmly claimed as his ' +
+			'kingdom. It is unfinished and imperfect and entirely, wonderfully ours.',
 		image: '/story/home.png',
 		focus: 'center 42%',
 		align: 'right'

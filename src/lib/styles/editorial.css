@@ -395,10 +395,37 @@
 .ed-foot {
 	text-align: center;
 	padding: clamp(60px, 10vw, 110px) 24px clamp(50px, 8vw, 90px);
+	position: relative;
+	isolation: isolate;
+	overflow: hidden;
+	background: var(--sage-deep);
+	color: #fff;
+}
+/* Botanical watermark, matching the homepage green CTA: inverted line art
+   screened over the sage, with a green pass so the green stays dominant. */
+.ed-foot::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: -2;
+	background: url('/flora/botanical-border.png') center / cover no-repeat;
+	filter: invert(1);
+	mix-blend-mode: screen;
+	opacity: 0.1;
+	pointer-events: none;
+}
+.ed-foot::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	background: var(--sage-deep);
+	opacity: 0.52;
+	pointer-events: none;
 }
 .ed-foot-names {
 	font-size: clamp(44px, 9vw, 80px);
-	color: var(--ink);
+	color: #fff;
 	margin: 0 0 16px;
 }
 .ed-foot-line {
@@ -406,8 +433,17 @@
 	font-size: 11px;
 	letter-spacing: 0.2em;
 	text-transform: uppercase;
-	color: var(--muted);
+	color: rgba(255, 255, 255, 0.7);
 	margin: 0 0 18px;
+}
+.ed-foot .ed-link {
+	color: #fff;
+	border-color: rgba(255, 255, 255, 0.4);
+}
+.ed-foot .ed-link:hover {
+	color: #fff;
+	border-color: rgba(255, 255, 255, 0.9);
+	opacity: 0.8;
 }
 
 /* ---------------- Responsive ---------------- */

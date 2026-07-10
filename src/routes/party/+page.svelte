@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Topbar from '$lib/components/Topbar.svelte';
+	import CoupleName from '$lib/components/CoupleName.svelte';
 	import { enhance } from '$lib/scrollfx';
 	import { WEDDING } from '$lib/wedding-info';
 	import { WEDDING_PARTY, PARTY_INTRO, PARTY_OUTRO, RING_BEARER } from '$lib/wedding-party';
@@ -26,8 +27,9 @@
 <main class="ed party" bind:this={root}>
 	<!-- ============ HERO ============ -->
 	<header class="ed-hero party-hero">
-		<p class="eyebrow" data-reveal>Those standing beside us</p>
-		<h1 class="ed-hero-title" data-reveal style="--d:.08s">
+		<img class="hero-sprig" src="/flora/sprig.png" alt="" aria-hidden="true" data-reveal />
+		<p class="eyebrow" data-reveal style="--d:.06s">Those standing beside us</p>
+		<h1 class="ed-hero-title" data-reveal style="--d:.12s">
 			The Wedding <span class="it">Party</span>
 		</h1>
 		<p class="party-intro" data-reveal style="--d:.16s">{PARTY_INTRO}</p>
@@ -76,7 +78,7 @@
 	<section class="ed-statement rest-head">
 		<p class="ed-statement-kicker" data-reveal>And the rest of our favourites</p>
 		<h2 class="rest-title" data-reveal style="--d:.06s">
-			Groomsmen <span class="it">&amp;</span> Bridesmaids
+			Groomsmen <span class="amp">&amp;</span> Bridesmaids
 		</h2>
 	</section>
 
@@ -140,7 +142,7 @@
 	</section>
 
 	<footer class="ed-foot">
-		<p class="ed-foot-names script">{WEDDING.coupleName}</p>
+		<p class="ed-foot-names"><CoupleName /></p>
 		<p class="ed-foot-line">{WEDDING.dateLong} · {WEDDING.venueName}, Bolton Abbey</p>
 		<a class="ed-link" href="/">← Back to the invitation</a>
 	</footer>
@@ -148,6 +150,18 @@
 
 <style>
 	/* ---------- Hero ---------- */
+	.party-hero {
+		/* Contain the <Botanicals> layers (z-index -1) within the hero. */
+		isolation: isolate;
+		overflow: hidden;
+	}
+	.hero-sprig {
+		display: block;
+		width: auto;
+		height: clamp(70px, 9vw, 120px);
+		margin: 0 auto clamp(14px, 3vw, 26px);
+		opacity: 0.82;
+	}
 	.party-intro {
 		font-family: var(--serif);
 		font-size: clamp(18px, 2.6vw, 24px);
@@ -201,11 +215,20 @@
 	.side-flag[data-side='groom'] {
 		color: var(--sage);
 	}
+	/* Name-pair ampersands: Style Script swash, ink, matching the "Katie & Alex"
+	   lockup. They stay inline so they follow each heading's own alignment. */
 	.ed-chapter-title .amp,
-	.rest-names .amp {
-		color: var(--terra);
-		font-weight: 500;
+	.rest-names .amp,
+	.rest-title .amp {
+		font-family: var(--script-amp);
+		font-style: normal;
+		font-weight: 400;
+		color: inherit;
 		padding: 0 0.04em;
+	}
+	.ed-chapter-title .it {
+		font-style: italic;
+		font-weight: 500;
 	}
 	.roles {
 		list-style: none;
@@ -249,11 +272,6 @@
 		letter-spacing: -0.02em;
 		color: var(--ink);
 		margin: 10px 0 0;
-	}
-	.rest-title .it {
-		font-style: italic;
-		font-weight: 500;
-		color: var(--terra);
 	}
 	.rest-grid {
 		display: grid;
@@ -300,9 +318,23 @@
 
 	/* ---------- Bodie ---------- */
 	.bodie {
-		background: var(--sage-soft);
+		position: relative;
+		overflow: hidden;
+		isolation: isolate;
+		background: #edf1e7;
 		margin-top: clamp(110px, 18vw, 220px);
 		padding: clamp(60px, 10vw, 130px) 0;
+	}
+	/* Subtle botanical watermark on the pale-green band. */
+	.bodie::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		background: url('/flora/botanical-field.png') center / cover no-repeat;
+		mix-blend-mode: multiply;
+		opacity: 0.08;
+		pointer-events: none;
 	}
 	.bodie-inner {
 		display: flex;

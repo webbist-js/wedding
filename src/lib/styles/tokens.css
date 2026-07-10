@@ -10,5 +10,8 @@
   --sidebar-text: #b8b4a6; --sidebar-faint: #807c70; --sidebar-active: #f4f1e8;
   --serif: 'Cormorant Garamond', Georgia, serif;
   --sans: 'Inter', system-ui, sans-serif;
-  --script: 'Style Script', cursive;
+  --script: 'Kristi', cursive;
+  /* Reserved for the "Katie & Alex" hero ampersand, which keeps the
+     original flowing swash rather than switching to Kristi. */
+  --script-amp: 'Style Script', cursive;
 }

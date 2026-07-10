@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Topbar from '$lib/components/Topbar.svelte';
+	import CoupleName from '$lib/components/CoupleName.svelte';
 	import { enhance } from '$lib/scrollfx';
 	import { WEDDING, TRAVEL, ACCOMMODATION } from '$lib/wedding-info';
 	import { VENUE, AREA_INTRO, ATTRACTIONS, AREA_OUTRO, IMAGE_CREDITS } from '$lib/location-info';
@@ -22,8 +23,9 @@
 	<!-- ============ HERO ============ -->
 	<header class="ed-hero">
 		<div class="ed-hero-inner">
-			<p class="eyebrow" data-reveal>{VENUE.estate}</p>
-			<h1 class="ed-hero-title" data-reveal style="--d:.08s">Where <span class="it">We'll</span> Be</h1>
+			<img class="hero-sprig" src="/flora/sprig.png" alt="" aria-hidden="true" data-reveal />
+			<p class="eyebrow" data-reveal style="--d:.06s">{VENUE.estate}</p>
+			<h1 class="ed-hero-title" data-reveal style="--d:.12s">Where <span class="it">We'll</span> Be</h1>
 			<div class="ed-hero-photo ed-frame loc-hero-photo" data-reveal style="--d:.16s">
 				<img src={VENUE.heroImage} data-speed="0.07" alt="The Tithe Barn at Bolton Abbey" />
 			</div>
@@ -78,7 +80,7 @@
 	<section class="ed-statement">
 		<p class="ed-statement-kicker" data-reveal>Make a weekend of it</p>
 		<h2 class="area-title" data-reveal style="--d:.06s">
-			Brontë Country <span class="it">&amp;</span> the Dales
+			Brontë Country<br /><span class="amp">&amp;</span> the Dales
 		</h2>
 		<p class="ed-statement-text area-intro" data-reveal style="--d:.12s">{AREA_INTRO}</p>
 	</section>
@@ -137,7 +139,7 @@
 
 	<!-- ============ FOOTER ============ -->
 	<footer class="ed-foot">
-		<p class="ed-foot-names script">{WEDDING.coupleName}</p>
+		<p class="ed-foot-names"><CoupleName /></p>
 		<p class="ed-foot-line">{WEDDING.dateLong} · {WEDDING.venueName}, Bolton Abbey</p>
 		<a class="ed-link" href="/">← Back to the invitation</a>
 
@@ -169,6 +171,13 @@
 		flex-direction: column;
 		align-items: center;
 		width: 100%;
+	}
+	.hero-sprig {
+		display: block;
+		width: auto;
+		height: clamp(70px, 9vw, 120px);
+		margin: 0 auto clamp(14px, 3vw, 26px);
+		opacity: 0.82;
 	}
 	.ed-hero-title {
 		font-size: clamp(46px, 8.5vw, 120px);
@@ -253,10 +262,11 @@
 		color: var(--ink);
 		margin: 0 0 clamp(26px, 4vw, 40px);
 	}
-	.area-title .it {
-		font-style: italic;
-		font-weight: 500;
-		color: var(--terra);
+	.area-title .amp {
+		font-family: var(--script-amp);
+		font-style: normal;
+		font-weight: 400;
+		color: inherit;
 	}
 	.area-intro {
 		font-size: clamp(20px, 2.6vw, 30px);
@@ -390,7 +400,7 @@
 		max-width: 620px;
 		font-family: var(--sans);
 		font-size: 11.5px;
-		color: var(--faint);
+		color: rgba(255, 255, 255, 0.55);
 		text-align: left;
 	}
 	.credits summary {
@@ -398,7 +408,7 @@
 		text-align: center;
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
-		color: var(--muted);
+		color: rgba(255, 255, 255, 0.7);
 	}
 	.credits ul {
 		margin: 14px 0 0;
@@ -406,7 +416,7 @@
 		line-height: 1.7;
 	}
 	.credits a {
-		color: var(--muted);
+		color: rgba(255, 255, 255, 0.85);
 	}
 
 	/* ---------- Responsive ---------- */

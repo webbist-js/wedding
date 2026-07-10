@@ -44,7 +44,7 @@ export const ATTRACTIONS: Attraction[] = [
 	},
 	{
 		slug: 'haworth',
-		image: '/location/bronte-parsonage.jpg',
+		image: '/location/haworth-main-street.jpg',
 		name: 'Brontë Country & Haworth',
 		distance: 'About 40 minutes',
 		body:

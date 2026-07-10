@@ -9,8 +9,8 @@
 		TRAVEL,
 		GIFTS
 	} from '$lib/wedding-info';
-	import Flora from '$lib/components/Flora.svelte';
 	import MusicBanner from '$lib/components/MusicBanner.svelte';
+	import CoupleName from '$lib/components/CoupleName.svelte';
 	import { reveal } from '$lib/actions/reveal';
 	let { data, form } = $props();
 
@@ -101,7 +101,6 @@
 
 <svelte:window onkeydown={onKey} />
 
-<Flora side="left" />
 <div class="form-panel-bg" aria-hidden="true"></div>
 
 {#if showPersonalMsg && data.group.personalMessage}
@@ -126,17 +125,7 @@
 		<div class="hero-overlay" aria-hidden="true"></div>
 		<div class="hero-content">
 			<p class="eyebrow fade-in">You are invited to the wedding of</p>
-			<svg
-				class="title-svg"
-				viewBox="0 0 700 220"
-				preserveAspectRatio="xMidYMid meet"
-				role="img"
-				aria-label={WEDDING.coupleName}
-			>
-				<text class="title-text" x="50%" y="50%" text-anchor="middle" dominant-baseline="middle">
-					{WEDDING.coupleName}
-				</text>
-			</svg>
+			<div class="hero-title fade-in"><CoupleName /></div>
 			<img src="/flora/layer-13.png" class="title-sprig fade-in" alt="" aria-hidden="true" />
 			<p class="when fade-in">{WEDDING.dateLong}</p>
 			<p class="where fade-in">{WEDDING.venueName} · Bolton Abbey · Yorkshire Dales</p>
@@ -160,7 +149,6 @@
 		<!-- The Day -->
 		<section class="card" use:reveal>
 		<h2 class="card-title script">The Day</h2>
-		<img src="/flora/layer-13.png" class="card-sprig" alt="" aria-hidden="true" />
 		<ul class="timetable">
 			{#each CEREMONY_TIMETABLE.filter((row) => !isEveningOnly || row.evening) as row}
 				<li>
@@ -175,7 +163,6 @@
 	<!-- The Formalities — dress code + unplugged ceremony -->
 	<section class="card center formalities" use:reveal>
 		<h2 class="card-title script">The Formalities</h2>
-		<img src="/flora/layer-13.png" class="card-sprig" alt="" aria-hidden="true" />
 
 		<div class="formality">
 			<p class="micro">{WEDDING.formalities.dressCode.label}</p>
@@ -198,7 +185,6 @@
 		<!-- Submission summary — replaces the form entirely on success. -->
 		<section class="card center success-card col-right" use:reveal>
 			<h2 class="card-title script">We look forward to seeing you!</h2>
-			<img src="/flora/layer-13.png" class="card-sprig" alt="" aria-hidden="true" />
 			<p class="body">Your reply is saved. You can update it any time from this link.</p>
 			<ul class="summary">
 				{#each data.members as m (m.id)}
@@ -235,7 +221,6 @@
 	<!-- Please Reply -->
 	<section class="card rsvp-form col-right" use:reveal>
 		<h2 class="card-title script">Please Reply</h2>
-		<img src="/flora/layer-13.png" class="card-sprig" alt="" aria-hidden="true" />
 		<p class="deadline">Kindly RSVP by <b>{WEDDING.rsvpDeadline}</b>.</p>
 
 		<form method="POST" use:enhance>
@@ -375,7 +360,6 @@
 	<!-- The Menu -->
 	<section class="card menu-card" use:reveal>
 		<h2 class="card-title script">The Menu</h2>
-		<img src="/flora/layer-13.png" class="card-sprig" alt="" aria-hidden="true" />
 		<div class="menu-video">
 			<!-- svelte-ignore a11y_media_has_caption -->
 			<video
@@ -422,7 +406,6 @@
 	<!-- Gifts -->
 	<section class="card center" use:reveal>
 		<h2 class="card-title script">Gifts</h2>
-		<img src="/flora/layer-13.png" class="card-sprig" alt="" aria-hidden="true" />
 		<p class="lead">{GIFTS.headline}</p>
 		<p class="body">{GIFTS.body}</p>
 		<a class="primary-link" href={WEDDING.paypalLink} target="_blank" rel="noopener">
@@ -433,7 +416,6 @@
 	<!-- Getting There -->
 	<section class="card" use:reveal>
 		<h2 class="card-title script">Getting There</h2>
-		<img src="/flora/layer-13.png" class="card-sprig" alt="" aria-hidden="true" />
 		<div class="grid-2">
 			<div>
 				<h4 class="micro">Address</h4>
@@ -477,7 +459,6 @@
 	<!-- Where to Stay -->
 	<section class="card" use:reveal>
 		<h2 class="card-title script">Where to Stay</h2>
-		<img src="/flora/layer-13.png" class="card-sprig" alt="" aria-hidden="true" />
 		<ul class="accom">
 			{#each ACCOMMODATION as a}
 				<li>
@@ -495,7 +476,6 @@
 
 		<section class="card center contact-card" use:reveal>
 			<h2 class="card-title script">Any questions?</h2>
-			<img src="/flora/layer-13.png" class="card-sprig" alt="" aria-hidden="true" />
 			<p class="body">
 				Drop us a line — we'd love to hear from you.
 			</p>
@@ -508,12 +488,11 @@
 	</div>
 
 	<footer class="foot" use:reveal>
-		<img src="/flora/layer-13.png" class="card-sprig" alt="" aria-hidden="true" />
 		<nav class="foot-links">
 			<a href="/party">Meet the wedding party →</a>
 			<a href="/location">The venue &amp; the area →</a>
 		</nav>
-		<p class="script">With love · K &amp; A</p>
+		<p class="script">With love · K <span class="amp">&amp;</span> A</p>
 	</footer>
 </main>
 
@@ -666,44 +645,14 @@
 		text-shadow: 0 2px 22px rgba(0, 0, 0, 0.25);
 	}
 
-	/* Script-title flourish:
-	   * Stroke (the "pen tip") draws the cursive across the canvas.
-	   * Fill (the "ink") flows in progressively alongside the stroke instead of
-	     waiting until the end, so the letters never look like a hollow outline.
-	   * Stroke fades out as the fill reaches full opacity — finishes as solid script. */
-	.title-svg {
-		display: block;
-		width: min(680px, 92%);
-		margin: 6px auto 8px;
-		filter: drop-shadow(0 2px 22px rgba(0, 0, 0, 0.25));
-	}
-	.title-text {
-		font-family: var(--script);
-		font-size: 168px;
-		fill: #fbfaf6;
-		fill-opacity: 0;
-		stroke: #fbfaf6;
-		stroke-width: 1.4;
-		stroke-opacity: 1;
-		stroke-linejoin: round;
-		stroke-linecap: round;
-		stroke-dasharray: 8000;
-		stroke-dashoffset: 8000;
-		/* Three parallel animations — same easing on each so pen, ink and stroke-out
-		   all share a single continuous rhythm with no intermediate keyframe pauses. */
-		animation:
-			drawStroke 1.3s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards,
-			fillIn 1.3s cubic-bezier(0.4, 0, 0.6, 1) 0.1s forwards,
-			fadeStroke 0.45s cubic-bezier(0.4, 0, 0.6, 1) 1.25s forwards;
-	}
-	@keyframes drawStroke {
-		to { stroke-dashoffset: 0; }
-	}
-	@keyframes fillIn {
-		to { fill-opacity: 1; }
-	}
-	@keyframes fadeStroke {
-		to { stroke-opacity: 0; }
+	/* Couple-name lockup, matching the homepage hero title: "Katie" in bold
+	   serif above an italic "Alex", joined by the Style Script swash. */
+	.hero-content .hero-title {
+		font-size: clamp(58px, 12vw, 132px);
+		line-height: 0.9;
+		margin: 6px auto 10px;
+		color: #fbfaf6;
+		text-shadow: 0 2px 22px rgba(0, 0, 0, 0.25);
 	}
 
 	/* Hero items start appearing mid-flourish so the composition reveals
@@ -727,11 +676,6 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.title-text {
-			animation: none;
-			stroke-dashoffset: 0;
-			fill-opacity: 1;
-		}
 		.fade-in {
 			animation: none;
 			opacity: 1;
@@ -815,7 +759,7 @@
 
 		/* Universal font bump on desktop */
 		.card { padding: 36px 40px 32px; overflow: hidden; }
-		.card-title { font-size: 52px; }
+		.card-title { font-size: 64px; }
 		.card .body, .card p { font-size: 15.5px; }
 		.timetable li { font-size: 16px; }
 		.menu dd { font-size: 17px; }
@@ -889,11 +833,11 @@
 	.personal {
 		background: var(--rose-bg);
 		border-radius: 14px;
-		padding: 20px 24px;
+		padding: clamp(28px, 4vw, 44px) clamp(24px, 4vw, 40px);
 		margin-top: 12px;
 		font-family: var(--serif);
-		font-size: 17px;
-		line-height: 1.55;
+		font-size: clamp(20px, 2.6vw, 27px);
+		line-height: 1.5;
 		color: var(--ink);
 		text-align: center;
 		font-style: italic;
@@ -919,18 +863,12 @@
 		font-family: var(--script);
 		font-weight: 400;
 		text-align: center;
-		font-size: 42px;
+		font-size: 52px;
 		line-height: 1;
 		color: var(--ink);
-		margin: 0;
+		/* Kristi sits tight; give the title room from the content below. */
+		margin: 0 0 26px;
 	}
-	.card-sprig {
-		display: block;
-		width: 22px;
-		margin: 10px auto 22px;
-		opacity: 0.7;
-	}
-
 	/* ---- The Day ---- */
 	.timetable {
 		list-style: none;
@@ -1232,12 +1170,13 @@
 		}
 	}
 	.menu dt {
+		/* Label in the sans; dish name below in the serif. */
 		font-family: var(--sans);
 		font-weight: 600;
 		letter-spacing: 0.22em;
 		text-transform: uppercase;
 		font-size: 10px;
-		color: var(--sage-deep);
+		color: var(--ink);
 		margin-top: 18px;
 	}
 	.menu dt:first-child {
@@ -1246,7 +1185,7 @@
 	.menu dd {
 		margin: 6px 0 0;
 		font-family: var(--serif);
-		font-size: 16px;
+		font-size: 17px;
 		color: var(--ink);
 		line-height: 1.45;
 	}
@@ -1265,15 +1204,19 @@
 		margin-top: 0;
 	}
 	.formality .micro {
-		font-family: var(--sans);
+		/* Swapped: label now in the serif, headline below in the sans. */
+		font-family: var(--serif);
 		font-weight: 600;
 		letter-spacing: 0.22em;
 		text-transform: uppercase;
-		font-size: 10px;
-		color: var(--sage-deep);
+		font-size: 12px;
+		color: var(--ink);
 		margin: 0 0 10px;
 	}
 	.formality .lead {
+		font-family: var(--sans);
+		font-style: normal;
+		font-size: 17px;
 		margin: 0 0 10px;
 	}
 	.formality .body {
@@ -1329,7 +1272,7 @@
 		letter-spacing: 0.22em;
 		text-transform: uppercase;
 		font-size: 10px;
-		color: var(--sage-deep);
+		color: var(--ink);
 		margin: 0 0 8px;
 	}
 	.grid-2 p {
@@ -1520,38 +1463,75 @@
 	}
 
 	/* ---- Footer ---- */
+	/* Full-width solid closing band, matching the CTA on the other pages. Its
+	   opaque background sits above the fixed split panel, so the page split
+	   visually ends at its top edge. */
 	.foot {
+		position: relative;
+		z-index: 2;
+		width: 100%;
+		margin-top: clamp(60px, 10vw, 120px);
+		padding: clamp(60px, 10vw, 110px) 24px clamp(50px, 8vw, 90px);
+		background: var(--sage-deep);
+		color: #fff;
 		text-align: center;
-		margin-top: 40px;
-		color: var(--muted);
+		overflow: hidden;
+		isolation: isolate;
+	}
+	/* Botanical watermark, matching the green CTA on the other pages: inverted
+	   line art screened over the sage, with a green pass so green stays dominant. */
+	.foot::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		z-index: -2;
+		background: url('/flora/botanical-field.png') center / cover no-repeat;
+		filter: invert(1);
+		mix-blend-mode: screen;
+		opacity: 0.1;
+		pointer-events: none;
+	}
+	.foot::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		background: var(--sage-deep);
+		opacity: 0.52;
+		pointer-events: none;
 	}
 	.foot .script {
-		font-size: 32px;
-		color: var(--sage);
+		font-size: clamp(32px, 5vw, 44px);
+		color: #fff;
+		margin: 30px 0 0;
+	}
+	.foot .script .amp {
+		font-family: var(--script-amp);
+		font-style: normal;
 	}
 	.foot-links {
 		display: flex;
-		gap: 26px;
+		gap: 16px 40px;
 		justify-content: center;
 		flex-wrap: wrap;
-		margin-bottom: 22px;
+		margin-bottom: 0;
 	}
 	.foot-links a {
 		font-family: var(--sans);
 		font-size: 12px;
 		letter-spacing: 0.18em;
 		text-transform: uppercase;
-		color: var(--sage-deep);
+		color: #fff;
 		text-decoration: none;
-		border-bottom: 1px solid var(--rule);
-		padding-bottom: 3px;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+		padding-bottom: 5px;
 		transition:
-			color 0.2s ease,
-			border-color 0.2s ease;
+			opacity 0.25s ease,
+			border-color 0.25s ease;
 	}
 	.foot-links a:hover {
-		color: var(--terra);
-		border-color: var(--terra);
+		opacity: 0.7;
+		border-color: rgba(255, 255, 255, 0.9);
 	}
 
 	@media (max-width: 560px) {
