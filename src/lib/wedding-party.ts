@@ -116,10 +116,10 @@ export const WEDDING_PARTY: PartyCouple[] = [
 		tagline: 'Way back, and here for good',
 		members: [
 			{ name: 'Oliver Brierley', role: 'Groomsman', photo: '/party/oliver-brierley.png', focus: 'center 28%' },
-			{ name: 'Pheobe Brierley', role: 'Bridesmaid', photo: '/party/pheobe-brierley.png', focus: 'center 25%' }
+			{ name: 'Phoebe Brierley', role: 'Bridesmaid', photo: '/party/pheobe-brierley.png', focus: 'center 25%' }
 		],
 		story:
-			'Oli is another of Alex\'s school friends — proof that the best ones stick around. Pheobe joined ' +
+			'Oli is another of Alex\'s school friends — proof that the best ones stick around. Phoebe joined ' +
 			'the fold and instantly made it better. Somewhere along the line this whole crew became the ' +
 			'sort that does everything together; we wouldn\'t have it any other way.'
 	},

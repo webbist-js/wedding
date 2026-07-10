@@ -99,7 +99,7 @@ export const SEED_GUESTS: SeedGuest[] = [
   { name: 'Kiran Philips', side: 'G', relationshipGroup: G_FR, relation: "Alex's friend", role: 'Groomsman', attendanceType: 'day', inviteGroup: 'kiran-elisa-philips' },
   { name: 'Elisa Philips', side: 'G', relationshipGroup: G_FR, relation: "Kiran's wife", role: 'Bridesmaid', attendanceType: 'day', inviteGroup: 'kiran-elisa-philips' },
   { name: 'Oliver Brierley', side: 'G', relationshipGroup: G_FR, relation: "Alex's friend", role: 'Groomsman', attendanceType: 'day', inviteGroup: 'oliver-pheobe-brierley' },
-  { name: 'Pheobe', side: 'G', relationshipGroup: G_FR, relation: "Oliver's wife", role: 'Bridesmaid', attendanceType: 'day', inviteGroup: 'oliver-pheobe-brierley' },
+  { name: 'Phoebe', side: 'G', relationshipGroup: G_FR, relation: "Oliver's wife", role: 'Bridesmaid', attendanceType: 'day', inviteGroup: 'oliver-pheobe-brierley' },
   { name: 'Chris Todd', side: 'G', relationshipGroup: G_FR, relation: "Alex's friend", role: 'Groomsman', attendanceType: 'day', inviteGroup: 'chris-jen-todd' },
   { name: 'Jen Todd', side: 'G', relationshipGroup: G_FR, relation: "Chris Todd's wife", role: 'Bridesmaid', attendanceType: 'day', inviteGroup: 'chris-jen-todd' },
   { name: 'Stephen McCarroll', side: 'G', relationshipGroup: G_FR, relation: "Alex's friend", attendanceType: 'day', inviteGroup: 'stephen-mccarroll-alice-barrel' },

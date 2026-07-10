@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { WEDDING } from '$lib/wedding-info';
 	import {
-		HERO_IMAGE,
-		HERO_FOCUS,
 		STORY_STATEMENT,
 		STORY_CHAPTERS,
 		WISHES_INTRO,
@@ -47,10 +45,6 @@
 				<span class="amp script">&amp;</span>Alex
 			</span>
 		</h1>
-
-		<div class="hero-photo frame" data-reveal style="--d:.16s">
-			<img src={HERO_IMAGE} data-speed="0.07" alt="Katie and Alex" style="object-position:{HERO_FOCUS}" />
-		</div>
 
 		<div class="hero-meta" data-reveal style="--d:.24s">
 			<span>{WEDDING.dateLong}</span>
@@ -258,17 +252,8 @@
 		   stationery's "&Alex" lockup. */
 		margin-right: -0.02em;
 	}
-	.hero-photo {
-		width: min(560px, 80vw);
-		aspect-ratio: 4 / 5;
-		border-radius: 4px;
-		margin: clamp(36px, 6vw, 72px) auto clamp(28px, 4vw, 44px);
-		box-shadow: 0 40px 90px rgba(33, 31, 26, 0.22);
-	}
-	.hero-photo img {
-		filter: grayscale(1);
-	}
 	.hero-meta {
+		margin-top: clamp(36px, 6vw, 64px);
 		display: flex;
 		flex-wrap: wrap;
 		justify-content: center;
