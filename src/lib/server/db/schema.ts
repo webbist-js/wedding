@@ -140,6 +140,14 @@ export const seatingTables = sqliteTable('seating_tables', {
   rotation: integer('rotation').notNull().default(0)
 });
 
+// Section headers for the venue quote table. Lines reference sections by
+// name (quote_lines.section), so renames must update both tables together.
+export const quoteSections = sqliteTable('quote_sections', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  sort: integer('sort').notNull().default(0)
+});
+
 export const quoteLines = sqliteTable('quote_lines', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   label: text('label').notNull(),

@@ -9,6 +9,13 @@
   let manual = $state({ ...data.manual });
   let min = $state(data.min);
   let lines = $state(data.lines.map((l) => ({ ...l })));
+  let sections = $state(data.sections.map((s) => ({ ...s })));
+
+  // Lines grouped under their section band, both in display order. Grouping is
+  // by name (that's the DB link); items within a group follow `lines` order.
+  const grouped = $derived(
+    sections.map((s) => ({ s, items: lines.filter((l) => l.section === s.name) }))
+  );
 
   const active = $derived(basis === 'manual' ? manual : data.counts[basis]);
   const result = $derived(computeQuote(lines as any, { ...active, min }));
@@ -39,14 +46,123 @@
   function saveLine(line: any, field: 'label' | 'scope' | 'meal' | 'price' | 'qty' | 'bond') {
     post({ id: line.id, field, value: line[field] });
   }
-  async function addLine() {
-    const res = await post({ op: 'add' });
+  async function addLine(section: string) {
+    const res = await post({ op: 'add', section });
     const { id } = await res.json();
-    lines = [...lines, { id, label: 'New item', section: 'Custom', scope: 'fixed', meal: 'any', price: 0, qty: null, included: false, confirmed: true, bond: false, sort: 999 }];
+    lines = [...lines, { id, label: 'New item', section, scope: 'fixed', meal: 'any', price: 0, qty: null, included: false, confirmed: true, bond: false, sort: lines.length }];
   }
   function removeLine(line: any) {
     post({ op: 'remove', id: line.id });
     lines = lines.filter((l) => l.id !== line.id);
+  }
+
+  // ---- Section header management ----
+
+  function uniqueName(base: string) {
+    let name = base, n = 2;
+    while (sections.some((s) => s.name === name)) name = `${base} ${n++}`;
+    return name;
+  }
+  async function addSection() {
+    const name = uniqueName('New section');
+    const res = await post({ op: 'addSection', name });
+    const { id } = await res.json();
+    sections = [...sections, { id, name, sort: sections.length }];
+  }
+  // Reads the new name off the input on blur rather than binding, so typing
+  // doesn't re-group lines mid-edit. Duplicate names would merge two groups,
+  // so they get a numeric suffix.
+  function renameSection(s: any, e: FocusEvent) {
+    const input = e.currentTarget as HTMLInputElement;
+    let name = input.value.trim() || 'Section';
+    if (name === s.name) { input.value = s.name; return; }
+    if (sections.some((o) => o !== s && o.name === name)) name = uniqueName(name);
+    const old = s.name;
+    s.name = name;
+    input.value = name;
+    for (const l of lines) if (l.section === old) l.section = name;
+    post({ op: 'renameSection', id: s.id, name });
+  }
+  function removeSection(s: any) {
+    const items = lines.filter((l) => l.section === s.name);
+    let moveTo: string | undefined;
+    if (items.length) {
+      const i = sections.indexOf(s);
+      const neighbour = sections[i - 1] ?? sections[i + 1];
+      if (!neighbour) { alert('Can’t remove the only section while it still has items.'); return; }
+      if (!confirm(`Remove “${s.name}”? Its ${items.length} item${items.length === 1 ? '' : 's'} will move to “${neighbour.name}”.`)) return;
+      moveTo = neighbour.name;
+      for (const l of items) l.section = moveTo;
+    }
+    sections = sections.filter((o) => o !== s);
+    post({ op: 'removeSection', id: s.id, moveTo });
+  }
+
+  // ---- Drag & drop (native HTML5) ----
+  // Rows drag between/within sections; bands drag to reorder sections.
+
+  type Drag = { type: 'line'; id: number } | { type: 'section'; id: number } | null;
+  let drag = $state<Drag>(null);
+  // Current drop indicator: a line/section id plus whether we'd land after it,
+  // or an empty section acting as one big drop zone.
+  let over = $state<{ key: string; after: boolean } | null>(null);
+
+  function startDrag(e: DragEvent, d: NonNullable<Drag>) {
+    drag = d;
+    e.dataTransfer!.effectAllowed = 'move';
+    // The handle is the draggable element; show the whole row as the ghost.
+    const row = (e.currentTarget as HTMLElement).closest('.qrow, .band');
+    if (row) e.dataTransfer!.setDragImage(row, 20, row.clientHeight / 2);
+  }
+  function overTarget(e: DragEvent, key: string, allow: 'line' | 'section') {
+    if (drag?.type !== allow) return;
+    e.preventDefault();
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    over = { key, after: e.clientY > r.top + r.height / 2 };
+  }
+  function endDrag() { drag = null; over = null; }
+
+  function persistLineOrder() {
+    // Normalise the flat array to match display order, then save it all.
+    const flat = grouped.flatMap((g) => g.items);
+    lines = flat;
+    post({ op: 'reorder', lines: flat.map((l, i) => ({ id: l.id, section: l.section, sort: i })) });
+  }
+  function dropOnLine(target: any) {
+    if (drag?.type !== 'line') return;
+    const moving = lines.find((l) => l.id === drag!.id);
+    if (!moving || moving === target) return endDrag();
+    const after = over?.after ?? true;
+    moving.section = target.section;
+    const rest = lines.filter((l) => l !== moving);
+    const i = rest.indexOf(target);
+    rest.splice(i + (after ? 1 : 0), 0, moving);
+    lines = rest;
+    persistLineOrder();
+    endDrag();
+  }
+  // A band accepts lines (drop = top of that section) and sections (reorder).
+  function dropOnSection(target: any) {
+    if (drag?.type === 'line') {
+      const moving = lines.find((l) => l.id === drag!.id);
+      if (!moving) return endDrag();
+      moving.section = target.name;
+      const rest = lines.filter((l) => l !== moving);
+      const group = grouped.find((g) => g.s === target);
+      const first = group?.items.find((l) => l !== moving);
+      rest.splice(first ? rest.indexOf(first) : rest.length, 0, moving);
+      lines = rest;
+      persistLineOrder();
+    } else if (drag?.type === 'section') {
+      const moving = sections.find((s) => s.id === drag!.id);
+      if (!moving || moving === target) return endDrag();
+      const after = over?.after ?? true;
+      const rest = sections.filter((s) => s !== moving);
+      rest.splice(rest.indexOf(target) + (after ? 1 : 0), 0, moving);
+      sections = rest;
+      post({ op: 'sectionOrder', sections: rest.map((s, i) => ({ id: s.id, sort: i })) });
+    }
+    endDrag();
   }
   function saveSetting(setting: 'dayGuests' | 'eveGuests' | 'minSpend' | 'vegGuests', value: number) {
     post({ setting, value });
@@ -106,41 +222,75 @@
     <span></span>
   </div>
 
-  {#each lines as line, i (line.id)}
-    {@const qty = lineQty(line as any, { ...active, min })}
-    {#if line.section !== lines[i - 1]?.section}
-      <div class="band">{line.section}</div>
-    {/if}
-    <div class="qrow">
-      <span class="itemcell">
-        <input class="label" bind:value={line.label} onblur={() => saveLine(line, 'label')} placeholder="Item" />
-        {#if !line.confirmed}<span class="confirm">Confirm</span>{/if}
-        {#if line.scope === 'day'}
-          <select class="meal" class:mealset={line.meal !== 'any'} bind:value={line.meal} onchange={() => saveLine(line, 'meal')} title="Who this per-head price applies to">
-            <option value="any">everyone</option>
-            <option value="veg">veg only</option>
-            <option value="nonveg">non-veg only</option>
-          </select>
-        {/if}
-      </span>
-      <select class="scope" bind:value={line.scope} onchange={() => saveLine(line, 'scope')}>
-        {#each Object.entries(SCOPE_LABEL) as [val, lbl]}<option value={val}>{lbl}</option>{/each}
-      </select>
-      {#if line.scope === 'custom'}
-        <input class="num qty" type="number" bind:value={line.qty} onblur={() => saveLine(line, 'qty')} />
-      {:else}
-        <span class="readonly num">{qty}</span>
-      {/if}
-      <input class="num price" type="number" step="0.01" bind:value={line.price} onblur={() => saveLine(line, 'price')} />
-      <span class="num total">{gbp(qty * line.price)}</span>
-      <span class="acts">
-        <label class="bond" title="Refundable bond — excluded from spend"><input type="checkbox" bind:checked={line.bond} onchange={() => saveLine(line, 'bond')} /> bond</label>
-        <button class="rm" type="button" onclick={() => removeLine(line)} title="Remove" aria-label="Remove">×</button>
-      </span>
+  {#each grouped as g (g.s.id)}
+    <div
+      class="band"
+      class:drop-before={over?.key === `s${g.s.id}` && !over.after && drag?.type === 'section'}
+      class:drop-after={over?.key === `s${g.s.id}` && over.after && drag?.type === 'section'}
+      class:drop-into={over?.key === `s${g.s.id}` && drag?.type === 'line'}
+      role="listitem"
+      ondragover={(e) => overTarget(e, `s${g.s.id}`, drag?.type === 'line' ? 'line' : 'section')}
+      ondrop={() => dropOnSection(g.s)}
+    >
+      <span class="grip" draggable="true" title="Drag to reorder sections"
+        ondragstart={(e) => startDrag(e, { type: 'section', id: g.s.id })} ondragend={endDrag}>⋮⋮</span>
+      <input class="bandname" value={g.s.name} onblur={(e) => renameSection(g.s, e)} />
+      <span class="bandcount">{g.items.length} item{g.items.length === 1 ? '' : 's'}</span>
+      <button class="banditem" type="button" onclick={() => addLine(g.s.name)} title="Add item to this section">+ item</button>
+      <button class="rm" type="button" onclick={() => removeSection(g.s)} title="Remove section" aria-label="Remove section">×</button>
     </div>
+
+    {#each g.items as line (line.id)}
+      {@const qty = lineQty(line as any, { ...active, min })}
+      <div
+        class="qrow"
+        class:dragging={drag?.type === 'line' && drag.id === line.id}
+        class:drop-before={over?.key === `l${line.id}` && !over.after}
+        class:drop-after={over?.key === `l${line.id}` && over.after}
+        role="listitem"
+        ondragover={(e) => overTarget(e, `l${line.id}`, 'line')}
+        ondrop={() => dropOnLine(line)}
+      >
+        <span class="itemcell">
+          <span class="grip" draggable="true" title="Drag to reorder"
+            ondragstart={(e) => startDrag(e, { type: 'line', id: line.id })} ondragend={endDrag}>⋮⋮</span>
+          <input class="label" bind:value={line.label} onblur={() => saveLine(line, 'label')} placeholder="Item" />
+          {#if !line.confirmed}<span class="confirm">Confirm</span>{/if}
+          {#if line.scope === 'day'}
+            <select class="meal" class:mealset={line.meal !== 'any'} bind:value={line.meal} onchange={() => saveLine(line, 'meal')} title="Who this per-head price applies to">
+              <option value="any">everyone</option>
+              <option value="veg">veg only</option>
+              <option value="nonveg">non-veg only</option>
+            </select>
+          {/if}
+        </span>
+        <select class="scope" bind:value={line.scope} onchange={() => saveLine(line, 'scope')}>
+          {#each Object.entries(SCOPE_LABEL) as [val, lbl]}<option value={val}>{lbl}</option>{/each}
+        </select>
+        {#if line.scope === 'custom'}
+          <input class="num qty" type="number" bind:value={line.qty} onblur={() => saveLine(line, 'qty')} />
+        {:else}
+          <span class="readonly num">{qty}</span>
+        {/if}
+        <input class="num price" type="number" step="0.01" bind:value={line.price} onblur={() => saveLine(line, 'price')} />
+        <span class="num total">{gbp(qty * line.price)}</span>
+        <span class="acts">
+          <label class="bond" title="Refundable bond — excluded from spend"><input type="checkbox" bind:checked={line.bond} onchange={() => saveLine(line, 'bond')} /> bond</label>
+          <button class="rm" type="button" onclick={() => removeLine(line)} title="Remove" aria-label="Remove">×</button>
+        </span>
+      </div>
+    {:else}
+      <div
+        class="emptysec"
+        class:drop-into={over?.key === `e${g.s.id}`}
+        role="listitem"
+        ondragover={(e) => overTarget(e, `e${g.s.id}`, 'line')}
+        ondrop={() => dropOnSection(g.s)}
+      >No items — drag one here or use “+ item”</div>
+    {/each}
   {/each}
 
-  <button class="addrow" type="button" onclick={addLine}>+ Add item</button>
+  <button class="addrow" type="button" onclick={addSection}>+ Add section</button>
 </div>
 
 <div class="card totals">
@@ -194,8 +344,31 @@
   .qrow.head { font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 12px 0 8px; border-bottom: 1px solid var(--line); }
   .r { text-align: right; }
 
-  .band { grid-column: 1 / -1; background: #f1ece0; color: #9a7b53; font-size: 10px; font-weight: 700; letter-spacing: .16em;
-    text-transform: uppercase; padding: 7px 12px; border-radius: 6px; margin: 8px 0 2px; }
+  .band { display: flex; align-items: center; gap: 8px; background: #f1ece0; color: #9a7b53;
+    padding: 4px 12px 4px 8px; border-radius: 6px; margin: 8px 0 2px; }
+  .bandname { flex: 1; min-width: 0; border: 1px solid transparent; border-radius: 6px; padding: 4px 6px;
+    background: transparent; color: inherit; font: inherit; font-size: 10px; font-weight: 700;
+    letter-spacing: .16em; text-transform: uppercase; }
+  .bandname:hover { background: rgba(255, 255, 255, .5); }
+  .bandname:focus { outline: none; background: #fff; border-color: var(--line); }
+  .bandcount { font-size: 10px; color: #bda98a; white-space: nowrap; }
+  .band .banditem, .band .rm { opacity: 0; transition: opacity .12s; }
+  .band:hover .banditem, .band:hover .rm { opacity: 1; }
+  .banditem { background: none; border: 1px solid #dccfb4; border-radius: 6px; color: inherit; font: inherit;
+    font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 3px 8px; cursor: pointer; }
+  .banditem:hover { background: #fff; }
+
+  .grip { flex: none; cursor: grab; color: var(--faint); font-size: 11px; letter-spacing: -1px; user-select: none;
+    padding: 4px 2px; opacity: 0; transition: opacity .12s; }
+  .qrow:hover .grip, .band:hover .grip, .grip:active { opacity: 1; }
+  .grip:active { cursor: grabbing; }
+
+  .dragging { opacity: .35; }
+  .drop-before { box-shadow: 0 -2px 0 0 var(--sage-deep, #6b7f5e); }
+  .drop-after { box-shadow: 0 2px 0 0 var(--sage-deep, #6b7f5e); }
+  .band.drop-into, .emptysec.drop-into { outline: 2px solid var(--sage-deep, #6b7f5e); outline-offset: -1px; }
+  .emptysec { padding: 12px; font-size: 12px; color: var(--faint); font-style: italic; border: 1px dashed var(--line);
+    border-radius: 6px; margin: 4px 0; }
 
   .itemcell { display: flex; align-items: center; gap: 8px; min-width: 0; }
   .qrow .label { flex: 1; min-width: 0; border: 1px solid transparent; border-radius: 6px; padding: 6px 8px; font: inherit; font-size: 13.5px; background: transparent; color: var(--ink); }

@@ -9,6 +9,7 @@ import {
 	timelineItems,
 	vendors,
 	quoteLines,
+	quoteSections,
 	stationeryItems,
 	settings,
 	notes,
@@ -209,6 +210,14 @@ export async function seed(): Promise<void> {
 				bond: q.bond ?? false,
 				sort: i
 			});
+		}
+	}
+
+	if ((await db.select().from(quoteSections).limit(1)).length === 0) {
+		const seen: string[] = [];
+		for (const q of SEED_QUOTE) if (!seen.includes(q.section)) seen.push(q.section);
+		for (const [i, name] of seen.entries()) {
+			await db.insert(quoteSections).values({ name, sort: i });
 		}
 	}
 

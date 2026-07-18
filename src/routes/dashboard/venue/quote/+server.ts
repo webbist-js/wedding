@@ -1,8 +1,8 @@
 import type { RequestHandler } from './$types';
 import { json, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db/index';
-import { quoteLines, settings } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { quoteLines, quoteSections, settings } from '$lib/server/db/schema';
+import { eq, sql } from 'drizzle-orm';
 import { recordAudit } from '$lib/server/audit';
 
 const SETTING_KEYS = ['dayGuests', 'eveGuests', 'minSpend', 'vegGuests'];
@@ -13,11 +13,16 @@ export const POST: RequestHandler = async ({ request, locals }) => {
   const body = await request.json();
   await recordAudit(locals, { action: 'update', entity: 'venue', summary: 'Edited the venue quote' });
 
-  // Add a new quote line — returns its id so the client can track it.
+  // Add a new quote line at the end of the given section — returns its id so
+  // the client can track it.
   if (body.op === 'add') {
+    const section = String(body.section ?? 'Custom');
+    const [{ max }] = await db
+      .select({ max: sql<number>`coalesce(max(${quoteLines.sort}), -1)` })
+      .from(quoteLines);
     const [row] = await db
       .insert(quoteLines)
-      .values({ label: 'New item', section: 'Custom', scope: 'fixed', price: 0, sort: 999 })
+      .values({ label: 'New item', section, scope: 'fixed', price: 0, sort: max + 1 })
       .returning({ id: quoteLines.id });
     return json({ id: row.id });
   }
@@ -25,6 +30,78 @@ export const POST: RequestHandler = async ({ request, locals }) => {
   // Remove a quote line.
   if (body.op === 'remove') {
     await db.delete(quoteLines).where(eq(quoteLines.id, Number(body.id)));
+    return json({ ok: true });
+  }
+
+  // Persist a drag-and-drop reorder: every line's section + position in one go.
+  if (body.op === 'reorder') {
+    if (!Array.isArray(body.lines)) throw error(400, 'bad reorder');
+    for (const l of body.lines) {
+      await db
+        .update(quoteLines)
+        .set({ section: String(l.section), sort: Number(l.sort) || 0 })
+        .where(eq(quoteLines.id, Number(l.id)));
+    }
+    return json({ ok: true });
+  }
+
+  // ---- Section header management ----
+
+  if (body.op === 'addSection') {
+    const name = String(body.name ?? '').trim() || 'New section';
+    const [{ max }] = await db
+      .select({ max: sql<number>`coalesce(max(${quoteSections.sort}), -1)` })
+      .from(quoteSections);
+    const [row] = await db
+      .insert(quoteSections)
+      .values({ name, sort: max + 1 })
+      .returning({ id: quoteSections.id });
+    return json({ id: row.id });
+  }
+
+  // Rename a section: lines reference sections by name, so both move together.
+  if (body.op === 'renameSection') {
+    const name = String(body.name ?? '').trim() || 'Section';
+    const [row] = await db
+      .select()
+      .from(quoteSections)
+      .where(eq(quoteSections.id, Number(body.id)));
+    if (!row) throw error(404, 'no such section');
+    await db.update(quoteSections).set({ name }).where(eq(quoteSections.id, row.id));
+    await db.update(quoteLines).set({ section: name }).where(eq(quoteLines.section, row.name));
+    return json({ ok: true });
+  }
+
+  // Remove a section header; its lines (if any) move to the section named in
+  // `moveTo`, which the client picks as the nearest neighbour.
+  if (body.op === 'removeSection') {
+    const [row] = await db
+      .select()
+      .from(quoteSections)
+      .where(eq(quoteSections.id, Number(body.id)));
+    if (!row) throw error(404, 'no such section');
+    const [{ n }] = await db
+      .select({ n: sql<number>`count(*)` })
+      .from(quoteLines)
+      .where(eq(quoteLines.section, row.name));
+    if (n > 0) {
+      const moveTo = String(body.moveTo ?? '');
+      if (!moveTo) throw error(400, 'section not empty');
+      await db.update(quoteLines).set({ section: moveTo }).where(eq(quoteLines.section, row.name));
+    }
+    await db.delete(quoteSections).where(eq(quoteSections.id, row.id));
+    return json({ ok: true });
+  }
+
+  // Persist a section header reorder.
+  if (body.op === 'sectionOrder') {
+    if (!Array.isArray(body.sections)) throw error(400, 'bad order');
+    for (const s of body.sections) {
+      await db
+        .update(quoteSections)
+        .set({ sort: Number(s.sort) || 0 })
+        .where(eq(quoteSections.id, Number(s.id)));
+    }
     return json({ ok: true });
   }
 

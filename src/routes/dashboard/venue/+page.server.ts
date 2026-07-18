@@ -1,11 +1,23 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db/index';
-import { quoteLines, settings, guests } from '$lib/server/db/schema';
+import { quoteLines, quoteSections, settings, guests } from '$lib/server/db/schema';
 import { asc } from 'drizzle-orm';
 import { resolveHeadcounts, type CostBasis } from '$lib/headcount';
 
 export const load: PageServerLoad = async () => {
   const lines = await db.select().from(quoteLines).orderBy(asc(quoteLines.sort));
+  const sections = await db.select().from(quoteSections).orderBy(asc(quoteSections.sort));
+  // Lines whose section has no header row (e.g. data predating the sections
+  // table) still need a band to live under — create one so section edits work.
+  for (const l of lines) {
+    if (!sections.some((s) => s.name === l.section)) {
+      const [row] = await db
+        .insert(quoteSections)
+        .values({ name: l.section, sort: sections.length })
+        .returning();
+      sections.push(row);
+    }
+  }
   const setRows = await db.select().from(settings);
   const s = Object.fromEntries(setRows.map((r) => [r.key, r.value]));
   const manual = {
@@ -16,6 +28,7 @@ export const load: PageServerLoad = async () => {
   const allGuests = await db.select().from(guests);
   return {
     lines,
+    sections,
     manual,
     min: Number(s.minSpend ?? 16455),
     basis: (['manual', 'estimate', 'confirmed'].includes(s.venueCostBasis)
