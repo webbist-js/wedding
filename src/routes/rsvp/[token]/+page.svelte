@@ -148,7 +148,7 @@
 
 		<!-- The Day -->
 		<section class="card" use:reveal>
-		<h2 class="card-title script">The Day</h2>
+		<h2 class="card-title script">{isEveningOnly ? 'The Evening' : 'The Day'}</h2>
 		<ul class="timetable">
 			{#each CEREMONY_TIMETABLE.filter((row) => !isEveningOnly || row.evening) as row}
 				<li>
