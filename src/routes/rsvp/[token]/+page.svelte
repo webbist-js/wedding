@@ -389,6 +389,8 @@
 				</dd>
 				<dt>Dessert</dt>
 				<dd>{MENU.dessert}</dd>
+				<dt>Vegan dessert</dt>
+				<dd>{MENU.dessertVegan}</dd>
 				<dt>Tea &amp; coffee</dt>
 				<dd>{MENU.teaCoffee}</dd>
 			{/if}

@@ -59,6 +59,7 @@ export const MENU = {
 	mainVeg: 'Roasted squash, ricotta, chilli, pesto',
 	sides: ['Tender stem broccoli, chilli & garlic', 'Gratin dauphinoise'],
 	dessert: 'Treacle sponge, custard',
+	dessertVegan: 'Apple & blackberry crumble, vegan custard',
 	teaCoffee: 'Tea & coffee with petits fours',
 	evening: 'Baz & Fred wood-fired pizza, handmade on site — served to everyone in the evening',
 	drinks: 'Welcome prosecco · bottled beers · full bar',
