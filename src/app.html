@@ -60,7 +60,8 @@
 	<body data-sveltekit-preload-data="hover">
 		<div style="display: contents">%sveltekit.body%</div>
 
-		<!-- First-load botanical page loader (non-interactive, no sound). -->
+		<!-- First-load botanical page loader (non-interactive, no sound).
+		     Temporarily disabled — uncomment the block below (and its script) to restore.
 		<div id="ka-loader" aria-hidden="true">
 			<video
 				id="ka-loader-video"
@@ -115,5 +116,6 @@
 				if (playing && playing.catch) playing.catch(dismiss);
 			})();
 		</script>
+		-->
 	</body>
 </html>
