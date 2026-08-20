@@ -32,8 +32,7 @@ export const WEDDING = {
 	},
 	mapEmbed:
 		'https://www.openstreetmap.org/export/embed.html?bbox=-1.910%2C53.978%2C-1.872%2C53.992&layer=mapnik&marker=53.984%2C-1.891',
-	mapLink: 'https://www.google.com/maps?q=The+Tithe+Barn+Bolton+Abbey+BD23+6EX',
-	paypalLink: 'https://www.paypal.com/paypalme/alexkatie-honeymoon' // placeholder
+	mapLink: 'https://www.google.com/maps?q=The+Tithe+Barn+Bolton+Abbey+BD23+6EX'
 };
 
 export const CEREMONY_TIMETABLE = [
@@ -108,5 +107,9 @@ export const TRAVEL = {
 export const GIFTS = {
 	headline: 'Your presence is the gift.',
 	body:
-		"If you'd like to give something more, we're saving for our honeymoon — you can contribute via PayPal, or hand us cash on the day."
+		"Truly — having you there to celebrate with us means more than anything. If you'd like to give something extra, a contribution towards our honeymoon would be very gratefully received, either in cash on the day or directly to our bank.",
+	bank: {
+		accountNumber: '37040919',
+		sortCode: '04-00-05'
+	}
 };

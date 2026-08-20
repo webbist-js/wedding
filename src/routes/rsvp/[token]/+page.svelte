@@ -410,9 +410,16 @@
 		<h2 class="card-title script">Gifts</h2>
 		<p class="lead">{GIFTS.headline}</p>
 		<p class="body">{GIFTS.body}</p>
-		<a class="primary-link" href={WEDDING.paypalLink} target="_blank" rel="noopener">
-			Contribute to the honeymoon →
-		</a>
+		<div class="bank-details">
+			<div class="bank-detail">
+				<span class="micro">Sort code</span>
+				<span class="bank-value">{GIFTS.bank.sortCode}</span>
+			</div>
+			<div class="bank-detail">
+				<span class="micro">Account number</span>
+				<span class="bank-value">{GIFTS.bank.accountNumber}</span>
+			</div>
+		</div>
 	</section>
 
 	<!-- Getting There -->
@@ -1238,21 +1245,30 @@
 		font-size: 14.5px;
 		line-height: 1.6;
 	}
-	.primary-link {
-		display: inline-block;
-		background: var(--sage);
-		color: #fff;
-		text-decoration: none;
-		padding: 14px 28px;
-		border-radius: 999px;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
-		font-size: 11.5px;
-		font-weight: 600;
-		transition: background-color 0.2s ease;
+	.bank-details {
+		display: inline-flex;
+		gap: 40px;
+		margin-top: 20px;
+		padding: 18px 32px;
+		border: 1px solid var(--rule);
+		border-radius: 12px;
 	}
-	.primary-link:hover {
-		background: var(--sage-deep);
+	.bank-detail {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+	}
+	.bank-value {
+		font-family: var(--serif);
+		font-size: 19px;
+		color: var(--ink);
+		letter-spacing: 0.04em;
+	}
+	@media (max-width: 480px) {
+		.bank-details {
+			gap: 24px;
+			padding: 16px 24px;
+		}
 	}
 
 	/* ---- Getting There ---- */
