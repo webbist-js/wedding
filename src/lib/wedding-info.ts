@@ -8,10 +8,9 @@ export const WEDDING = {
 	venueArea: 'Bolton Abbey · Yorkshire Dales',
 	venuePostcode: 'BD23 6EX',
 	venueWebsite: 'https://crippsandco.com/the-tithe-barn',
-	// RSVP deadline derived from the venue's "final numbers 8 weeks before"
-	// requirement — set ~10 weeks before so the couple has time to chase
-	// non-responders before confirming to the venue.
-	rsvpDeadline: 'Friday 22 January 2027',
+	// Venue needs final numbers 8 weeks before the day; end-of-year deadline
+	// leaves ample time to chase non-responders before confirming.
+	rsvpDeadline: 'Thursday 31 December 2026',
 	// Phrased as direct asks rather than soft suggestions — guests respond better
 	// to a clear request than a polite hint.
 	formalities: {
