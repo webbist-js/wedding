@@ -1,216 +1,142 @@
 <script lang="ts">
-  import Notes from '$lib/components/Notes.svelte';
-  import type { NoteRow } from '$lib/components/Notes.svelte';
-  import { enhance } from '$app/forms';
-  import { invalidateAll } from '$app/navigation';
-  import { gbp } from '$lib/money';
-  let { data } = $props();
+	// Pipeline view of every supplier, grouped by stage. Editing happens in the
+	// same SupplierCard the Budget expander uses; each card links back to the
+	// budget line it's filed under.
+	import { onMount } from 'svelte';
+	import { invalidateAll } from '$app/navigation';
+	import SupplierCard, { STAGES, type SupplierRow } from '$lib/components/SupplierCard.svelte';
+	import type { NoteRow } from '$lib/components/Notes.svelte';
+	import { gbp, linkedConfirmed } from '$lib/money';
+	let { data } = $props();
 
-  const STAGES = ['Lead', 'Enquired', 'Quoted', 'Shortlisted', 'Booked'];
-  const todayISO = new Date().toISOString().slice(0, 10);
+	const notes = $derived(data.notes as NoteRow[]);
+	const lineById = $derived(new Map(data.lineOptions.map((l) => [l.id, l])));
 
-  const apptsByVendor = $derived.by(() => {
-    const map: Record<number, typeof data.appointments> = {};
-    for (const a of data.appointments) {
-      if (a.vendorId == null || a.date < todayISO) continue;
-      (map[a.vendorId] ??= []).push(a);
-    }
-    return map;
-  });
-  const notesByVendor = $derived.by(() => {
-    const map: Record<number, NoteRow[]> = {};
-    for (const n of data.notes as NoteRow[]) {
-      if (n.entityId == null) continue;
-      (map[n.entityId] ??= []).push(n);
-    }
-    return map;
-  });
-  const fmt = (d: string) =>
-    new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+	// Pipeline order: most settled first, then the ones still being chased.
+	const ORDER = [...STAGES].reverse(); // Booked → Shortlisted → Quoted → Enquired → Lead
+	const groups = $derived.by(() => {
+		const filed = data.suppliers.filter((s) => s.budgetLineId != null);
+		const out = ORDER.map((stage) => ({ key: stage, title: stage, items: filed.filter((s) => s.stage === stage) }))
+			.filter((g) => g.items.length);
+		const unassigned = data.suppliers.filter((s) => s.budgetLineId == null);
+		if (unassigned.length) out.push({ key: 'unassigned', title: 'Unfiled', items: unassigned });
+		return out;
+	});
 
-  const stageTone = (s: string) =>
-    s === 'Booked' ? 'green' : s === 'Shortlisted' || s === 'Quoted' ? 'tan' : 'neut';
+	const counts = $derived({
+		booked: data.suppliers.filter((s) => s.stage === 'Booked').length,
+		shortlisted: data.suppliers.filter((s) => s.stage === 'Shortlisted' || s.stage === 'Quoted').length,
+		leads: data.suppliers.filter((s) => s.stage === 'Lead' || s.stage === 'Enquired').length,
+		committed: data.suppliers.reduce((a, s) => a + linkedConfirmed(s), 0)
+	});
 
-  async function save(id: number, field: string, value: unknown) {
-    await fetch('/dashboard/vendors/edit', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ id, field, value })
-    });
-    // Deposit flips can create a payment row server-side — refresh to show it.
-    if (field === 'depositPaid') await invalidateAll();
-  }
+	let filter = $state<string>('all');
+	const visible = $derived(filter === 'all' ? groups : groups.filter((g) => g.key === filter));
 
-  async function addPayment(vendorId: number, form: HTMLFormElement) {
-    const f = new FormData(form);
-    const amount = Number(f.get('amount'));
-    if (!amount) return;
-    await fetch('/dashboard/budget/payments', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        op: 'add',
-        amount,
-        paidOn: String(f.get('paidOn') ?? '') || null,
-        note: String(f.get('note') ?? '') || null,
-        vendorId
-      })
-    });
-    form.reset();
-    await invalidateAll();
-  }
-  async function removePayment(id: number) {
-    await fetch('/dashboard/budget/payments', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ op: 'remove', id })
-    });
-    await invalidateAll();
-  }
+	async function add() {
+		await fetch('/dashboard/suppliers/edit', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ op: 'add' })
+		});
+		await invalidateAll();
+	}
+
+	onMount(() => {
+		const m = location.hash.match(/^#supplier-(\d+)$/);
+		if (m) requestAnimationFrame(() => document.getElementById(`supplier-${m[1]}`)?.scrollIntoView({ block: 'center' }));
+	});
+
+	const forLine = (s: SupplierRow) => (s.budgetLineId != null ? lineById.get(s.budgetLineId) : undefined);
 </script>
 
-{#snippet calIcon()}<svg class="ico" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>{/snippet}
-{#snippet noteIcon()}<svg class="ico" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l5 5v13H6z"/><path d="M14 3v6h6M9 13h6M9 17h4"/></svg>{/snippet}
-
-<div class="list">
-  {#each data.vendors as v (v.id)}
-    {@const vPays = data.payments.filter((p) => p.vendorId === v.id)}
-    <article class="vendor" class:chosen={v.depositPaid}>
-      <div class="top">
-        <input class="cat" value={v.category} placeholder="Category"
-          onchange={(e) => save(v.id, 'category', e.currentTarget.value)} />
-        <input class="name" value={v.name ?? ''} placeholder="Vendor — who?"
-          onchange={(e) => save(v.id, 'name', e.currentTarget.value)} />
-        <span class={`status ${stageTone(v.stage)}`}>
-          <select value={v.stage} onchange={(e) => save(v.id, 'stage', e.currentTarget.value)} aria-label="Stage">
-            {#each STAGES as st}<option value={st}>{st}</option>{/each}
-          </select>
-        </span>
-        {#if v.depositPaid}<span class="chosen-badge">Chosen supplier</span>{/if}
-        <form method="POST" action="?/remove" use:enhance class="rmf"
-          onsubmit={(e) => { if (!confirm(`Remove ${v.category}?`)) e.preventDefault(); }}>
-          <input type="hidden" name="id" value={v.id} />
-          <button class="rm" title="Remove" aria-label="Remove">×</button>
-        </form>
-      </div>
-
-      <div class="grid">
-        <label>Phone<input value={v.phone ?? ''} onchange={(e) => save(v.id, 'phone', e.currentTarget.value)} /></label>
-        <label>Email<input value={v.email ?? ''} onchange={(e) => save(v.id, 'email', e.currentTarget.value)} /></label>
-        <label>Website<input value={v.website ?? ''} onchange={(e) => save(v.id, 'website', e.currentTarget.value)} /></label>
-        <label>Contact<input value={v.contact ?? ''} onchange={(e) => save(v.id, 'contact', e.currentTarget.value)} /></label>
-        <label>Quote £<input type="number" step="0.01" value={v.quotedAmount ?? ''} onchange={(e) => save(v.id, 'quotedAmount', e.currentTarget.value)} /></label>
-        <label>Deposit £<input type="number" step="0.01" value={v.depositAmount ?? ''} onchange={(e) => save(v.id, 'depositAmount', e.currentTarget.value)} /></label>
-        <label>Follow-up<input type="date" value={v.followUpDate ?? ''} onchange={(e) => save(v.id, 'followUpDate', e.currentTarget.value)} /></label>
-        <label>Priority
-          <select value={String(v.priority)} onchange={(e) => save(v.id, 'priority', e.currentTarget.value)}>
-            <option value="1">High</option><option value="2">Medium</option><option value="3">Low</option>
-          </select>
-        </label>
-      </div>
-
-      <label class="deposit-toggle">
-        <input type="checkbox" checked={v.depositPaid}
-          onchange={(e) => save(v.id, 'depositPaid', e.currentTarget.checked)} />
-        Deposit paid — booked &amp; chosen supplier
-      </label>
-
-      <div class="payments">
-        <span class="pay-title">
-          Payments{#if vPays.length}&nbsp;· {gbp(vPays.reduce((a, p) => a + p.amount, 0))} paid{/if}
-        </span>
-        {#each vPays as p (p.id)}
-          <span class="pay-item">
-            {gbp(p.amount)}{p.paidOn ? ` · ${fmt(p.paidOn)}` : ''}{p.note ? ` · ${p.note}` : ''}
-            <button class="pay-rm" title="Remove payment" onclick={() => removePayment(p.id)}>×</button>
-          </span>
-        {/each}
-        <form class="pay-add" onsubmit={(e) => { e.preventDefault(); addPayment(v.id, e.currentTarget); }}>
-          <input name="amount" type="number" step="0.01" min="0.01" placeholder="£" required />
-          <input name="paidOn" type="date" />
-          <input name="note" placeholder="What for?" />
-          <button>+ Payment</button>
-        </form>
-      </div>
-
-      <div class="actions">
-        {#each apptsByVendor[v.id] ?? [] as a (a.id)}
-          <a class="chip booked-chip" href="/dashboard/calendar" title={a.title}>
-            {@render calIcon()} {fmt(a.date)}{a.time ? ` · ${a.time}` : ''} — {a.title}
-          </a>
-        {/each}
-        <a class="chip dashed" href={`/dashboard/calendar?supplier=${v.id}`}>{@render calIcon()} Book appointment</a>
-      </div>
-
-      <div class="notes-area">
-        <p class="notes-head">{@render noteIcon()} Notes{(notesByVendor[v.id] ?? []).length ? ` · ${notesByVendor[v.id].length}` : ''}</p>
-        <Notes notes={notesByVendor[v.id] ?? []} category="Suppliers" entityType="vendor" entityId={v.id} compact addLabel="Add note" />
-      </div>
-    </article>
-  {/each}
-
-  <form method="POST" action="?/add" use:enhance class="add"><button>+ Add vendor</button></form>
+<div class="stats">
+	<div class="stat filled"><div class="v">{counts.booked}</div><div class="l">Booked</div></div>
+	<div class="stat"><div class="v">{counts.shortlisted}</div><div class="l">Shortlisted / quoted</div></div>
+	<div class="stat"><div class="v">{counts.leads}</div><div class="l">Leads &amp; enquiries</div></div>
+	<div class="stat"><div class="v">{gbp(counts.committed)}</div><div class="l">Committed in quotes</div></div>
 </div>
 
+<div class="ctrls">
+	<div class="pills" role="tablist" aria-label="Filter by stage">
+		<button type="button" class:on={filter === 'all'} onclick={() => (filter = 'all')}>All</button>
+		{#each groups as g}
+			<button type="button" class:on={filter === g.key} class:warn={g.key === 'unassigned'} onclick={() => (filter = g.key)}>
+				{g.title} <span class="n">{g.items.length}</span>
+			</button>
+		{/each}
+	</div>
+	<button type="button" class="btn primary" onclick={add}>+ Add supplier</button>
+</div>
+
+<p class="hint">
+	Every supplier is filed under a budget line, which is where its quote and payments count. Edit here or from the
+	<a href="/dashboard/budget">Budget</a> — it's the same card.
+</p>
+
+{#each visible as g (g.key)}
+	<section class="group">
+		<h3 class="ktitle" class:warn={g.key === 'unassigned'}>
+			<span>{g.title}</span>
+			<span class="kcount">{g.items.length} {g.items.length === 1 ? 'supplier' : 'suppliers'}</span>
+			{#if g.key === 'unassigned'}
+				<span class="knote">Not counted anywhere yet — pick a budget line on each card</span>
+			{/if}
+		</h3>
+		<div class="list">
+			{#each g.items as s (s.id)}
+				{@const line = forLine(s)}
+				<div class="entry">
+					<p class="for">
+						{#if line}
+							for <a href={`/dashboard/budget#line-${line.id}`}><b>{line.category}</b> · {line.section} →</a>
+						{:else}
+							<span class="unfiled">Unfiled</span>
+						{/if}
+					</p>
+					<SupplierCard
+						supplier={s}
+						showLine
+						payments={data.payments.filter((p) => p.vendorId === s.id)}
+						appointments={data.appointments}
+						notes={notes.filter((n) => n.entityId === s.id)}
+						lineOptions={data.lineOptions}
+					/>
+				</div>
+			{/each}
+		</div>
+	</section>
+{/each}
+
 <style>
-  .list { display: flex; flex-direction: column; gap: 14px; }
-  .vendor {
-    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
-    padding: 18px 22px; transition: box-shadow .15s, border-color .15s;
-  }
-  .vendor:hover { box-shadow: 0 4px 18px rgba(33,31,26,.05); }
-  .vendor.chosen { border-color: var(--sage); }
+	.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 18px; }
+	.stat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 22px; }
+	.stat.filled { background: var(--sage); border-color: var(--sage); }
+	.stat.filled .v, .stat.filled .l { color: #fff; }
+	.stat .v { font-family: var(--serif); font-weight: 600; font-size: 28px; color: var(--ink); line-height: 1; }
+	.stat .l { font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; font-size: 10px; color: var(--muted); margin-top: 8px; }
 
-  .top { display: grid; grid-template-columns: minmax(140px,1fr) minmax(160px,1.4fr) 130px auto 28px; gap: 14px; align-items: center; }
-  .top input { border: 1px solid transparent; border-radius: 8px; padding: 6px 8px; font: inherit; background: transparent; min-width: 0; transition: background-color .12s, border-color .12s; }
-  .top input:hover { background: var(--bg); }
-  .top input:focus { background: #fff; border-color: var(--line); outline: none; }
-  .top .cat { font-weight: 700; font-size: 15px; color: var(--ink); }
-  .top .name { color: var(--body); font-size: 14px; }
+	.ctrls { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 10px; }
+	.pills { display: flex; gap: 6px; flex-wrap: wrap; }
+	.pills button { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; color: var(--muted); cursor: pointer; }
+	.pills button.on { background: var(--sage); border-color: var(--sage); color: #fff; }
+	.pills button.warn:not(.on) { color: var(--terra); border-color: #ecd9cf; }
+	.pills .n { opacity: 0.75; font-weight: 500; margin-left: 3px; }
+	.btn { border: 0; border-radius: 8px; padding: 10px 18px; font: inherit; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; cursor: pointer; }
+	.btn.primary { background: var(--sage); color: #fff; }
+	.btn.primary:hover { background: var(--sage-deep); }
+	.hint { font-size: 13px; color: var(--muted); margin: 0 0 22px; line-height: 1.6; }
 
-  .status { justify-self: start; border-radius: 999px; display: inline-flex; }
-  .status select { appearance: none; -webkit-appearance: none; border: 0; background: transparent; cursor: pointer; font: inherit; font-weight: 700; font-size: 10px; letter-spacing: .07em; text-transform: uppercase; padding: 4px 12px; border-radius: 999px; color: inherit; }
-  .status.green { background: var(--sage-soft); color: var(--sage-deep); }
-  .status.tan { background: #f0e8da; color: #9a7b53; }
-  .status.neut { background: #f0ede5; color: #8a8678; }
-  .chosen-badge { justify-self: start; font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--sage-deep); background: var(--sage-soft); padding: 4px 10px; border-radius: 999px; }
-
-  .rmf { margin: 0; justify-self: end; }
-  .rm { background: none; border: 0; color: var(--faint); font-size: 18px; cursor: pointer; padding: 0; line-height: 1; }
-  .rm:hover { color: var(--terra); }
-
-  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 14px; margin-top: 14px; }
-  .grid label { display: flex; flex-direction: column; gap: 3px; font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
-  .grid input, .grid select { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font: inherit; font-size: 13px; background: #fff; min-width: 0; }
-
-  .deposit-toggle { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 13px; color: var(--body); cursor: pointer; }
-  .payments { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line2); }
-  .pay-title { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
-  .pay-item { font-size: 12.5px; background: var(--sage-soft); border-radius: 8px; padding: 4px 8px; color: var(--body); font-variant-numeric: tabular-nums; }
-  .pay-rm { border: 0; background: none; color: var(--terra); cursor: pointer; font-size: 13px; padding: 0 0 0 4px; }
-  .pay-add { display: flex; gap: 6px; margin-left: auto; }
-  .pay-add input { border: 1px solid var(--line); border-radius: 6px; padding: 5px 7px; font: inherit; font-size: 12.5px; }
-  .pay-add input[name='amount'] { width: 80px; }
-  .pay-add input[name='note'] { width: 120px; }
-  .pay-add button { border: 0; border-radius: 6px; background: var(--sage); color: #fff; font-size: 12.5px; font-weight: 600; padding: 5px 10px; cursor: pointer; }
-
-  .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line2); }
-  .chip { display: inline-flex; align-items: center; gap: 6px; background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 6px 13px; font: inherit; font-size: 10.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--sage-deep); text-decoration: none; cursor: pointer; }
-  .chip:hover { border-color: var(--sage); background: var(--sage-soft); }
-  .chip :global(.ico) { flex: none; }
-  .chip.dashed { border-style: dashed; }
-  .booked-chip { background: var(--terra-bg); border-color: var(--terra-bg); color: var(--terra); text-transform: none; letter-spacing: 0; }
-  .booked-chip:hover { border-color: var(--terra); background: var(--terra-bg); }
-
-  .notes-area { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line2); }
-  .notes-head { display: flex; align-items: center; gap: 6px; margin: 0 0 10px; font-size: 10.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--sage-deep); font-weight: 600; }
-  .notes-head :global(.ico) { flex: none; }
-
-  .add { margin-top: 4px; }
-  .add button { background: var(--sage); color: #fff; border: 0; border-radius: 8px; padding: 9px 16px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; cursor: pointer; }
-
-  @media (max-width: 820px) {
-    .top { grid-template-columns: 1fr 1fr; }
-    .grid { grid-template-columns: 1fr 1fr; }
-  }
+	.group { margin-bottom: 26px; }
+	.ktitle { display: flex; align-items: baseline; gap: 10px; margin: 0 2px 10px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; font-size: 11.5px; color: var(--ink); flex-wrap: wrap; }
+	.ktitle.warn span:first-child { color: var(--terra); }
+	.kcount { color: var(--faint); font-weight: 500; letter-spacing: 0.04em; text-transform: none; font-size: 11.5px; }
+	.knote { margin-left: auto; color: var(--terra); font-weight: 500; letter-spacing: 0.02em; text-transform: none; font-size: 12px; }
+	.list { display: flex; flex-direction: column; gap: 14px; }
+	.entry { display: grid; gap: 4px; }
+	.for { margin: 0 4px; font-size: 11.5px; color: var(--muted); }
+	.for a { color: var(--sage-deep); text-decoration: none; }
+	.for a:hover { text-decoration: underline; }
+	.for b { color: var(--ink); }
+	.unfiled { color: var(--terra); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; font-size: 10px; }
 </style>

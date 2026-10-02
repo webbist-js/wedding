@@ -1,7 +1,12 @@
 <script lang="ts">
   import { computeQuote, lineQty } from '$lib/quote';
   import type { CostBasis } from '$lib/headcount';
+  import { describeBasis } from '$lib/venue-compare';
+  import LockToggle from '$lib/components/LockToggle.svelte';
   let { data } = $props();
+
+  // Header lock — venue terms (basis, counts, min spend) are set.
+  let venueLocked = $state(data.venueLocked);
 
   // Which headcounts price the quote: typed numbers, everyone invited, or
   // RSVP-confirmed guests. The chosen basis also drives the Budget's Venue line.
@@ -19,8 +24,14 @@
 
   const active = $derived(basis === 'manual' ? manual : data.counts[basis]);
   const result = $derived(computeQuote(lines as any, { ...active, min }));
-  const estimateGrand = $derived(computeQuote(lines as any, { ...data.counts.estimate, min }).grand);
-  const confirmedGrand = $derived(computeQuote(lines as any, { ...data.counts.confirmed, min }).grand);
+  // Each basis priced + explained, so the compare cards can say why a figure
+  // is what it is (e.g. the venue floor when nobody has confirmed yet).
+  const estimateQ = $derived(computeQuote(lines as any, { ...data.counts.estimate, min }));
+  const confirmedQ = $derived(computeQuote(lines as any, { ...data.counts.confirmed, min }));
+  const estimateD = $derived(describeBasis(estimateQ, data.counts.estimate, min));
+  const confirmedD = $derived(describeBasis(confirmedQ, data.counts.confirmed, min));
+  const heads = (h: { day: number; eve: number; veg: number }) =>
+    `${h.day} day · ${h.eve} evening${h.veg ? ` · ${h.veg} veg` : ''}`;
 
   const gbp = (n: number) => '£' + n.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const SCOPE_LABEL: Record<string, string> = {
@@ -43,15 +54,21 @@
       method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload)
     });
   }
-  function saveLine(line: any, field: 'label' | 'scope' | 'meal' | 'price' | 'qty' | 'bond') {
-    post({ id: line.id, field, value: line[field] });
+  async function saveLine(line: any, field: 'label' | 'scope' | 'meal' | 'price' | 'qty' | 'bond' | 'locked') {
+    const res = await post({ id: line.id, field, value: line[field] });
+    if (res.status === 423) alert('This line is locked — unlock it to edit.');
+  }
+  function toggleLock(line: any, next: boolean) {
+    line.locked = next;
+    saveLine(line, 'locked');
   }
   async function addLine(section: string) {
     const res = await post({ op: 'add', section });
     const { id } = await res.json();
-    lines = [...lines, { id, label: 'New item', section, scope: 'fixed', meal: 'any', price: 0, qty: null, included: false, confirmed: true, bond: false, sort: lines.length }];
+    lines = [...lines, { id, label: 'New item', section, scope: 'fixed', meal: 'any', price: 0, qty: null, included: false, locked: false, bond: false, sort: lines.length }];
   }
   function removeLine(line: any) {
+    if (line.locked) return;
     post({ op: 'remove', id: line.id });
     lines = lines.filter((l) => l.id !== line.id);
   }
@@ -108,6 +125,7 @@
   let over = $state<{ key: string; after: boolean } | null>(null);
 
   function startDrag(e: DragEvent, d: NonNullable<Drag>) {
+    if (d.type === 'line' && lines.find((l) => l.id === d.id)?.locked) { e.preventDefault(); return; }
     drag = d;
     e.dataTransfer!.effectAllowed = 'move';
     // The handle is the draggable element; show the whole row as the ghost.
@@ -170,6 +188,10 @@
   function saveBasis() {
     post({ setting: 'venueCostBasis', value: basis });
   }
+  function saveVenueLock(next: boolean) {
+    venueLocked = next;
+    post({ setting: 'venueLocked', value: next });
+  }
   function reset() {
     manual = { day: 61, eve: 90, veg: 6 }; min = 16455;
     saveSetting('dayGuests', manual.day); saveSetting('eveGuests', manual.eve);
@@ -177,38 +199,54 @@
   }
 </script>
 
-<div class="ctrls">
+<div class="ctrls" class:islocked={venueLocked}>
+  <LockToggle locked={venueLocked} label="venue terms set" size={34} onToggle={saveVenueLock} />
   <label>Cost basis
-    <select class="basis" bind:value={basis} onchange={saveBasis}>
+    <select class="basis" bind:value={basis} onchange={saveBasis} disabled={venueLocked}>
       <option value="manual">Manual counts</option>
       <option value="estimate">All invited (estimate)</option>
       <option value="confirmed">RSVP confirmed</option>
     </select>
   </label>
   {#if basis === 'manual'}
-    <label>Day guests <input type="number" bind:value={manual.day} onchange={() => saveSetting('dayGuests', manual.day)} /></label>
-    <label>Evening guests (total) <input type="number" bind:value={manual.eve} onchange={() => saveSetting('eveGuests', manual.eve)} /></label>
-    <label>Vegetarian (day) <input type="number" bind:value={manual.veg} onchange={() => saveSetting('vegGuests', manual.veg)} /></label>
+    <label>Day guests <input type="number" bind:value={manual.day} disabled={venueLocked} onchange={() => saveSetting('dayGuests', manual.day)} /></label>
+    <label>Evening guests (total) <input type="number" bind:value={manual.eve} disabled={venueLocked} onchange={() => saveSetting('eveGuests', manual.eve)} /></label>
+    <label>Vegetarian (day) <input type="number" bind:value={manual.veg} disabled={venueLocked} onchange={() => saveSetting('vegGuests', manual.veg)} /></label>
   {:else}
     <span class="derived-counts">
       <strong>{active.day}</strong> day · <strong>{active.eve}</strong> evening · <strong>{active.veg}</strong> veg
       <em>from the guest list — {basis === 'confirmed' ? 'RSVP yes only' : 'everyone who hasn’t declined'}</em>
     </span>
   {/if}
-  <label>Min. spend (£) <input type="number" bind:value={min} onchange={() => saveSetting('minSpend', min)} /></label>
-  <button class="reset" type="button" onclick={reset}>Reset</button>
-  <span class="auto">edits save automatically · this basis drives the Budget’s Venue line</span>
+  <label>Min. spend (£) <input type="number" bind:value={min} disabled={venueLocked} onchange={() => saveSetting('minSpend', min)} /></label>
+  {#if venueLocked}
+    <span class="auto locked-note">Locked — venue terms are set. Unlock to change the basis, counts or minimum spend.</span>
+  {:else}
+    <button class="reset" type="button" onclick={reset}>Reset</button>
+    <span class="auto">edits save automatically · this basis drives the Budget’s Venue line</span>
+  {/if}
 </div>
 
 <div class="card compare">
   <div class="c" class:active={basis === 'estimate'}>
-    <span>All invited (estimate)</span><strong>{gbp(estimateGrand)}</strong>
+    <span>All invited (estimate)</span>
+    <strong>{gbp(estimateQ.grand)}</strong>
+    <small>{heads(data.counts.estimate)}{#if estimateD.topup > 0} · incl. {gbp(estimateD.topup)} min-spend top-up{/if}</small>
   </div>
-  <div class="c" class:active={basis === 'confirmed'}>
-    <span>RSVP confirmed so far</span><strong>{gbp(confirmedGrand)}</strong>
+  <div class="c" class:active={basis === 'confirmed'} class:empty={confirmedD.noGuests}>
+    <span>RSVP confirmed so far</span>
+    {#if confirmedD.noGuests}
+      <strong class="soft">No replies yet</strong>
+      <small>Floor if nobody came: <b>{gbp(confirmedD.floor)}</b> = {gbp(min)} min. spend + {gbp(confirmedQ.bond)} bond</small>
+    {:else}
+      <strong>{gbp(confirmedQ.grand)}</strong>
+      <small>{heads(data.counts.confirmed)}{#if confirmedD.topup > 0} · incl. {gbp(confirmedD.topup)} min-spend top-up{/if}</small>
+    {/if}
   </div>
   <div class="c">
-    <span>Original 80-cover quote</span><strong>{gbp(data.originalQuote)}</strong>
+    <span>Original 80-cover quote</span>
+    <strong>{gbp(data.originalQuote)}</strong>
+    <small>80 covers · the venue’s first proposal</small>
   </div>
 </div>
 
@@ -244,6 +282,7 @@
       {@const qty = lineQty(line as any, { ...active, min })}
       <div
         class="qrow"
+        class:islocked={line.locked}
         class:dragging={drag?.type === 'line' && drag.id === line.id}
         class:drop-before={over?.key === `l${line.id}` && !over.after}
         class:drop-after={over?.key === `l${line.id}` && over.after}
@@ -252,31 +291,33 @@
         ondrop={() => dropOnLine(line)}
       >
         <span class="itemcell">
-          <span class="grip" draggable="true" title="Drag to reorder"
+          <span class="grip" draggable={!line.locked} title={line.locked ? 'Locked lines stay put' : 'Drag to reorder'}
             ondragstart={(e) => startDrag(e, { type: 'line', id: line.id })} ondragend={endDrag}>⋮⋮</span>
-          <input class="label" bind:value={line.label} onblur={() => saveLine(line, 'label')} placeholder="Item" />
-          {#if !line.confirmed}<span class="confirm">Confirm</span>{/if}
+          <LockToggle locked={line.locked} label="price confirmed with the venue" size={24} onToggle={(next) => toggleLock(line, next)} />
+          <input class="label" bind:value={line.label} disabled={line.locked} onblur={() => saveLine(line, 'label')} placeholder="Item" />
           {#if line.scope === 'day'}
-            <select class="meal" class:mealset={line.meal !== 'any'} bind:value={line.meal} onchange={() => saveLine(line, 'meal')} title="Who this per-head price applies to">
+            <select class="meal" class:mealset={line.meal !== 'any'} bind:value={line.meal} disabled={line.locked} onchange={() => saveLine(line, 'meal')} title="Who this per-head price applies to">
               <option value="any">everyone</option>
               <option value="veg">veg only</option>
               <option value="nonveg">non-veg only</option>
             </select>
           {/if}
         </span>
-        <select class="scope" bind:value={line.scope} onchange={() => saveLine(line, 'scope')}>
+        <select class="scope" bind:value={line.scope} disabled={line.locked} onchange={() => saveLine(line, 'scope')}>
           {#each Object.entries(SCOPE_LABEL) as [val, lbl]}<option value={val}>{lbl}</option>{/each}
         </select>
         {#if line.scope === 'custom'}
-          <input class="num qty" type="number" bind:value={line.qty} onblur={() => saveLine(line, 'qty')} />
+          <input class="num qty" type="number" bind:value={line.qty} disabled={line.locked} onblur={() => saveLine(line, 'qty')} />
         {:else}
           <span class="readonly num">{qty}</span>
         {/if}
-        <input class="num price" type="number" step="0.01" bind:value={line.price} onblur={() => saveLine(line, 'price')} />
+        <input class="num price" type="number" step="0.01" bind:value={line.price} disabled={line.locked} onblur={() => saveLine(line, 'price')} />
         <span class="num total">{gbp(qty * line.price)}</span>
         <span class="acts">
-          <label class="bond" title="Refundable bond — excluded from spend"><input type="checkbox" bind:checked={line.bond} onchange={() => saveLine(line, 'bond')} /> bond</label>
-          <button class="rm" type="button" onclick={() => removeLine(line)} title="Remove" aria-label="Remove">×</button>
+          <label class="bond" title="Refundable bond — excluded from spend"><input type="checkbox" bind:checked={line.bond} disabled={line.locked} onchange={() => saveLine(line, 'bond')} /> bond</label>
+          {#if !line.locked}
+            <button class="rm" type="button" onclick={() => removeLine(line)} title="Remove" aria-label="Remove">×</button>
+          {/if}
         </span>
       </div>
     {:else}
@@ -308,8 +349,14 @@
 
 <style>
   .intro { font-size: 13.5px; color: var(--body); line-height: 1.7; max-width: 80ch; margin: 0 0 18px; }
-  .confirm { display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
-    background: var(--terra-bg); color: var(--terra); border-radius: 999px; padding: 2px 7px; vertical-align: middle; }
+  .ctrls.islocked label { opacity: .75; }
+  .ctrls input:disabled, .ctrls .basis:disabled { background: var(--bg); color: var(--body); cursor: default; }
+  .locked-note { color: var(--sage-deep); font-weight: 600; }
+  .qrow.islocked { background: linear-gradient(90deg, var(--sage-soft), transparent 45%); border-radius: 8px; }
+  .qrow.islocked .grip { opacity: .3 !important; cursor: default; }
+  .qrow.islocked input:disabled, .qrow.islocked select:disabled { color: var(--body); background: transparent; border-color: transparent; cursor: default; }
+  .qrow :global(.lock) { opacity: 0; transition: opacity .12s; }
+  .qrow:hover :global(.lock), .qrow.islocked :global(.lock), .qrow :global(.lock:focus-visible) { opacity: 1; }
 
   .alert { display: flex; gap: 14px; background: var(--rose-bg); border-radius: 14px; padding: 16px 20px; margin-bottom: 22px; }
   .alert .ai { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--terra); color: var(--terra);
@@ -330,6 +377,11 @@
   .compare .c.active { background: var(--sage-soft); }
   .compare .c span { font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
   .compare .c strong { font-family: var(--serif); font-size: 22px; color: var(--ink); }
+  .compare .c strong.soft { color: var(--muted); font-weight: 500; }
+  .compare .c small { font-size: 11.5px; color: var(--muted); line-height: 1.45; margin-top: 2px; }
+  .compare .c small b { color: var(--ink); }
+  .compare .c.empty { background: repeating-linear-gradient(135deg, transparent 0 8px, rgba(0,0,0,.015) 8px 16px); }
+  .compare .c.empty.active { background: var(--sage-soft); }
   .meal { flex: none; border: 1px solid transparent; background: transparent; color: var(--faint); font: inherit; font-size: 11px; padding: 3px 2px; border-radius: 6px; cursor: pointer; }
   .meal.mealset { color: var(--sage-deep); background: var(--sage-soft); }
   .meal:focus { outline: none; border-color: var(--line); background: #fff; }

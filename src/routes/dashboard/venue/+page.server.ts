@@ -41,6 +41,8 @@ export const load: PageServerLoad = async () => {
       estimate: resolveHeadcounts('estimate', allGuests, manual),
       confirmed: resolveHeadcounts('confirmed', allGuests, manual)
     },
-    originalQuote: Number(s.venueOriginalQuote ?? 17319.4)
+    originalQuote: Number(s.venueOriginalQuote ?? 17319.4),
+    // Header lock: freezes basis, counts and min spend against accidental edits.
+    venueLocked: s.venueLocked === '1'
   };
 };
