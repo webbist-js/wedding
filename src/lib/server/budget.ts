@@ -9,9 +9,22 @@ import {
 	quoteLines,
 	guests
 } from './db/schema';
-import { linkedConfirmed, isCommitted, sumPayments, derivedStatus } from '$lib/money';
+import { lineConfirmed, lineCommitted, sumPayments, derivedStatus } from '$lib/money';
 import { resolveHeadcounts, type CostBasis, type Headcounts } from '$lib/headcount';
 import { computeQuote } from '$lib/quote';
+
+// A supplier as seen from its budget line.
+export interface LineSupplier {
+	id: number;
+	name: string | null;
+	category: string;
+	stage: string;
+	quotedAmount: number | null;
+	depositAmount: number | null;
+	depositPaid: boolean;
+	locked: boolean;
+	committed: boolean;
+}
 
 export interface EffectiveLine {
 	id: number;
@@ -22,21 +35,35 @@ export interface EffectiveLine {
 	paid: number;
 	status: string;
 	sort: number;
+	locked: boolean;
 	editable: boolean; // false → confirmed/status derived, grid renders read-only
-	link:
-		| null
-		| { type: 'vendor'; vendorId: number; vendorName: string }
-		| { type: 'venue' }
-		| { type: 'shopping' };
+	// Suppliers filed under this line (vendors.budgetLineId). Any supplier makes
+	// the line derived: confirmed = Σ committed quotes.
+	suppliers: LineSupplier[];
+	link: null | { type: 'venue' } | { type: 'shopping' };
 	payments: { id: number; amount: number; paidOn: string | null; note: string | null }[];
 }
 
+export function toLineSupplier(v: typeof vendors.$inferSelect): LineSupplier {
+	return {
+		id: v.id,
+		name: v.name,
+		category: v.category,
+		stage: v.stage,
+		quotedAmount: v.quotedAmount,
+		depositAmount: v.depositAmount,
+		depositPaid: v.depositPaid,
+		locked: v.locked,
+		committed: lineCommitted([v])
+	};
+}
+
 // THE money rollup — the only place effective budget figures are computed.
-// Budget page and Overview both consume this.
+// Budget page, Suppliers page and Overview all consume this.
 export async function effectiveBudget() {
 	const [lines, vs, ps, shopping, setRows, qLines, allGuests] = await Promise.all([
 		db.select().from(budgetLines).orderBy(asc(budgetLines.sort)),
-		db.select().from(vendors),
+		db.select().from(vendors).orderBy(asc(vendors.sort), asc(vendors.id)),
 		db.select().from(payments).orderBy(asc(payments.id)),
 		db.select().from(shoppingItems),
 		db.select().from(settings),
@@ -57,18 +84,26 @@ export async function effectiveBudget() {
 	const heads = resolveHeadcounts(basis, allGuests, manual);
 	const venueConfirmed = computeQuote(qLines, { ...heads, min: Number(s.minSpend ?? 16455) }).grand;
 
-	const vendorById = new Map(vs.map((v) => [v.id, v]));
-	// A line's payments: attached directly, plus its vendor's (vendor payments
-	// carry no budgetLineId, so nothing double-counts).
-	const pay = (lineId: number, vendorId: number | null) =>
+	// Suppliers grouped by the line they're filed under.
+	const byLine = new Map<number, typeof vs>();
+	const unassigned: LineSupplier[] = [];
+	for (const v of vs) {
+		if (v.budgetLineId == null) unassigned.push(toLineSupplier(v));
+		else (byLine.get(v.budgetLineId) ?? byLine.set(v.budgetLineId, []).get(v.budgetLineId)!).push(v);
+	}
+
+	// A line's payments: attached directly, plus any of its suppliers' (supplier
+	// payments carry no budgetLineId, so nothing double-counts).
+	const pay = (lineId: number, supplierIds: Set<number>) =>
 		ps.filter(
 			(p) =>
 				p.budgetLineId === lineId ||
-				(vendorId != null && p.vendorId === vendorId && p.budgetLineId == null)
+				(p.vendorId != null && supplierIds.has(p.vendorId) && p.budgetLineId == null)
 		);
 
 	const effective: EffectiveLine[] = lines.map((l) => {
-		const rows = pay(l.id, l.vendorId);
+		const lineVendors = byLine.get(l.id) ?? [];
+		const rows = pay(l.id, new Set(lineVendors.map((v) => v.id)));
 		const paid = sumPayments(rows);
 		const base = {
 			id: l.id,
@@ -76,6 +111,8 @@ export async function effectiveBudget() {
 			section: l.section,
 			budgeted: l.budgeted,
 			sort: l.sort,
+			locked: l.locked,
+			suppliers: lineVendors.map(toLineSupplier),
 			payments: rows.map((p) => ({ id: p.id, amount: p.amount, paidOn: p.paidOn, note: p.note }))
 		};
 		if (l.sourceType === 'venue') {
@@ -88,22 +125,21 @@ export async function effectiveBudget() {
 				link: { type: 'venue' as const }
 			};
 		}
-		const v = l.vendorId != null ? vendorById.get(l.vendorId) : undefined;
-		if (v) {
-			const confirmed = linkedConfirmed(v);
+		if (lineVendors.length > 0) {
+			const confirmed = lineConfirmed(lineVendors);
 			return {
 				...base,
 				confirmed,
 				paid,
-				status: derivedStatus(confirmed, paid, isCommitted(v)),
+				status: derivedStatus(confirmed, paid, lineCommitted(lineVendors)),
 				editable: false,
-				link: { type: 'vendor' as const, vendorId: v.id, vendorName: v.name ?? v.category }
+				link: null
 			};
 		}
 		return { ...base, confirmed: l.confirmed, paid, status: l.status, editable: true, link: null };
 	});
 
-	// Shopping list — synced virtual line (previously duplicated in two loads).
+	// Shopping list — synced virtual line.
 	const shopTotal = shopping.reduce((a, i) => a + i.cost * i.qty, 0);
 	const shopPaid = shopping.filter((i) => i.bought).reduce((a, i) => a + i.cost * i.qty, 0);
 	effective.push({
@@ -115,7 +151,9 @@ export async function effectiveBudget() {
 		paid: shopPaid,
 		status: 'Shopping',
 		sort: 1_000_000_000,
+		locked: false,
 		editable: false,
+		suppliers: [],
 		link: { type: 'shopping' },
 		payments: []
 	});
@@ -125,5 +163,13 @@ export async function effectiveBudget() {
 		confirmed: effective.reduce((a, l) => a + l.confirmed, 0),
 		paid: effective.reduce((a, l) => a + l.paid, 0)
 	};
-	return { lines: effective, totals, target, basis, headcounts: heads, shoppingCount: shopping.length };
+	return {
+		lines: effective,
+		totals,
+		target,
+		basis,
+		headcounts: heads,
+		shoppingCount: shopping.length,
+		unassigned
+	};
 }

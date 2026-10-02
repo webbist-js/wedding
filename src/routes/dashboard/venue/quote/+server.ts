@@ -13,6 +13,33 @@ export const POST: RequestHandler = async ({ request, locals }) => {
   const body = await request.json();
   await recordAudit(locals, { action: 'update', entity: 'venue', summary: 'Edited the venue quote' });
 
+  // ---- Locks ----
+  // The header lock freezes the venue terms (counts, basis, min spend). The
+  // UI disables those controls; this is the backstop.
+  if (body.setting === 'venueLocked') {
+    await db
+      .update(settings)
+      .set({ value: body.value ? '1' : '0' })
+      .where(eq(settings.key, 'venueLocked'));
+    return json({ ok: true });
+  }
+  if (typeof body.setting === 'string') {
+    const [row] = await db.select().from(settings).where(eq(settings.key, 'venueLocked'));
+    if (row?.value === '1') throw error(423, 'locked');
+  }
+  // Per-line lock: price/scope are set & confirmed with the venue. Toggling
+  // the lock is always allowed; every other edit (and removal) is refused.
+  const lineId = body.op === 'remove' || body.field ? Number(body.id) : null;
+  if (lineId != null) {
+    const [line] = await db.select().from(quoteLines).where(eq(quoteLines.id, lineId));
+    if (!line) throw error(404, 'no such line');
+    if (body.field === 'locked') {
+      await db.update(quoteLines).set({ locked: !!body.value }).where(eq(quoteLines.id, line.id));
+      return json({ ok: true });
+    }
+    if (line.locked) throw error(423, 'locked');
+  }
+
   // Add a new quote line at the end of the given section — returns its id so
   // the client can track it.
   if (body.op === 'add') {

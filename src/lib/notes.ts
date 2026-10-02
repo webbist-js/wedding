@@ -30,7 +30,7 @@ export interface EntityKind {
 }
 
 export const ENTITY_KINDS = {
-	vendor: { label: 'Vendor', category: 'Suppliers', href: '/dashboard/vendors' },
+	vendor: { label: 'Supplier', category: 'Suppliers', href: '/dashboard/suppliers' },
 	budget: { label: 'Budget line', category: 'Budget', href: '/dashboard/budget' },
 	guest_group: { label: 'Household', category: 'Guests', href: '/dashboard/guests' },
 	timeline: { label: 'Timeline task', category: 'Timeline', href: '/dashboard/timeline' },
