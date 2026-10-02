@@ -20,6 +20,9 @@ export const inviteGroups = sqliteTable('invite_groups', {
   address: text('address'),
   email: text('email'),
   phone: text('phone'),
+  // When the invite (QR card / link) was actually sent to this household —
+  // ISO YYYY-MM-DD, set from the dashboard. Null = not sent yet.
+  inviteSentAt: text('invite_sent_at'),
   respondedAt: integer('responded_at', { mode: 'timestamp' })
 });
 

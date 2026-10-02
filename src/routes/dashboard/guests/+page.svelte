@@ -1,312 +1,134 @@
 <script lang="ts">
-	import Stat from '$lib/components/Stat.svelte';
-	import InvitePanel from '$lib/components/InvitePanel.svelte';
+	import { onMount } from 'svelte';
 	import { enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
+	import GuestReport, { type AttentionKey } from '$lib/components/guests/GuestReport.svelte';
+	import HouseholdTable from '$lib/components/guests/HouseholdTable.svelte';
+	import HouseholdPanel from '$lib/components/guests/HouseholdPanel.svelte';
+	import { guestReport, householdSummary, type HouseholdStatus } from '$lib/guest-report';
 	let { data } = $props();
 
-	// Search + RSVP-status filter. Awaiting = anyone in the household still
-	// pending; Replied = everyone has answered; Declined = everyone said no.
-	type Status = 'all' | 'awaiting' | 'replied' | 'declined';
+	// ---- Reporting (pure, see lib/guest-report.ts)
+	const rows = $derived(data.households.map((h) => ({ h, s: householdSummary(h) })));
+	const report = $derived(guestReport(data.households));
+
+	// ---- Filters
 	let q = $state('');
-	let status = $state<Status>('all');
-	const matchesStatus = (h: (typeof data.households)[number]) => {
-		if (status === 'all') return true;
-		const ms = h.members;
-		if (status === 'awaiting') return ms.some((m) => m.rsvpStatus === 'pending');
-		if (status === 'replied') return ms.length > 0 && ms.every((m) => m.rsvpStatus !== 'pending');
-		return ms.length > 0 && ms.every((m) => m.rsvpStatus === 'no');
+	let status = $state<'all' | HouseholdStatus>('all');
+	let side = $state<'all' | 'B' | 'G'>('all');
+	let attention = $state<AttentionKey | null>(null);
+
+	const passesAttention = (h: (typeof data.households)[number]) => {
+		if (attention === 'noAddress') return !h.address?.trim();
+		if (attention === 'noContact') return !h.email?.trim() && !h.phone?.trim();
+		if (attention === 'inviteNotSent') return !h.inviteSentAt;
+		return true;
 	};
-	let filtered = $derived(
-		data.households.filter((h) => {
-			if (!matchesStatus(h)) return false;
+	const filtered = $derived(
+		rows.filter(({ h, s }) => {
+			if (status !== 'all' && s.rsvp.status !== status) return false;
+			if (side !== 'all' && s.side !== side && s.side !== 'X') return false;
+			if (!passesAttention(h)) return false;
 			if (!q) return true;
 			const needle = q.toLowerCase();
-			return (
-				h.name.toLowerCase().includes(needle) ||
-				h.members.some((m) => m.name.toLowerCase().includes(needle))
-			);
+			return h.name.toLowerCase().includes(needle) || h.members.some((m) => m.name.toLowerCase().includes(needle));
 		})
 	);
 	const counts = $derived({
-		awaiting: data.households.filter((h) => h.members.some((m) => m.rsvpStatus === 'pending')).length,
-		replied: data.households.filter((h) => h.members.length > 0 && h.members.every((m) => m.rsvpStatus !== 'pending')).length,
-		declined: data.households.filter((h) => h.members.length > 0 && h.members.every((m) => m.rsvpStatus === 'no')).length
+		awaiting: rows.filter((r) => r.s.rsvp.status === 'awaiting').length,
+		replied: rows.filter((r) => r.s.rsvp.status === 'replied').length,
+		declined: rows.filter((r) => r.s.rsvp.status === 'declined').length
 	});
 
-	async function save(
-		kind: 'group' | 'guest',
-		id: number,
-		field: string,
-		value: string | boolean
-	) {
-		await fetch('/dashboard/guests/edit', {
-			method: 'POST',
-			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ kind, id, field, value })
-		});
-	}
-
-	function confirmSubmit(message: string) {
-		return (e: Event) => {
-			if (!confirm(message)) e.preventDefault();
-		};
-	}
-
-	// Relationship-group dropdown. The "+ New group…" sentinel prompts for a fresh
-	// group name; we reload so it persists and appears as an option everywhere.
-	const NEW_GROUP = '__new__';
-	async function onRelChange(memberId: number, current: string, e: Event) {
-		const sel = e.currentTarget as HTMLSelectElement;
-		const v = sel.value;
-		if (v === NEW_GROUP) {
-			const name = window.prompt('New relationship group name:')?.trim();
-			sel.value = current; // restore until the reload confirms the change
-			if (!name) return;
-			await save('guest', memberId, 'relationshipGroup', name);
-			await invalidateAll();
-			return;
+	// ---- Selection (master–detail). #h-<id> deep-links to a household.
+	let selectedId = $state<number | null>(null);
+	const selected = $derived(rows.find((r) => r.h.id === selectedId) ?? null);
+	let panelEl = $state<HTMLElement | null>(null);
+	function select(id: number) {
+		selectedId = id;
+		history.replaceState(null, '', `#h-${id}`);
+		// On narrow screens the panel sits below the table — bring it into view.
+		if (window.matchMedia('(max-width: 1000px)').matches) {
+			requestAnimationFrame(() => panelEl?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
 		}
-		await save('guest', memberId, 'relationshipGroup', v);
 	}
+	onMount(() => {
+		const m = location.hash.match(/^#h-(\d+)$/);
+		if (m && rows.some((r) => r.h.id === Number(m[1]))) {
+			selectedId = Number(m[1]);
+			requestAnimationFrame(() => document.getElementById(`h-${m[1]}`)?.scrollIntoView({ block: 'center' }));
+		}
+	});
 
-	// Add-household modal.
+	// ---- Add-household modal
 	let showAdd = $state(false);
 	let addName = $state('');
-	function openAdd() {
-		showAdd = true;
-	}
-	function closeAdd() {
-		showAdd = false;
-	}
 
 	// <main> carries a persistent load-animation transform, which makes it the
 	// containing block for position:fixed children — so the modal would centre
-	// on the list, not the viewport. Reparent it to the SvelteKit app root (the
-	// topmost child of <body>): outside <main>, but still inside Svelte's event-
-	// delegation root so backdrop/cancel clicks keep firing.
+	// on the list, not the viewport. Reparent it to the SvelteKit app root.
 	function portal(node: HTMLElement) {
 		let root: HTMLElement = node;
-		while (root.parentElement && root.parentElement !== document.body) {
-			root = root.parentElement;
-		}
+		while (root.parentElement && root.parentElement !== document.body) root = root.parentElement;
 		root.appendChild(node);
-		return {
-			destroy() {
-				node.remove();
-			}
-		};
+		return { destroy() { node.remove(); } };
 	}
 </script>
 
-
-<div class="stats">
-	<Stat value={String(data.summary.total)} label="Total" />
-	<Stat value={`${data.summary.day} / ${data.summary.evening}`} label="Day / evening" />
-	<Stat value={String(data.summary.kids)} label="Children" />
-	<Stat value={String(data.summary.rsvpYes)} label="RSVP'd yes" accent />
-</div>
+<GuestReport {report} {attention} onAttention={(k) => (attention = attention === k ? null : k)} />
 
 <div class="ctrls">
-	<input class="srch" bind:value={q} placeholder="Search households or names…" />
+	<label class="srch">
+		<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+		<input bind:value={q} placeholder="Search households or names…" aria-label="Search" />
+	</label>
 	<div class="pills" role="group" aria-label="Filter by RSVP status">
-		<button type="button" class:on={status === 'all'} onclick={() => (status = 'all')}>All <span class="n">{data.households.length}</span></button>
+		<button type="button" class:on={status === 'all'} onclick={() => (status = 'all')}>All <span class="n">{rows.length}</span></button>
 		<button type="button" class:on={status === 'awaiting'} onclick={() => (status = 'awaiting')}>Awaiting <span class="n">{counts.awaiting}</span></button>
 		<button type="button" class:on={status === 'replied'} onclick={() => (status = 'replied')}>Replied <span class="n">{counts.replied}</span></button>
 		<button type="button" class:on={status === 'declined'} onclick={() => (status = 'declined')}>Declined <span class="n">{counts.declined}</span></button>
 	</div>
-	<button type="button" class="btn primary" onclick={openAdd}>+ Add household</button>
+	<div class="pills" role="group" aria-label="Filter by side">
+		<button type="button" class:on={side === 'all'} onclick={() => (side = 'all')}>Both sides</button>
+		<button type="button" class:on={side === 'B'} onclick={() => (side = 'B')}>Bride</button>
+		<button type="button" class:on={side === 'G'} onclick={() => (side = 'G')}>Groom</button>
+	</div>
+	<button type="button" class="btn primary" onclick={() => (showAdd = true)}>+ Add household</button>
 </div>
 
-{#if filtered.length === 0}
-	<p class="empty">No households match.</p>
+{#if attention}
+	<p class="attn-note">
+		Showing households with <b>{attention === 'noAddress' ? 'no postal address' : attention === 'noContact' ? 'no email or phone' : 'no invite sent'}</b>
+		· <button type="button" class="clear" onclick={() => (attention = null)}>clear</button>
+	</p>
 {/if}
 
-{#each filtered as h (h.id)}
-	{@const replied = h.members.filter((m) => m.rsvpStatus !== 'pending').length}
-	{@const allReplied = replied === h.members.length && h.members.length > 0}
-	<section class="household" class:complete={allReplied}>
-		<header class="h-head">
-			<input
-				class="h-name"
-				value={h.name}
-				onchange={(e) => save('group', h.id, 'name', e.currentTarget.value)}
-				placeholder="Household name"
+<div class="split">
+	<HouseholdTable
+		rows={filtered.map(({ h, s }) => ({ id: h.id, name: h.name, summary: s }))}
+		total={rows.length}
+		{selectedId}
+		onSelect={select}
+	/>
+	<aside class="side" bind:this={panelEl}>
+		{#if selected}
+			<HouseholdPanel
+				household={selected.h}
+				summary={selected.s}
+				relationshipGroups={data.relationshipGroups}
+				others={data.households.filter((g) => g.id !== selected.h.id).map((g) => ({ id: g.id, name: g.name }))}
+				base={data.base}
 			/>
-			<div class="h-meta">
-				<span class="replied" class:done={allReplied}>
-					{replied}/{h.members.length} replied
-				</span>
-				<form method="POST" action="?/regenerateToken" use:enhance
-				      onsubmit={confirmSubmit('Regenerate the QR link? Any printed QR codes will stop working.')}>
-					<input type="hidden" name="id" value={h.id} />
-					<button class="btn-ghost" type="submit" title="Regenerate link">↻</button>
-				</form>
-				<form method="POST" action="?/removeGroup" use:enhance
-				      onsubmit={confirmSubmit(`Delete ${h.name} and all ${h.members.length} member(s)?`)}>
-					<input type="hidden" name="id" value={h.id} />
-					<button class="btn-ghost danger" type="submit" title="Delete household">×</button>
-				</form>
+		{:else}
+			<div class="hint">
+				<p class="hint-title">Pick a household</p>
+				<p>Select a row to edit its guests, contact details and invite, or mark the invite as sent.</p>
 			</div>
-		</header>
-
-		<div class="h-body">
-		<div class="h-contact">
-			<label class="field addr">
-				<span>Address</span>
-				<textarea
-					rows="2"
-					placeholder="Postal address for invitations…"
-					value={h.address ?? ''}
-					onchange={(e) => save('group', h.id, 'address', e.currentTarget.value)}
-				></textarea>
-			</label>
-			<label class="field">
-				<span>Email</span>
-				<input
-					type="email"
-					placeholder="—"
-					value={h.email ?? ''}
-					onchange={(e) => save('group', h.id, 'email', e.currentTarget.value)}
-				/>
-			</label>
-			<label class="field">
-				<span>Phone</span>
-				<input
-					placeholder="—"
-					value={h.phone ?? ''}
-					onchange={(e) => save('group', h.id, 'phone', e.currentTarget.value)}
-				/>
-			</label>
-		</div>
-		<div class="h-invite">
-			<InvitePanel id={h.id} token={h.token} name={h.name} personalMessage={h.personalMessage} base={data.base} />
-		</div>
-		</div>
-
-		<div class="members">
-			<div class="row head">
-				<span>Name</span>
-				<span>Side</span>
-				<span>Relationship group</span>
-				<span>Relation</span>
-				<span>Role</span>
-				<span>Day/Eve</span>
-				<span title="Child">Kid</span>
-				<span title="Plus-one slot">+1</span>
-				<span>RSVP</span>
-				<span></span>
-			</div>
-
-			{#each h.members as m (m.id)}
-				<div class="row">
-					<input
-						value={m.name}
-						placeholder="Name"
-						onchange={(e) => save('guest', m.id, 'name', e.currentTarget.value)}
-					/>
-					<select
-						value={m.side}
-						onchange={(e) => save('guest', m.id, 'side', e.currentTarget.value)}
-					>
-						<option value="G">Groom</option>
-						<option value="B">Bride</option>
-						<option value="X">Both</option>
-					</select>
-					<select
-						class="rel-sel"
-						value={m.relationshipGroup}
-						onchange={(e) => onRelChange(m.id, m.relationshipGroup, e)}
-					>
-						{#each data.relationshipGroups as rg}
-							<option value={rg}>{rg}</option>
-						{/each}
-						{#if !data.relationshipGroups.includes(m.relationshipGroup)}
-							<option value={m.relationshipGroup}>{m.relationshipGroup}</option>
-						{/if}
-						<option value={NEW_GROUP}>+ New group…</option>
-					</select>
-					<input
-						value={m.relation ?? ''}
-						placeholder="—"
-						onchange={(e) => save('guest', m.id, 'relation', e.currentTarget.value)}
-					/>
-					<input
-						value={m.role ?? ''}
-						placeholder="—"
-						onchange={(e) => save('guest', m.id, 'role', e.currentTarget.value)}
-					/>
-					<select
-						value={m.attendanceType}
-						onchange={(e) => save('guest', m.id, 'attendanceType', e.currentTarget.value)}
-					>
-						<option value="day">Day</option>
-						<option value="evening">Evening</option>
-					</select>
-					<label class="cb">
-						<input
-							type="checkbox"
-							checked={m.isChild}
-							onchange={(e) => save('guest', m.id, 'isChild', e.currentTarget.checked)}
-						/>
-					</label>
-					<label class="cb">
-						<input
-							type="checkbox"
-							checked={m.isPlusOne}
-							onchange={(e) => save('guest', m.id, 'isPlusOne', e.currentTarget.checked)}
-						/>
-					</label>
-					<select
-						class="rsvp-sel {m.rsvpStatus}"
-						value={m.rsvpStatus}
-						onchange={(e) => save('guest', m.id, 'rsvpStatus', e.currentTarget.value)}
-						title="RSVP status (admin override)"
-					>
-						<option value="pending">—</option>
-						<option value="yes">Yes</option>
-						<option value="no">No</option>
-					</select>
-					<div class="actions">
-						<form method="POST" action="?/moveGuest" use:enhance class="inline">
-							<input type="hidden" name="id" value={m.id} />
-							<select
-								name="newGroupId"
-								onchange={(e) => (e.currentTarget.form as HTMLFormElement).requestSubmit()}
-							>
-								<option value="">Move…</option>
-								{#each data.households.filter((g) => g.id !== h.id) as g (g.id)}
-									<option value={g.id}>{g.name}</option>
-								{/each}
-							</select>
-						</form>
-						<form method="POST" action="?/removeGuest" use:enhance class="inline"
-						      onsubmit={confirmSubmit(`Remove ${m.name}?`)}>
-							<input type="hidden" name="id" value={m.id} />
-							<button class="btn-ghost danger" type="submit" title="Remove guest">×</button>
-						</form>
-					</div>
-				</div>
-			{/each}
-
-			<form method="POST" action="?/addGuest" use:enhance class="addmember">
-				<input type="hidden" name="groupId" value={h.id} />
-				<input name="name" placeholder="Add another guest to this household…" />
-				<button type="submit" class="btn ghost">+ Add</button>
-			</form>
-		</div>
-	</section>
-{/each}
+		{/if}
+	</aside>
+</div>
 
 {#if showAdd}
-	<div
-		class="overlay"
-		role="presentation"
-		use:portal
-		onclick={(e) => {
-			if (e.target === e.currentTarget) closeAdd();
-		}}
-	>
+	<div class="overlay" role="presentation" use:portal onclick={(e) => { if (e.target === e.currentTarget) showAdd = false; }}>
 		<div class="modal" role="dialog" aria-modal="true" aria-label="Add household">
 			<h2>Add household</h2>
 			<form
@@ -314,13 +136,16 @@
 				action="?/addGroup"
 				use:enhance={() => {
 					return async ({ result, update }) => {
+						await update();
 						if (result.type === 'success') {
-							q = addName.trim(); // filter the list straight to the new household
 							showAdd = false;
 							addName = '';
-							await update();
-						} else {
-							await update();
+							q = '';
+							status = 'all';
+							side = 'all';
+							attention = null;
+							const id = (result.data as { added?: number } | undefined)?.added;
+							if (id) select(id);
 						}
 					};
 				}}
@@ -329,7 +154,6 @@
 					<span>Household name *</span>
 					<input name="name" bind:value={addName} placeholder="e.g. The Smiths" required />
 				</label>
-
 				<div class="grid2">
 					<label class="f">
 						<span>First guest (optional)</span>
@@ -344,25 +168,16 @@
 						</select>
 					</label>
 				</div>
-
 				<label class="f">
 					<span>Address</span>
 					<textarea name="address" rows="2" placeholder="Postal address for invitations…"></textarea>
 				</label>
-
 				<div class="grid2">
-					<label class="f">
-						<span>Email</span>
-						<input name="email" type="email" placeholder="—" />
-					</label>
-					<label class="f">
-						<span>Phone</span>
-						<input name="phone" placeholder="—" />
-					</label>
+					<label class="f"><span>Email</span><input name="email" type="email" placeholder="—" /></label>
+					<label class="f"><span>Phone</span><input name="phone" placeholder="—" /></label>
 				</div>
-
 				<div class="modal-actions">
-					<button type="button" class="btn ghost" onclick={closeAdd}>Cancel</button>
+					<button type="button" class="btn ghost" onclick={() => (showAdd = false)}>Cancel</button>
 					<button type="submit" class="btn primary" disabled={!addName.trim()}>Add household</button>
 				</div>
 			</form>
@@ -371,358 +186,43 @@
 {/if}
 
 <style>
-	.stats {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-		gap: 14px;
-		margin-bottom: 22px;
-	}
-
-	.ctrls {
-		display: flex;
-		gap: 12px;
-		align-items: center;
-		margin-bottom: 22px;
-		flex-wrap: wrap;
-	}
-	.pills { display: flex; gap: 6px; flex-wrap: wrap; }
-	.pills button { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 7px 12px; font: inherit; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; color: var(--muted); cursor: pointer; }
-	.pills button.on { background: var(--sage); border-color: var(--sage); color: #fff; }
-	.pills .n { opacity: 0.75; font-weight: 500; margin-left: 3px; }
-	.empty { color: var(--muted); font-style: italic; margin-bottom: 22px; }
-	.srch {
-		flex: 1;
-		min-width: 220px;
-		border: 1px solid var(--line);
-		border-radius: 10px;
-		padding: 10px 14px;
-		font: inherit;
-		font-size: 14px;
-	}
-
-	.btn {
-		border: 0;
-		border-radius: 8px;
-		padding: 10px 18px;
-		font: inherit;
-		font-size: 12px;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		font-weight: 600;
-		cursor: pointer;
-	}
-	.btn.primary {
-		background: var(--sage);
-		color: #fff;
-	}
+	.ctrls { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+	.srch { flex: 1; min-width: 240px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 10px; padding: 0 12px; background: var(--card); color: var(--faint); }
+	.srch input { flex: 1; border: 0; background: transparent; padding: 10px 0; font: inherit; font-size: 14px; color: var(--ink); min-width: 0; }
+	.srch input:focus { outline: none; }
+	.srch:focus-within { border-color: var(--sage); }
+	.pills { display: inline-flex; gap: 2px; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+	.pills button { border: 0; background: transparent; border-radius: 999px; padding: 6px 11px; font: inherit; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; color: var(--muted); cursor: pointer; white-space: nowrap; }
+	.pills button.on { background: var(--sage-soft); color: var(--sage-deep); }
+	.pills .n { opacity: 0.7; font-weight: 500; margin-left: 2px; }
+	.btn { border: 0; border-radius: 8px; padding: 10px 18px; font: inherit; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; cursor: pointer; }
+	.btn.primary { background: var(--sage); color: #fff; }
 	.btn.primary:hover { background: var(--sage-deep); }
-	.btn.ghost {
-		background: transparent;
-		color: var(--sage-deep);
-		border: 1px solid var(--line);
-	}
-	.btn.ghost:hover { border-color: var(--sage); }
-	.btn-ghost {
-		background: transparent;
-		border: 1px solid var(--line);
-		border-radius: 6px;
-		width: 28px;
-		height: 28px;
-		display: inline-grid;
-		place-items: center;
-		color: var(--muted);
-		cursor: pointer;
-		font-size: 14px;
-		padding: 0;
-		font-family: inherit;
-	}
-	.btn-ghost:hover {
-		border-color: var(--sage);
-		color: var(--sage-deep);
-	}
-	.btn-ghost.danger:hover {
-		border-color: var(--terra);
-		color: var(--terra);
-	}
+	.btn.ghost { background: transparent; color: var(--sage-deep); border: 1px solid var(--line); }
+	.btn:disabled { opacity: 0.5; cursor: default; }
+	.attn-note { margin: -4px 2px 12px; font-size: 12.5px; color: var(--body); }
+	.attn-note b { color: var(--terra); }
+	.clear { background: none; border: 0; padding: 0; font: inherit; font-size: 12.5px; color: var(--sage-deep); cursor: pointer; text-decoration: underline; }
 
-	.household {
-		background: var(--card);
-		border: 1px solid var(--line);
-		border-radius: 14px;
-		padding: 16px 18px;
-		margin-bottom: 14px;
-	}
-	.household.complete {
-		border-color: var(--sage);
-	}
+	.split { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(340px, 1fr); gap: 16px; align-items: start; }
+	.side { position: sticky; top: 16px; }
+	.hint { background: var(--card); border: 1px dashed var(--line); border-radius: 14px; padding: 28px 22px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+	.hint-title { margin: 0 0 6px; font-family: var(--serif); font-size: 20px; color: var(--ink); }
+	.hint p { margin: 0; }
 
-	.h-head {
-		display: flex;
-		align-items: center;
-		gap: 12px;
-		justify-content: space-between;
-		flex-wrap: wrap;
-		margin-bottom: 12px;
-		padding-bottom: 12px;
-		border-bottom: 1px solid var(--line2);
-	}
-	.h-name {
-		flex: 1;
-		min-width: 200px;
-		font-family: var(--serif);
-		font-weight: 600;
-		font-size: 19px;
-		color: var(--ink);
-		border: 1px solid transparent;
-		background: transparent;
-		border-radius: 6px;
-		padding: 4px 8px;
-	}
-	.h-name:hover,
-	.h-name:focus {
-		border-color: var(--line);
-		background: #fff;
-	}
-	.h-meta {
-		display: flex;
-		gap: 12px;
-		align-items: center;
-		font-size: 12px;
-		color: var(--muted);
-	}
-	.replied {
-		font-size: 10.5px;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-		font-weight: 600;
-	}
-	.replied.done { color: var(--sage-deep); }
-
-	.h-body {
-		display: grid;
-		grid-template-columns: minmax(0, 1.2fr) minmax(300px, 1fr);
-		gap: 18px;
-		margin-bottom: 14px;
-		padding-bottom: 14px;
-		border-bottom: 1px solid var(--line2);
-	}
-	.h-contact {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 10px;
-		align-content: start;
-	}
-	.h-contact .addr { grid-column: 1 / -1; }
-	.h-invite {
-		background: var(--bg);
-		border: 1px solid var(--line2);
-		border-radius: 10px;
-		padding: 12px 14px;
-	}
-	.h-contact .field {
-		display: flex;
-		flex-direction: column;
-		gap: 4px;
-	}
-	.h-contact .field > span {
-		font-size: 9.5px;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-		color: var(--muted);
-		font-weight: 600;
-	}
-	.h-contact textarea,
-	.h-contact input {
-		border: 1px solid var(--line);
-		border-radius: 6px;
-		padding: 6px 8px;
-		font: inherit;
-		font-size: 12.5px;
-		background: #fff;
-		color: var(--ink);
-		resize: vertical;
-		width: 100%;
-	}
-	@media (max-width: 900px) {
-		.h-body {
-			grid-template-columns: 1fr;
-		}
-	}
-
-	.members .row {
-		display: grid;
-		grid-template-columns:
-			minmax(140px, 1.4fr) 90px minmax(140px, 1.3fr) minmax(110px, 1fr) 90px 90px 36px 36px
-			52px minmax(180px, 1fr);
-		gap: 6px;
-		align-items: center;
-		padding: 6px 0;
-		border-bottom: 1px solid var(--line2);
-	}
-	.members .row:last-of-type { border-bottom: 0; }
-	.members .row.head {
-		font-size: 9.5px;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-		color: var(--muted);
-		font-weight: 600;
-		padding-bottom: 8px;
-	}
-	.row input:not([type='checkbox']),
-	.row select {
-		width: 100%;
-		min-width: 0;
-		border: 1px solid var(--line);
-		border-radius: 6px;
-		padding: 6px 8px;
-		font: inherit;
-		font-size: 12.5px;
-		background: #fff;
-		color: var(--ink);
-	}
-	.row .cb {
-		display: grid;
-		place-items: center;
-	}
-
-	.rsvp-sel {
-		font-size: 11.5px;
-		font-weight: 600;
-		border-radius: 999px !important;
-		text-align: center;
-		padding: 5px 6px;
-	}
-	.rsvp-sel.yes {
-		background: var(--sage-soft);
-		color: var(--sage-deep);
-		border-color: var(--sage);
-	}
-	.rsvp-sel.no {
-		background: var(--terra-bg);
-		color: var(--terra);
-		border-color: var(--terra);
-	}
-	.rsvp-sel.pending {
-		color: var(--muted);
-	}
-
-	.actions {
-		display: flex;
-		gap: 6px;
-		align-items: center;
-	}
-	.actions .inline {
-		display: contents;
-	}
-	.actions select {
-		font-size: 11.5px;
-		padding: 5px 6px;
-	}
-
-	.addmember {
-		display: flex;
-		gap: 8px;
-		margin-top: 12px;
-	}
-	.addmember input {
-		flex: 1;
-		border: 1px solid var(--line);
-		border-radius: 8px;
-		padding: 8px 12px;
-		font: inherit;
-		font-size: 13px;
-	}
-
-	@media (max-width: 900px) {
-		.members .row {
-			grid-template-columns: 1fr 1fr 1fr;
-			row-gap: 4px;
-		}
-		.members .row.head {
-			display: none;
-		}
-	}
-	/* Phones: two wider columns so the select values (e.g. "Bride's family",
-	   "Evening guest") aren't clipped in cramped 110px cells. */
-	@media (max-width: 480px) {
-		.members .row {
-			grid-template-columns: 1fr 1fr;
-		}
+	@media (max-width: 1000px) {
+		.split { grid-template-columns: 1fr; }
+		.side { position: static; scroll-margin-top: 70px; }
 	}
 
 	/* ---------------- Add-household modal ---------------- */
-	.overlay {
-		position: fixed;
-		inset: 0;
-		background: rgba(33, 31, 26, 0.4);
-		display: grid;
-		place-items: center;
-		padding: 20px;
-		z-index: 100;
-	}
-	.modal {
-		background: var(--card);
-		border: 1px solid var(--line);
-		border-radius: 16px;
-		padding: 24px 24px 20px;
-		width: 100%;
-		max-width: 520px;
-		box-shadow: 0 24px 60px rgba(33, 31, 26, 0.22);
-		max-height: 90vh;
-		overflow: auto;
-	}
-	.modal h2 {
-		font-family: var(--serif);
-		font-weight: 600;
-		font-size: 24px;
-		margin: 0 0 16px;
-		color: var(--ink);
-	}
-	.modal .f {
-		display: flex;
-		flex-direction: column;
-		gap: 4px;
-		margin-bottom: 12px;
-	}
-	.modal .f > span {
-		font-size: 9.5px;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-		color: var(--muted);
-		font-weight: 600;
-	}
-	.modal input,
-	.modal select,
-	.modal textarea {
-		border: 1px solid var(--line);
-		border-radius: 8px;
-		padding: 9px 11px;
-		font: inherit;
-		font-size: 14px;
-		background: #fff;
-		color: var(--ink);
-		width: 100%;
-		box-sizing: border-box;
-		resize: vertical;
-	}
-	.modal .grid2 {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 12px;
-	}
-	.modal-actions {
-		display: flex;
-		justify-content: flex-end;
-		gap: 10px;
-		margin-top: 16px;
-	}
-	.modal .btn:disabled {
-		opacity: 0.5;
-		cursor: default;
-	}
-	@media (max-width: 520px) {
-		.modal .grid2 {
-			grid-template-columns: 1fr;
-		}
-	}
+	.overlay { position: fixed; inset: 0; background: rgba(33, 31, 26, 0.4); display: grid; place-items: center; padding: 20px; z-index: 100; }
+	.modal { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 24px 24px 20px; width: 100%; max-width: 520px; box-shadow: 0 24px 60px rgba(33, 31, 26, 0.22); max-height: 90vh; overflow: auto; }
+	.modal h2 { font-family: var(--serif); font-weight: 600; font-size: 24px; margin: 0 0 16px; color: var(--ink); }
+	.modal .f { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+	.modal .f > span { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+	.modal input, .modal select, .modal textarea { border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; font: inherit; font-size: 14px; background: #fff; color: var(--ink); width: 100%; box-sizing: border-box; resize: vertical; }
+	.modal .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+	.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+	@media (max-width: 520px) { .modal .grid2 { grid-template-columns: 1fr; } }
 </style>

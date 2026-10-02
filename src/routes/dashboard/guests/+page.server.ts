@@ -2,7 +2,6 @@ import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db/index';
 import { inviteGroups, guests, seatAssignments } from '$lib/server/db/schema';
 import { asc, eq } from 'drizzle-orm';
-import { summarise, type GuestRow } from '$lib/server/queries';
 import { randomBytes } from 'node:crypto';
 import { env } from '$env/dynamic/private';
 
@@ -16,7 +15,6 @@ export const load: PageServerLoad = async ({ url }) => {
 	const base = env.PUBLIC_BASE_URL || url.origin;
 	const allGroups = await db.select().from(inviteGroups).orderBy(asc(inviteGroups.name));
 	const allGuests = await db.select().from(guests).orderBy(asc(guests.id));
-	const summary = summarise(allGuests as unknown as GuestRow[]);
 	const relationshipGroups = [
 		...new Set(allGuests.map((g) => g.relationshipGroup).filter(Boolean))
 	].sort();
@@ -24,7 +22,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		...g,
 		members: allGuests.filter((m) => m.groupId === g.id)
 	}));
-	return { households, summary, relationshipGroups, base };
+	return { households, relationshipGroups, base };
 };
 
 export const actions: Actions = {
@@ -96,6 +94,15 @@ export const actions: Actions = {
 		if (newGroupId) {
 			await db.update(guests).set({ groupId: newGroupId }).where(eq(guests.id, id));
 		}
+	},
+	// Admin reset: everyone in the household goes back to "awaiting" (e.g. a
+	// mis-tap on the RSVP page). Meal choices, dietary notes and the household's
+	// message are kept — they're the guests' own words.
+	resetRsvps: async ({ request }) => {
+		const f = await request.formData();
+		const id = Number(f.get('id'));
+		await db.update(guests).set({ rsvpStatus: 'pending' }).where(eq(guests.groupId, id));
+		await db.update(inviteGroups).set({ respondedAt: null }).where(eq(inviteGroups.id, id));
 	},
 	regenerateToken: async ({ request }) => {
 		const f = await request.formData();

@@ -31,6 +31,16 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	});
 
 	if (kind === 'group') {
+		// When the invite was sent (ISO date) — null/empty clears it ("undo").
+		if (field === 'inviteSentAt') {
+			const v = String(value ?? '').trim();
+			if (v && !/^\d{4}-\d{2}-\d{2}$/.test(v)) throw error(400, 'bad date');
+			await db
+				.update(inviteGroups)
+				.set({ inviteSentAt: v || null })
+				.where(eq(inviteGroups.id, Number(id)));
+			return json({ ok: true });
+		}
 		if (GROUP_TEXT.has(field)) {
 			const v = String(value ?? '').trim() || 'Household';
 			await db

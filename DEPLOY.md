@@ -86,7 +86,7 @@ in the AI phase.
 
 ## Notes
 - **Migrations on future deploys:** run `npm run db:migrate` against Turso whenever
-  `src/lib/server/db/schema.ts` changes (currently up to `0023`). Migrations
+  `src/lib/server/db/schema.ts` changes (currently up to `0024`). Migrations
   `0015`+ are hand-written SQL plus a `drizzle/meta/_journal.json` entry —
   `npm run db:generate` is broken (snapshots stop at 0014), so don't run it.
 - **Migration `0023_suppliers_lines_locks`** (2026-10-02) moves the supplier↔budget
@@ -95,6 +95,9 @@ in the AI phase.
   lines (the latter renamed from `confirmed`), and seeds the `venueLocked`
   setting. The matching one-off data fix lives in
   `scripts/prod-data-fixes/2026-10-02-link-suppliers.sql` and has been applied.
+- **Migration `0024_invite_sent_at`** (2026-10-02) adds the nullable
+  `invite_groups.invite_sent_at` date behind the guest list's "Mark invite as
+  sent" control. Additive and already applied to Turso.
 - **Migration `0015_vendors_notes_audit`** renames `suppliers`→`vendors`, seeds the
   `alex`/`katie` users, adds the comments + audit-log tables, and maps old supplier
   statuses to the new `stage`/`deposit_paid` fields. It is data-preserving (uses
