@@ -7,8 +7,9 @@ import { recordAudit } from '$lib/server/audit';
 
 const GROUP_TEXT = new Set(['name']);
 // Guest-CRM contact fields on the household — admin-only, not part of the seed,
-// so editing them does not detach the row from its seed identity.
-const GROUP_CONTACT = new Set(['address', 'email', 'phone']);
+// so editing them does not detach the row from its seed identity. The personal
+// message is the note shown at the top of the household's RSVP page.
+const GROUP_CONTACT = new Set(['address', 'email', 'phone', 'personalMessage']);
 const GUEST_TEXT = new Set(['name', 'relation', 'role']);
 const GUEST_ENUM_SIDE = new Set(['G', 'B', 'X']);
 const GUEST_ENUM_ATTEND = new Set(['day', 'evening']);

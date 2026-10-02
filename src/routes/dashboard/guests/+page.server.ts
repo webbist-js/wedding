@@ -4,12 +4,16 @@ import { inviteGroups, guests, seatAssignments } from '$lib/server/db/schema';
 import { asc, eq } from 'drizzle-orm';
 import { summarise, type GuestRow } from '$lib/server/queries';
 import { randomBytes } from 'node:crypto';
+import { env } from '$env/dynamic/private';
 
 function makeToken(): string {
 	return randomBytes(12).toString('base64url');
 }
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ url }) => {
+	// Public origin for RSVP links/QR codes — configured URL first, request
+	// origin as a fallback so links are right on whatever host serves us.
+	const base = env.PUBLIC_BASE_URL || url.origin;
 	const allGroups = await db.select().from(inviteGroups).orderBy(asc(inviteGroups.name));
 	const allGuests = await db.select().from(guests).orderBy(asc(guests.id));
 	const summary = summarise(allGuests as unknown as GuestRow[]);
@@ -20,7 +24,7 @@ export const load: PageServerLoad = async () => {
 		...g,
 		members: allGuests.filter((m) => m.groupId === g.id)
 	}));
-	return { households, summary, relationshipGroups };
+	return { households, summary, relationshipGroups, base };
 };
 
 export const actions: Actions = {

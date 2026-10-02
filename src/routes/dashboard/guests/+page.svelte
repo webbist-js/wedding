@@ -1,21 +1,38 @@
 <script lang="ts">
 	import Stat from '$lib/components/Stat.svelte';
+	import InvitePanel from '$lib/components/InvitePanel.svelte';
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	let { data } = $props();
 
+	// Search + RSVP-status filter. Awaiting = anyone in the household still
+	// pending; Replied = everyone has answered; Declined = everyone said no.
+	type Status = 'all' | 'awaiting' | 'replied' | 'declined';
 	let q = $state('');
+	let status = $state<Status>('all');
+	const matchesStatus = (h: (typeof data.households)[number]) => {
+		if (status === 'all') return true;
+		const ms = h.members;
+		if (status === 'awaiting') return ms.some((m) => m.rsvpStatus === 'pending');
+		if (status === 'replied') return ms.length > 0 && ms.every((m) => m.rsvpStatus !== 'pending');
+		return ms.length > 0 && ms.every((m) => m.rsvpStatus === 'no');
+	};
 	let filtered = $derived(
-		!q
-			? data.households
-			: data.households.filter((h) => {
-					const needle = q.toLowerCase();
-					return (
-						h.name.toLowerCase().includes(needle) ||
-						h.members.some((m) => m.name.toLowerCase().includes(needle))
-					);
-				})
+		data.households.filter((h) => {
+			if (!matchesStatus(h)) return false;
+			if (!q) return true;
+			const needle = q.toLowerCase();
+			return (
+				h.name.toLowerCase().includes(needle) ||
+				h.members.some((m) => m.name.toLowerCase().includes(needle))
+			);
+		})
 	);
+	const counts = $derived({
+		awaiting: data.households.filter((h) => h.members.some((m) => m.rsvpStatus === 'pending')).length,
+		replied: data.households.filter((h) => h.members.length > 0 && h.members.every((m) => m.rsvpStatus !== 'pending')).length,
+		declined: data.households.filter((h) => h.members.length > 0 && h.members.every((m) => m.rsvpStatus === 'no')).length
+	});
 
 	async function save(
 		kind: 'group' | 'guest',
@@ -92,8 +109,18 @@
 
 <div class="ctrls">
 	<input class="srch" bind:value={q} placeholder="Search households or names…" />
+	<div class="pills" role="group" aria-label="Filter by RSVP status">
+		<button type="button" class:on={status === 'all'} onclick={() => (status = 'all')}>All <span class="n">{data.households.length}</span></button>
+		<button type="button" class:on={status === 'awaiting'} onclick={() => (status = 'awaiting')}>Awaiting <span class="n">{counts.awaiting}</span></button>
+		<button type="button" class:on={status === 'replied'} onclick={() => (status = 'replied')}>Replied <span class="n">{counts.replied}</span></button>
+		<button type="button" class:on={status === 'declined'} onclick={() => (status = 'declined')}>Declined <span class="n">{counts.declined}</span></button>
+	</div>
 	<button type="button" class="btn primary" onclick={openAdd}>+ Add household</button>
 </div>
+
+{#if filtered.length === 0}
+	<p class="empty">No households match.</p>
+{/if}
 
 {#each filtered as h (h.id)}
 	{@const replied = h.members.filter((m) => m.rsvpStatus !== 'pending').length}
@@ -107,9 +134,6 @@
 				placeholder="Household name"
 			/>
 			<div class="h-meta">
-				<a class="token-link" href={`/rsvp/${h.token}`} target="_blank" rel="noopener">
-					/rsvp/{h.token}
-				</a>
 				<span class="replied" class:done={allReplied}>
 					{replied}/{h.members.length} replied
 				</span>
@@ -126,6 +150,7 @@
 			</div>
 		</header>
 
+		<div class="h-body">
 		<div class="h-contact">
 			<label class="field addr">
 				<span>Address</span>
@@ -153,6 +178,10 @@
 					onchange={(e) => save('group', h.id, 'phone', e.currentTarget.value)}
 				/>
 			</label>
+		</div>
+		<div class="h-invite">
+			<InvitePanel id={h.id} token={h.token} name={h.name} personalMessage={h.personalMessage} base={data.base} />
+		</div>
 		</div>
 
 		<div class="members">
@@ -356,6 +385,11 @@
 		margin-bottom: 22px;
 		flex-wrap: wrap;
 	}
+	.pills { display: flex; gap: 6px; flex-wrap: wrap; }
+	.pills button { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 7px 12px; font: inherit; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; color: var(--muted); cursor: pointer; }
+	.pills button.on { background: var(--sage); border-color: var(--sage); color: #fff; }
+	.pills .n { opacity: 0.75; font-weight: 500; margin-left: 3px; }
+	.empty { color: var(--muted); font-style: italic; margin-bottom: 22px; }
 	.srch {
 		flex: 1;
 		min-width: 220px;
@@ -456,18 +490,6 @@
 		font-size: 12px;
 		color: var(--muted);
 	}
-	.token-link {
-		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-		font-size: 11.5px;
-		color: var(--sage-deep);
-		text-decoration: none;
-		max-width: 260px;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		display: inline-block;
-	}
-	.token-link:hover { text-decoration: underline; }
 	.replied {
 		font-size: 10.5px;
 		letter-spacing: 0.12em;
@@ -476,13 +498,26 @@
 	}
 	.replied.done { color: var(--sage-deep); }
 
-	.h-contact {
+	.h-body {
 		display: grid;
-		grid-template-columns: 2fr 1fr 1fr;
-		gap: 10px;
+		grid-template-columns: minmax(0, 1.2fr) minmax(300px, 1fr);
+		gap: 18px;
 		margin-bottom: 14px;
 		padding-bottom: 14px;
 		border-bottom: 1px solid var(--line2);
+	}
+	.h-contact {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 10px;
+		align-content: start;
+	}
+	.h-contact .addr { grid-column: 1 / -1; }
+	.h-invite {
+		background: var(--bg);
+		border: 1px solid var(--line2);
+		border-radius: 10px;
+		padding: 12px 14px;
 	}
 	.h-contact .field {
 		display: flex;
@@ -508,8 +543,8 @@
 		resize: vertical;
 		width: 100%;
 	}
-	@media (max-width: 760px) {
-		.h-contact {
+	@media (max-width: 900px) {
+		.h-body {
 			grid-template-columns: 1fr;
 		}
 	}

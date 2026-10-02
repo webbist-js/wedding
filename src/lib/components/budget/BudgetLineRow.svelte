@@ -115,7 +115,6 @@
 	ondragover={onDragOver}
 	ondragleave={onDragLeave}
 	ondrop={onDrop}
-	role="row"
 >
 	<span class="grip" aria-hidden="true" title={line.locked ? 'Locked lines stay put' : 'Drag to reorder'}>≡</span>
 	<span class="catwrap">

@@ -9,8 +9,9 @@
     {
       title: 'Money',
       items: [
-        ['/dashboard/venue', 'Venue', 'receipt'],
         ['/dashboard/budget', 'Budget', 'wallet'],
+        ['/dashboard/suppliers', 'Suppliers', 'briefcase'],
+        ['/dashboard/venue', 'Venue', 'receipt'],
         ['/dashboard/shopping', 'Shopping', 'cart']
       ]
     },
@@ -18,9 +19,7 @@
       title: 'Guests',
       items: [
         ['/dashboard/guests', 'Guests', 'users'],
-        ['/dashboard/seating', 'Seating', 'seat'],
-        ['/dashboard/vendors', 'Vendors', 'briefcase'],
-        ['/dashboard/invites', 'Invites', 'qr']
+        ['/dashboard/seating', 'Seating', 'seat']
       ]
     },
     {
@@ -39,12 +38,11 @@
   const META: Record<string, { title: string; subtitle: string }> = {
     '/dashboard': { title: 'Overview', subtitle: 'Where you are, at a glance' },
     '/dashboard/venue': { title: 'Venue', subtitle: 'Live quote calculator — edits save automatically' },
-    '/dashboard/budget': { title: 'Budget', subtitle: 'What you plan to spend, and what’s confirmed' },
+    '/dashboard/budget': { title: 'Budget', subtitle: 'Every pound in one place — lines, suppliers, payments' },
+    '/dashboard/suppliers': { title: 'Suppliers', subtitle: 'Your pipeline by stage — each one filed under a budget line' },
     '/dashboard/shopping': { title: 'Shopping list', subtitle: 'Things to buy — feeds the budget' },
-    '/dashboard/guests': { title: 'Guest list', subtitle: 'Households, contacts & RSVPs' },
+    '/dashboard/guests': { title: 'Guest list', subtitle: 'Households, invites, contacts & RSVPs' },
     '/dashboard/seating': { title: 'Seating chart', subtitle: 'Plan tables and the floor layout' },
-    '/dashboard/vendors': { title: 'Vendors', subtitle: 'Your shortlist, quotes & chosen suppliers' },
-    '/dashboard/invites': { title: 'Invites & QR codes', subtitle: 'Share links and printable codes' },
     '/dashboard/timeline': { title: 'Timeline', subtitle: 'Your road to 2 April 2027' },
     '/dashboard/calendar': { title: 'Calendar', subtitle: 'Appointments & supplier meetings' },
     '/dashboard/notes': { title: 'Research & notes', subtitle: 'Everything you’ve found' },
