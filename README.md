@@ -10,7 +10,7 @@ Built with **SvelteKit** (Svelte 5) · **Drizzle ORM** over **libSQL** · shared
   - `/` — elegant landing page.
   - `/rsvp/[token]` — each household's personal RSVP page (reached by QR code). Per-person attendance, veg/non-veg, allergies/dietary, kids' menu for children, and a message to the couple. Re-editable any time.
 - **Private dashboard** (`/dashboard`, behind a shared passcode)
-  - Overview (live counts + catering split from RSVPs), Budget (CRUD + stationery checklist), Costs (live venue-quote calculator with autosave), Guests (grouped, with RSVP/meal/dietary), Seating (table assignments), Suppliers (CRUD), Timeline (phases + tasks), Invites (printable QR codes), Research & Notes.
+  - Overview (live counts + catering split from RSVPs), **Budget** (the money hub: every line expands to its suppliers, payments and lock), **Suppliers** (pipeline by stage; each supplier is filed under a budget line), Venue (live quote calculator with autosave and per-line locks), Shopping, **Guests** (households with contacts, RSVPs and each household's invite: QR code, link, personal message), Seating, Timeline, Calendar, Notes, Gallery, Activity.
 
 ## Setup
 
@@ -30,7 +30,9 @@ The dev passcode (if you seeded the bundled `.env`) is `tithe-barn-2027`.
 
 ## Data model
 
-The guest roster is a fixed, seeded source of truth (`src/lib/server/db/data.ts`) — guests aren't added/removed via the UI. Their **RSVP status, meal, dietary notes, and household message** are written to the DB by the RSVP pages. Budget, timeline, suppliers, seating, quote prices, and the stationery checklist are all managed through the dashboard. Re-running `npm run db:seed` is idempotent and restores the roster/defaults (it clears and re-inserts, so it also resets RSVP data).
+The guest roster is seeded from `src/lib/server/db/data.ts` and then edited in the dashboard (rows are matched by `seed_key`, so reseeding preserves tokens and RSVP data). Their **RSVP status, meal, dietary notes, and household message** are written to the DB by the RSVP pages.
+
+Money has one home per figure: a budget line's confirmed cost is derived from the suppliers filed under it (`vendors.budget_line_id`, committed = booked or deposit paid), the Venue line from the quote calculator, Shopping from the shopping list, and every paid penny is a row in `payments`. A **lock** on a quote line, budget line, supplier or the venue header marks it set & confirmed: the UI goes read-only and the server rejects other edits (HTTP 423).
 
 ## Deploy
 
