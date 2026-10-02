@@ -162,6 +162,13 @@
       "when": 1782329436100,
       "tag": "0022_quote_sections",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1782329436101,
+      "tag": "0023_suppliers_lines_locks",
+      "breakpoints": true
     }
   ]
 }

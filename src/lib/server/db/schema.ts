@@ -48,12 +48,15 @@ export const budgetLines = sqliteTable('budget_lines', {
   section: text('section').notNull().default('Everything else'),
   budgeted: real('budgeted').notNull().default(0),
   confirmed: real('confirmed').notNull().default(0),
-  // Linked lines derive confirmed/paid at read time (see lib/server/budget.ts):
-  // vendorId → pulls from that vendor; sourceType 'venue' → pulls from the
-  // quote calculator. Paid figures live in `payments` for every line.
-  vendorId: integer('vendor_id').references(() => vendors.id),
+  // Derived lines compute confirmed/paid at read time (see lib/server/budget.ts):
+  // suppliers attached via vendors.budgetLineId feed a line's figures;
+  // sourceType 'venue' pulls from the quote calculator. Paid figures live in
+  // `payments` for every line.
   sourceType: text('source_type', { enum: ['venue'] }),
   status: text('status').notNull().default('todo'),
+  // Locked = set & confirmed: the UI renders the row read-only and the server
+  // rejects field edits other than the lock itself.
+  locked: integer('locked', { mode: 'boolean' }).notNull().default(false),
   sort: integer('sort').notNull().default(0)
 });
 
@@ -96,6 +99,11 @@ export const vendors = sqliteTable('vendors', {
   depositPaid: integer('deposit_paid', { mode: 'boolean' }).notNull().default(false),
   followUpDate: text('follow_up_date'), // ISO YYYY-MM-DD
   priority: integer('priority').notNull().default(2), // 1 high … 3 low
+  // Every supplier belongs to a budget line (its money home). Null = unassigned;
+  // the Budget page flags these so they can be filed.
+  budgetLineId: integer('budget_line_id').references(() => budgetLines.id),
+  // Locked = booking details are final; see budgetLines.locked.
+  locked: integer('locked', { mode: 'boolean' }).notNull().default(false),
   sort: integer('sort').notNull().default(0)
 });
 
@@ -160,7 +168,9 @@ export const quoteLines = sqliteTable('quote_lines', {
   price: real('price').notNull().default(0),
   qty: integer('qty'),
   included: integer('included', { mode: 'boolean' }).notNull().default(false),
-  confirmed: integer('confirmed', { mode: 'boolean' }).notNull().default(false),
+  // Locked = price and scope are set & confirmed with the venue. Replaces the
+  // old `confirmed` flag (renamed in migration 0023); locked rows are read-only.
+  locked: integer('locked', { mode: 'boolean' }).notNull().default(false),
   bond: integer('bond', { mode: 'boolean' }).notNull().default(false),
   sort: integer('sort').notNull().default(0)
 });

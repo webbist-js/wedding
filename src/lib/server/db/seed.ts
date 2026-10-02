@@ -206,7 +206,7 @@ export async function seed(): Promise<void> {
 				price: q.price,
 				qty: q.qty ?? null,
 				included: q.included ?? false,
-				confirmed: q.confirmed ?? false,
+				locked: q.locked ?? false,
 				bond: q.bond ?? false,
 				sort: i
 			});

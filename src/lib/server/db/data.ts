@@ -26,7 +26,7 @@ export interface SeedQuoteLine {
   price: number;
   qty?: number;
   included?: boolean;
-  confirmed?: boolean;
+  locked?: boolean;
   bond?: boolean;
 }
 
@@ -186,24 +186,24 @@ export const SEED_GUESTS: SeedGuest[] = [
 ];
 
 export const SEED_QUOTE: SeedQuoteLine[] = [
-  { label: 'Event fee (incl. 3 canapés + 2 drinks pp, staff, crockery, linen, décor)', section: 'Event', scope: 'day', price: 50.0, confirmed: true },
+  { label: 'Event fee (incl. 3 canapés + 2 drinks pp, staff, crockery, linen, décor)', section: 'Event', scope: 'day', price: 50.0, locked: true },
   { label: 'Bottled beer (reception)', section: 'Drinks', scope: 'day', price: 0, included: true },
   { label: 'Prosecco di Valdobbiadene, glass', section: 'Drinks', scope: 'day', price: 0, included: true },
   { label: 'Canapé — halloumi, rosemary & olive oil', section: 'Menu', scope: 'day', price: 0, included: true },
   { label: 'Canapé — honey roasted sausages, spicy ketchup', section: 'Menu', scope: 'day', price: 0, included: true },
   { label: 'Canapé — nduja toast, goat’s curd', section: 'Menu', scope: 'day', price: 0, included: true },
-  { label: 'Starter — leek & potato soup, Cashel blue', section: 'Menu', scope: 'day', price: 12.0, confirmed: false },
-  { label: 'Main — rotisserie chicken, herb butter / tarragon cream', section: 'Menu', scope: 'day', price: 44.0, confirmed: false },
+  { label: 'Starter — leek & potato soup, Cashel blue', section: 'Menu', scope: 'day', price: 12.0, locked: false },
+  { label: 'Main — rotisserie chicken, herb butter / tarragon cream', section: 'Menu', scope: 'day', price: 44.0, locked: false },
   { label: 'Side — tender stem broccoli, chilli & garlic', section: 'Menu', scope: 'day', price: 0, included: true },
   { label: 'Side — gratin dauphinoise', section: 'Menu', scope: 'day', price: 0, included: true },
-  { label: 'Dessert — treacle sponge, custard', section: 'Menu', scope: 'day', price: 12.0, confirmed: true },
-  { label: 'Tea & coffee (buffet)', section: 'Menu', scope: 'custom', qty: 56, price: 2.4, confirmed: true },
-  { label: 'Baz & Fred pizza (evening food)', section: 'Evening food', scope: 'eve', price: 15.0, confirmed: true },
-  { label: 'Tithe Barn outdoor package', section: 'Decorations', scope: 'fixed', price: 275.0, confirmed: true },
-  { label: 'Venue hire fee', section: 'Hire', scope: 'fixed', price: 2900.0, confirmed: true },
-  { label: 'Venue exclusive / reservation fee', section: 'Hire', scope: 'fixed', price: 3750.0, confirmed: true },
-  { label: 'Ceremony fee', section: 'Hire', scope: 'fixed', price: 180.0, confirmed: true },
-  { label: 'Refundable bond', section: 'Hire', scope: 'fixed', price: 500.0, confirmed: false, bond: true }
+  { label: 'Dessert — treacle sponge, custard', section: 'Menu', scope: 'day', price: 12.0, locked: true },
+  { label: 'Tea & coffee (buffet)', section: 'Menu', scope: 'custom', qty: 56, price: 2.4, locked: true },
+  { label: 'Baz & Fred pizza (evening food)', section: 'Evening food', scope: 'eve', price: 15.0, locked: true },
+  { label: 'Tithe Barn outdoor package', section: 'Decorations', scope: 'fixed', price: 275.0, locked: true },
+  { label: 'Venue hire fee', section: 'Hire', scope: 'fixed', price: 2900.0, locked: true },
+  { label: 'Venue exclusive / reservation fee', section: 'Hire', scope: 'fixed', price: 3750.0, locked: true },
+  { label: 'Ceremony fee', section: 'Hire', scope: 'fixed', price: 180.0, locked: true },
+  { label: 'Refundable bond', section: 'Hire', scope: 'fixed', price: 500.0, locked: false, bond: true }
 ];
 
 export const SEED_VENDORS: SeedVendor[] = [
