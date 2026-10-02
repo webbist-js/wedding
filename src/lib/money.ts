@@ -46,3 +46,13 @@ export function derivedStatus(
 	if (committed) return 'Booked';
 	return 'Estimate';
 }
+
+// A budget line may carry several suppliers (a shortlist). Its confirmed cost
+// is the sum of the committed ones' quotes; it's committed if any of them is.
+export function lineConfirmed(suppliers: VendorMoney[]): number {
+	return suppliers.reduce((a, v) => a + linkedConfirmed(v), 0);
+}
+
+export function lineCommitted(suppliers: Pick<VendorMoney, 'stage' | 'depositPaid'>[]): boolean {
+	return suppliers.some(isCommitted);
+}

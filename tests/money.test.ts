@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isCommitted, linkedConfirmed, sumPayments, derivedStatus, gbp } from '../src/lib/money';
+import { isCommitted, linkedConfirmed, lineConfirmed, lineCommitted, sumPayments, derivedStatus, gbp } from '../src/lib/money';
 
 describe('gbp', () => {
 	it('keeps whole pounds clean', () => {
@@ -62,4 +62,30 @@ describe('isCommitted', () => {
 	it('booked stage commits', () => expect(isCommitted({ stage: 'Booked', depositPaid: false })).toBe(true));
 	it('deposit commits', () => expect(isCommitted({ stage: 'Lead', depositPaid: true })).toBe(true));
 	it('lead does not', () => expect(isCommitted({ stage: 'Lead', depositPaid: false })).toBe(false));
+});
+
+describe('lineConfirmed / lineCommitted (several suppliers on one line)', () => {
+	const booked = { quotedAmount: 1898.4, stage: 'Booked', depositPaid: true };
+	const deposit = { quotedAmount: 550, stage: 'Lead', depositPaid: true };
+	const shortlisted = { quotedAmount: 440, stage: 'Shortlisted', depositPaid: false };
+	const noQuote = { quotedAmount: null, stage: 'Booked', depositPaid: true };
+
+	it('sums only committed suppliers’ quotes', () => {
+		expect(lineConfirmed([booked, deposit, shortlisted])).toBeCloseTo(2448.4);
+	});
+	it('is zero with no suppliers', () => {
+		expect(lineConfirmed([])).toBe(0);
+	});
+	it('is zero when every supplier is still a shortlist', () => {
+		expect(lineConfirmed([shortlisted])).toBe(0);
+	});
+	it('treats a committed supplier without a quote as zero but still committed', () => {
+		expect(lineConfirmed([noQuote])).toBe(0);
+		expect(lineCommitted([noQuote])).toBe(true);
+	});
+	it('committed when any supplier is committed', () => {
+		expect(lineCommitted([shortlisted, deposit])).toBe(true);
+		expect(lineCommitted([shortlisted])).toBe(false);
+		expect(lineCommitted([])).toBe(false);
+	});
 });
