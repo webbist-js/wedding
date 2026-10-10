@@ -52,7 +52,7 @@ export const MENU = {
 		'Honey roasted sausages, spicy ketchup',
 		'Nduja toast, goat’s curd'
 	],
-	starter: 'Leek & potato soup, Cashel blue',
+	starter: 'Falafel, tabbouleh, flatbreads, tahini (V)',
 	main: 'Rotisserie chicken with herb butter & tarragon cream',
 	mainVeg: 'Roasted squash, ricotta, chilli, pesto',
 	sides: ['Tender stem broccoli, chilli & garlic', 'Gratin dauphinoise'],

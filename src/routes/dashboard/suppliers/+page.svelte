@@ -2,7 +2,7 @@
 	// Pipeline view of every supplier, grouped by stage. Editing happens in the
 	// same SupplierCard the Budget expander uses; each card links back to the
 	// budget line it's filed under.
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { invalidateAll } from '$app/navigation';
 	import SupplierCard, { STAGES, type SupplierRow } from '$lib/components/SupplierCard.svelte';
 	import type { NoteRow } from '$lib/components/Notes.svelte';
@@ -32,14 +32,36 @@
 
 	let filter = $state<string>('all');
 	const visible = $derived(filter === 'all' ? groups : groups.filter((g) => g.key === filter));
+	let adding = $state(false);
+	let addError = $state('');
 
 	async function add() {
-		await fetch('/dashboard/suppliers/edit', {
-			method: 'POST',
-			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ op: 'add' })
-		});
-		await invalidateAll();
+		if (adding) return;
+		adding = true;
+		addError = '';
+		let created = false;
+		try {
+			const res = await fetch('/dashboard/suppliers/edit', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ op: 'add' })
+			});
+			if (!res.ok || res.redirected) throw new Error('Could not add supplier');
+			const { id } = await res.json();
+			created = true;
+			filter = 'all';
+			await invalidateAll();
+			await tick();
+			const card = document.getElementById(`supplier-${id}`);
+			card?.scrollIntoView({ block: 'center' });
+			card?.querySelector<HTMLInputElement>('input.name')?.focus({ preventScroll: true });
+		} catch {
+			addError = created
+				? 'Supplier added, but the page could not refresh. Reload the page to see it.'
+				: 'Could not add supplier. Please try again.';
+		} finally {
+			adding = false;
+		}
 	}
 
 	onMount(() => {
@@ -66,8 +88,12 @@
 			</button>
 		{/each}
 	</div>
-	<button type="button" class="btn primary" onclick={add}>+ Add supplier</button>
+	<button type="button" class="btn primary" onclick={add} disabled={adding}>
+		{adding ? 'Adding…' : '+ Add supplier'}
+	</button>
 </div>
+
+{#if addError}<p class="add-error" role="alert">{addError}</p>{/if}
 
 <p class="hint">
 	Every supplier is filed under a budget line, which is where its quote and payments count. Edit here or from the
@@ -125,6 +151,8 @@
 	.btn { border: 0; border-radius: 8px; padding: 10px 18px; font: inherit; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; cursor: pointer; }
 	.btn.primary { background: var(--sage); color: #fff; }
 	.btn.primary:hover { background: var(--sage-deep); }
+	.btn:disabled { opacity: 0.65; cursor: wait; }
+	.add-error { color: var(--terra); font-size: 13px; margin: 0 0 12px; }
 	.hint { font-size: 13px; color: var(--muted); margin: 0 0 22px; line-height: 1.6; }
 
 	.group { margin-bottom: 26px; }
