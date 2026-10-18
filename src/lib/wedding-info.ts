@@ -50,16 +50,16 @@ export const MENU = {
 	canapes: [
 		'Halloumi, rosemary & olive oil',
 		'Honey roasted sausages, spicy ketchup',
-		'Nduja toast, goat’s curd'
+		'Nduja toast, goats curd'
 	],
-	starter: 'Falafel, tabbouleh, flatbreads, tahini (V)',
-	main: 'Rotisserie chicken with herb butter & tarragon cream',
+	starter: 'Falafel, tabbouleh, flat breads, tahini - ve',
+	main: 'Rotisserie chicken with herb butter',
 	mainVeg: 'Roasted squash, ricotta, chilli, pesto',
-	sides: ['Tender stem broccoli, chilli & garlic', 'Gratin dauphinoise'],
+	sides: ['Tender stem broccoli, chilli & garlic', 'Duck fat roasties, garlic, rosemary', 'Herb oil roasted potatoes - ve'],
 	dessert: 'Treacle sponge, custard',
-	dessertVegan: 'Apple & blackberry crumble, vegan custard',
+	dessertVegan: 'Apple and blackberry crumble - ve',
 	teaCoffee: 'Tea & coffee with petits fours',
-	evening: 'Baz & Fred wood-fired pizza, handmade on site — served to everyone in the evening',
+	evening: 'Baz & Fred wood-fired pizza',
 	drinks: 'Welcome prosecco · bottled beers · full bar',
 	kids: "A children's menu (with a vegetarian option) will be served — let us know any allergies on your RSVP"
 };
