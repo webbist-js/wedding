@@ -1971,10 +1971,13 @@
 		border-radius: 14px;
 		box-shadow: var(--shadow);
 		transition: transform 0.35s cubic-bezier(0.2, 1.4, 0.4, 1);
-		white-space: nowrap;
+		/* Wrap long messages (e.g. "Welcome back, <name> — your votes are loaded")
+		   onto two lines on phones rather than clipping them. */
+		width: max-content;
 		max-width: 92vw;
-		overflow: hidden;
-		text-overflow: ellipsis;
+		text-align: center;
+		line-height: 1.2;
+		overflow-wrap: anywhere;
 	}
 	.toast.show {
 		transform: translateX(-50%) translateY(0);
