@@ -176,6 +176,13 @@
       "when": 1782329436102,
       "tag": "0024_invite_sent_at",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1782329436103,
+      "tag": "0025_sten_do_ballots",
+      "breakpoints": true
     }
   ]
 }

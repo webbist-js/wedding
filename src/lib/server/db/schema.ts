@@ -282,3 +282,18 @@ export const auditLog = sqliteTable('audit_log', {
   summary: text('summary').notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' })
 });
+
+// Sten do (stag + hen) house showcase — one ballot per voter (a per-browser
+// voterId cookie, no login), storing a JSON map of {houseId: votes}. Totals on
+// the /the-sten-is-right page are aggregated over this table; see lib/server/sten-do.ts.
+export const stenDoBallots = sqliteTable('sten_do_ballots', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  // Random 32-hex token from the `stendo_vid` cookie — the ballot's identity.
+  voterId: text('voter_id').notNull().unique(),
+  // Display name the voter typed (shown in future tallies); null until set.
+  name: text('name'),
+  // JSON object {houseId: count}, counts summing to at most VOTES_TOTAL (3).
+  picks: text('picks').notNull().default('{}'),
+  createdAt: integer('created_at', { mode: 'timestamp' }),
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
+});

@@ -27,3 +27,4 @@ vite.config.ts.timestamp-*
 *.db-*
 auth
 auth-wal
+.env*

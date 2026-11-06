@@ -8,12 +8,24 @@ declare const self: ServiceWorkerGlobalScope;
 const CACHE = `cache-${version}-v2`;
 // Build assets are hashed by SvelteKit — safe to cache aggressively.
 // `files` are everything under /static (manifest, icons, robots.txt).
-const ASSETS = [...build, ...files];
+// The Sten Is Right theme tune is ~5MB and only used on that one page, so it's
+// left out of the precache — no reason every wedding guest should download it.
+const NO_PRECACHE = ['/audio/the-sten-is-right.mp3'];
+const ASSETS = [...build, ...files.filter((f) => !NO_PRECACHE.includes(f))];
 
 // Paths we DON'T want the SW to cache: they're either auth-gated or per-token
 // dynamic content that must always go to the network so we never serve cached
 // private data to the wrong user.
-const NO_CACHE_PREFIXES = ['/dashboard', '/rsvp/', '/login', '/logout'];
+// The Sten Is Right is a live, per-voter tally — always go to the network.
+const NO_CACHE_PREFIXES = [
+	'/dashboard',
+	'/rsvp/',
+	'/login',
+	'/logout',
+	'/the-sten-is-right',
+	'/sten-do',
+	'/audio/the-sten-is-right.mp3'
+];
 
 self.addEventListener('install', (event) => {
 	event.waitUntil(
