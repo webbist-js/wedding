@@ -2,6 +2,7 @@
 	import { onMount, tick } from 'svelte';
 	import type { PageData } from './$types';
 	import type { House, Lead, Extra } from '$lib/sten-do';
+	import { cleanName, nameKey } from '$lib/sten-do';
 	import { WEDDING } from '$lib/wedding-info';
 
 	let { data }: { data: PageData } = $props();
@@ -52,6 +53,12 @@
 	// the initial value here is deliberate.
 	// svelte-ignore state_referenced_locally
 	let myName = $state(data.myName ?? '');
+	// The name the server has this browser's ballot under — myName is just the input.
+	// svelte-ignore state_referenced_locally
+	let committedName = $state(data.myName ?? '');
+	// Everyone's contestant names, for the "pick your name" list.
+	// svelte-ignore state_referenced_locally
+	let names = $state<string[]>(data.names ?? []);
 	// svelte-ignore state_referenced_locally
 	let myPicks = $state<Picks>({ ...data.mine }); // this viewer's optimistic ballot
 	// svelte-ignore state_referenced_locally
@@ -147,9 +154,61 @@
 		scheduleSave();
 	}
 	function commitName() {
-		myName = myName.trim();
-		store.set(NAME_KEY, myName);
-		if (myName && Object.keys(myPicks).length) scheduleSave();
+		const n = cleanName(myName);
+		if (!n) {
+			myName = committedName; // a blank name can't hold a ballot — put the old one back
+			return;
+		}
+		myName = n;
+		store.set(NAME_KEY, n);
+		if (n !== committedName) claimName(n);
+	}
+
+	// Attach this browser to the ballot for `n`. If that name has voted before
+	// (another phone, cleared cookies) the server hands back their picks and
+	// they carry on editing that ballot rather than starting a second one.
+	let claiming = false;
+	async function claimName(n: string) {
+		clearTimeout(saveTimer);
+		claiming = true;
+		try {
+			const res = await fetch(`${BASE}/name`, {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ name: n })
+			});
+			if (!res.ok) throw new Error('HTTP ' + res.status);
+			const d = await res.json();
+			// Only apply if they haven't typed a different name meanwhile.
+			if (cleanName(myName) === n) {
+				myName = committedName = d.name;
+				store.set(NAME_KEY, d.name);
+				myPicks = { ...(d.mine ?? {}) };
+				serverMine = { ...(d.mine ?? {}) };
+				if (d.claimed)
+					showToast(
+						sum(myPicks)
+							? `Welcome back, ${d.name} — your votes are loaded`
+							: `Welcome back, ${d.name}`
+					);
+			}
+			serverTotals = d.totals ?? {};
+			serverVoterCount = d.voterCount ?? 0;
+			names = d.names ?? names;
+			dirty = false; // the server's copy of this ballot is now the truth
+			setOffline(false);
+		} catch {
+			// Offline: votes still go out under the typed name and the server
+			// resolves it to the right ballot when they land.
+			setOffline(true);
+		} finally {
+			claiming = false;
+			// A tap that arrived mid-claim (or a claim that failed) still needs saving.
+			if (dirty) {
+				dirty = false;
+				scheduleSave();
+			}
+		}
 	}
 
 	// ---- persistence ----
@@ -162,22 +221,26 @@
 		saveTimer = setTimeout(saveVote, 320);
 	}
 	async function saveVote() {
-		if (writing) {
+		if (!cleanName(myName)) return; // nameless votes have no ballot to land on
+		if (writing || claiming) {
 			dirty = true;
 			return;
 		}
 		writing = true;
+		const sentName = cleanName(myName);
 		try {
 			const res = await fetch(`${BASE}/vote`, {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ name: myName.trim(), picks: myPicks })
+				body: JSON.stringify({ name: sentName, picks: myPicks })
 			});
 			if (!res.ok) throw new Error('HTTP ' + res.status);
 			const d = await res.json();
 			serverTotals = d.totals ?? {};
 			serverMine = d.mine ?? {};
 			serverVoterCount = d.voterCount ?? 0;
+			// Normally a no-op; matters when an offline name change landed via this vote.
+			if (d.name && nameKey(d.name) === nameKey(sentName)) committedName = d.name;
 			setOffline(false);
 		} catch {
 			dirty = true;
@@ -193,7 +256,7 @@
 
 	async function refresh() {
 		if (typeof document !== 'undefined' && document.hidden) return;
-		if (writing || dirty) return; // don't let a poll clobber an in-flight ballot
+		if (writing || dirty || claiming) return; // don't let a poll clobber an in-flight ballot
 		try {
 			const res = await fetch(`${BASE}/feed`, { cache: 'no-store' });
 			if (!res.ok) return;
@@ -201,6 +264,7 @@
 			serverTotals = d.totals ?? {};
 			serverVoterCount = d.voterCount ?? 0;
 			serverMine = d.mine ?? {};
+			names = d.names ?? names;
 			setOffline(false);
 		} catch {
 			setOffline(true);
@@ -281,7 +345,7 @@
 		else dialogEl?.focus();
 	}
 	function closeIntro() {
-		const n = introName.trim();
+		const n = cleanName(introName);
 		if (n) {
 			myName = n;
 			commitName();
@@ -290,6 +354,10 @@
 		store.set(INTRO_KEY, '1');
 		startMusic();
 		if (lastFocus instanceof HTMLElement) lastFocus.focus();
+	}
+	function pickName(n: string) {
+		introName = n;
+		closeIntro();
 	}
 	function dialogKeys(e: KeyboardEvent) {
 		if (e.key === 'Escape') {
@@ -383,7 +451,15 @@
 	}
 
 	onMount(() => {
-		if (!myName) myName = store.get(NAME_KEY) ?? '';
+		// No ballot on this browser yet but they've played here before: reattach
+		// to their name so their earlier votes come back instead of starting over.
+		if (!myName) {
+			const saved = cleanName(store.get(NAME_KEY));
+			if (saved) {
+				myName = saved;
+				claimName(saved);
+			}
+		}
 		muted = store.get(MUTE_KEY) === '1';
 		if (!store.get(INTRO_KEY)) openIntro();
 		startMusic();
@@ -463,12 +539,16 @@
 					id="name"
 					type="text"
 					placeholder="your name"
-					autocomplete="name"
+					autocomplete="off"
+					list="sten-names"
 					maxlength="24"
 					bind:value={myName}
 					onchange={commitName}
 				/>
 				<button class="ok" type="button" aria-label="Save name" onclick={commitName}>✓</button>
+				<datalist id="sten-names">
+					{#each names as n (n)}<option value={n}></option>{/each}
+				</datalist>
 			</div>
 			<span class="pill tix">🎟️ <b>{VOTES_TOTAL - spent}</b>&nbsp;of {VOTES_TOTAL} left</span>
 			<span class="pill">👥 <b>{voterCount}</b>&nbsp;voted</span>
@@ -665,12 +745,23 @@
 						closeIntro();
 					}}
 				>
-					<label for="intro-name">Contestant name</label>
+					{#if names.length}
+						<div class="d-names">
+							<p id="intro-names-label">Played already? Tap your name to pick up where you left off.</p>
+							<div class="d-chips" role="group" aria-labelledby="intro-names-label">
+								{#each names as n (n)}
+									<button type="button" class="d-chip" class:on={n === committedName} onclick={() => pickName(n)}>{n}</button>
+								{/each}
+							</div>
+						</div>
+					{/if}
+					<label for="intro-name">{names.length ? 'New contestant? Enter your name' : 'Contestant name'}</label>
 					<input
 						id="intro-name"
 						type="text"
 						placeholder="e.g. Greg"
-						autocomplete="name"
+						autocomplete="off"
+						list="sten-names"
 						maxlength="24"
 						bind:value={introName}
 						bind:this={introInput}
@@ -1787,6 +1878,41 @@
 	.d-form input:focus {
 		border-color: var(--cyan);
 		outline: none;
+	}
+	.d-names {
+		display: grid;
+		gap: 8px;
+		margin-bottom: 4px;
+	}
+	.d-names p {
+		margin: 0;
+		font-size: 0.84rem;
+		color: var(--muted);
+	}
+	.d-chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+		max-height: 132px;
+		overflow-y: auto;
+	}
+	.d-chip {
+		min-height: 40px;
+		padding: 0 14px;
+		border-radius: 999px;
+		border: 1px solid var(--line);
+		background: var(--stage-3);
+		color: var(--ink);
+		font: 600 0.92rem var(--f-body);
+	}
+	.d-chip:hover,
+	.d-chip:focus-visible {
+		border-color: var(--cyan);
+		outline: none;
+	}
+	.d-chip.on {
+		border-color: var(--gold);
+		color: var(--gold);
 	}
 	.cta {
 		height: 52px;

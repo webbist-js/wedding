@@ -36,6 +36,16 @@ export type Extra = {
 
 export const VOTES_TOTAL = 3;
 
+/** Trim and squash internal whitespace; '' if nothing usable. */
+export function cleanName(raw: unknown): string {
+	return (typeof raw === 'string' ? raw : '').trim().replace(/\s+/g, ' ').slice(0, 24);
+}
+
+/** Comparison key for names: "  greg " and "Greg" are the same contestant. */
+export function nameKey(name: string | null | undefined): string {
+	return cleanName(name ?? '').toLowerCase();
+}
+
 export const HOUSES: House[] = [
 	{ id: 'richmond', n: 1, name: 'Richmond Spa Cottage', loc: 'Richmond, North Yorkshire', sleeps: 12, beds: 6, baths: 4,
 		wish: true, rate: null, rateNote: 'Quote for your dates',
