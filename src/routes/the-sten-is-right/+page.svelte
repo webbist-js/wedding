@@ -946,7 +946,7 @@
 	.fact {
 		font-family: var(--f-pop);
 		font-weight: 600;
-		font-size: 0.84rem;
+		font-size: 0.875rem;
 		background: var(--stage-3);
 		border: 1px solid var(--line);
 		color: var(--ink);
@@ -1213,8 +1213,8 @@
 	/* ---------- GRID / CARDS ---------- */
 	.grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
-		gap: 22px 18px;
+		grid-template-columns: repeat(auto-fill, minmax(min(310px, 100%), 1fr));
+		gap: 32px 18px;
 	}
 	.card {
 		position: relative;
@@ -1224,7 +1224,8 @@
 		background: linear-gradient(180deg, var(--stage-2), rgba(31, 15, 49, 0.72));
 		border: 1px solid var(--line);
 		border-radius: 18px;
-		padding: 18px;
+		/* Reserve a header row for the raised number/medal and status ribbon. */
+		padding: 46px 18px 18px;
 		box-shadow: var(--shadow);
 		transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s;
 	}
@@ -1277,7 +1278,7 @@
 		right: 14px;
 		font-family: var(--f-pop);
 		font-weight: 600;
-		font-size: 0.66rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.07em;
 		text-transform: uppercase;
 		color: #1a0b12;
@@ -1296,22 +1297,22 @@
 		font-weight: 400;
 		text-transform: uppercase;
 		letter-spacing: 0.015em;
-		font-size: 1.38rem;
-		line-height: 1;
+		font-size: 1.5rem;
+		line-height: 1.15;
 		color: var(--gold);
-		margin-top: 10px;
-		padding-right: 96px;
+		margin-top: 0;
+		overflow-wrap: anywhere;
 	}
 	.c-loc {
 		font-family: var(--f-pop);
 		font-weight: 500;
 		color: var(--muted);
-		font-size: 0.84rem;
+		font-size: 0.875rem;
 		margin-top: -3px;
 	}
 	.stats {
 		display: grid;
-		grid-template-columns: repeat(3, 1fr);
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: 8px;
 	}
 	.stat {
@@ -1331,7 +1332,7 @@
 	.stat .l {
 		font-family: var(--f-pop);
 		font-weight: 600;
-		font-size: 0.58rem;
+		font-size: 0.6875rem;
 		letter-spacing: 0.09em;
 		text-transform: uppercase;
 		color: var(--muted);
@@ -1365,7 +1366,7 @@
 	.amen span {
 		font-family: var(--f-pop);
 		font-weight: 600;
-		font-size: 0.66rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
 		color: var(--ink);
@@ -1380,7 +1381,7 @@
 		color: var(--gold);
 	}
 	.nearby {
-		font-size: 0.79rem;
+		font-size: 0.875rem;
 		color: var(--muted);
 		line-height: 1.45;
 	}
@@ -1427,7 +1428,7 @@
 	.price small {
 		display: block;
 		font-weight: 500;
-		font-size: 0.64rem;
+		font-size: 0.75rem;
 		color: var(--muted);
 	}
 	.book {
@@ -1447,7 +1448,7 @@
 	.book .src {
 		display: block;
 		font-weight: 500;
-		font-size: 0.58rem;
+		font-size: 0.6875rem;
 		color: var(--muted);
 	}
 
@@ -1503,7 +1504,7 @@
 	}
 	.tnum small {
 		font-family: var(--f-pop);
-		font-size: 0.58rem;
+		font-size: 0.6875rem;
 		color: var(--muted);
 		font-weight: 600;
 		display: block;
@@ -1878,6 +1879,15 @@
 		.bar,
 		.toast {
 			transition: none;
+		}
+	}
+	@media (max-width: 360px) {
+		.stat {
+			padding-inline: 4px;
+		}
+		.stat .l {
+			font-size: 0.625rem;
+			letter-spacing: 0.02em;
 		}
 	}
 	@media (max-width: 620px) {
