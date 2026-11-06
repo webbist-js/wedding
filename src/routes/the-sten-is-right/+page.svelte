@@ -276,7 +276,9 @@
 		introName = myName;
 		showIntro = true;
 		await tick();
-		introInput?.focus();
+		// Keep the keyboard closed on touch devices until the guest taps the field.
+		if (window.matchMedia('(pointer: fine)').matches) introInput?.focus();
+		else dialogEl?.focus();
 	}
 	function closeIntro() {
 		const n = introName.trim();
@@ -503,7 +505,7 @@
 						on the link.
 					</p>
 				</div>
-				{#if bannerMsg}<div class="banner warn">{bannerMsg}</div>{/if}
+				{#if bannerMsg}<div class="banner warn" role="status">{bannerMsg}</div>{/if}
 				<div class="grid">
 					{#each ordered as h (h.id)}
 						{@const rank = ranks[h.id]}
@@ -552,7 +554,7 @@
 								<div class="tally">
 									<div class="track"><div class="bar" style:width="{(t / maxTotal) * 100}%"></div></div>
 									<div class="tnum">
-										{#key t}<span class="bignum">{t}</span>{/key}<small>votes</small>
+										{#key t}<span class="bignum">{t}</span>{/key}<small>{t === 1 ? 'vote' : 'votes'}</small>
 									</div>
 								</div>
 								<div class="vc">
@@ -751,6 +753,7 @@
 	button {
 		font-family: var(--f-pop);
 		cursor: pointer;
+		touch-action: manipulation;
 	}
 	button:disabled {
 		cursor: not-allowed;
@@ -1029,7 +1032,7 @@
 	}
 	.namebox input {
 		font-family: var(--f-body);
-		font-size: 0.9rem;
+		font-size: 1rem;
 		color: var(--ink);
 		background: transparent;
 		border: none;
@@ -1040,8 +1043,8 @@
 		color: var(--muted);
 	}
 	.namebox .ok {
-		width: 30px;
-		height: 30px;
+		width: 44px;
+		height: 44px;
 		border: none;
 		border-radius: 50%;
 		font-size: 0.95rem;
@@ -1076,8 +1079,8 @@
 		border-color: rgba(48, 224, 224, 0.5);
 	}
 	.pill.help {
-		width: 34px;
-		height: 34px;
+		width: 44px;
+		height: 44px;
 		padding: 0;
 		justify-content: center;
 		color: var(--gold);
@@ -1688,6 +1691,7 @@
 		backdrop-filter: blur(6px);
 		animation: fade 0.25s ease;
 		overflow-y: auto;
+		overscroll-behavior: contain;
 	}
 	.dialog {
 		position: relative;
@@ -1877,6 +1881,23 @@
 		}
 	}
 	@media (max-width: 620px) {
+		.dialog {
+			padding: 24px 18px 20px;
+		}
+		.d-lede {
+			font-size: 0.9rem;
+		}
+		.seg button,
+		.clearv,
+		.pill.sound,
+		.plus,
+		.step {
+			min-height: 44px;
+		}
+		.step {
+			min-width: 44px;
+		}
+
 		.seg {
 			margin-left: 0;
 		}
