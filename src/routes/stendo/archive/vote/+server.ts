@@ -1,5 +1,6 @@
 import type { RequestHandler } from './$types';
 import { json, error } from '@sveltejs/kit';
+import { ROUND } from '$lib/sten-do';
 import { getOrCreateVoterId, claimBallot, aggregate, cleanName } from '$lib/server/sten-do';
 
 // Upsert this voter's ballot, then return the fresh aggregate so the client
@@ -12,7 +13,8 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 	} catch {
 		throw error(400, 'Expected JSON body');
 	}
-	const { name, picks } = (body ?? {}) as { name?: unknown; picks?: unknown };
+	const { name, picks, round } = (body ?? {}) as { name?: unknown; picks?: unknown; round?: unknown };
+	if (round !== ROUND) throw error(409, 'The shortlist changed. Reload before voting.');
 	// The name is the ballot's identity, so a nameless vote has nowhere to go.
 	if (!cleanName(name)) throw error(400, 'Name required');
 	// Resolves the name first (claiming an existing ballot if needed), then stores picks.

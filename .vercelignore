@@ -1,0 +1,7 @@
+output/
+.motion-site/
+*.db
+*.db-*
+.env*
+auth
+auth-wal

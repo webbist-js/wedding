@@ -297,3 +297,20 @@ export const stenDoBallots = sqliteTable('sten_do_ballots', {
   createdAt: integer('created_at', { mode: 'timestamp' }),
   updatedAt: integer('updated_at', { mode: 'timestamp' })
 });
+
+// The Stendo Vol. 02 (/stendo): one row per person — which Center Parcs village
+// they'd pick, how they'd like to sleep, and whether they want Katie & Alex's
+// £130 top-up. Keyed by a lower-cased name so answers follow the person.
+export const stenCpResponses = sqliteTable('sten_cp_responses', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  nameKey: text('name_key').notNull().unique(),
+  name: text('name').notNull(),
+  village: text('village'), // 'sherwood' | 'longleat'
+  accom: text('accom'), // 'hub' | 'pair' | 'own-budget' | 'own-nicer' | 'either'
+  twinOk: integer('twin_ok').notNull().default(0),
+  budget: text('budget'), // '400' | '500' | '600' | '700'
+  offer: integer('offer').notNull().default(0),
+  notes: text('notes').notNull().default(''),
+  createdAt: integer('created_at', { mode: 'timestamp' }),
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
+});

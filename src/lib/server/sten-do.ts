@@ -1,4 +1,4 @@
-// Server-side voting for The Sten Is Right (/the-sten-is-right).
+// Server-side voting for the archived Sten Is Right house vote (/stendo/archive).
 //
 // One ballot per contestant name (no login — anyone with the link can vote,
 // which is the point: it's shared with the crew). A random per-browser cookie
@@ -8,6 +8,7 @@
 // Totals shown on the page are aggregated over every ballot in SQL-land JS —
 // there are ~a dozen voters, so reading all rows and summing is trivial.
 
+import { STEN_VOTERS } from '$lib/sten-voters';
 import { randomBytes } from 'node:crypto';
 import type { Cookies } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
@@ -30,7 +31,7 @@ export function getOrCreateVoterId(cookies: Cookies): string {
 	cookies.set(STENDO_COOKIE, id, {
 		// Scope to the game's route so it rides along with the page, feed and vote
 		// calls but doesn't leak onto the rest of the wedding site.
-		path: '/the-sten-is-right',
+		path: '/stendo/archive',
 		httpOnly: true,
 		sameSite: 'lax',
 		maxAge: COOKIE_MAX_AGE
@@ -77,7 +78,7 @@ export async function aggregate(): Promise<Aggregate> {
 	const totals: Picks = {};
 	let voterCount = 0;
 	for (const row of rows) {
-		const picks = parsePicks(row.picks);
+		const picks = sanitizePicks(parsePicks(row.picks));
 		let voted = false;
 		for (const id in picks) {
 			const v = picks[id] || 0;
@@ -98,7 +99,7 @@ export async function getBallot(voterId: string): Promise<{ picks: Picks; name: 
 		.from(stenDoBallots)
 		.where(eq(stenDoBallots.voterId, voterId));
 	if (!row) return { picks: {}, name: '' };
-	return { picks: parsePicks(row.picks), name: row.name ?? '' };
+	return { picks: sanitizePicks(parsePicks(row.picks)), name: row.name ?? '' };
 }
 
 // ---- names as identity ----
@@ -110,7 +111,7 @@ export async function getBallot(voterId: string): Promise<{ picks: Picks; name: 
 /** Every distinct contestant name so far, alphabetical — feeds the picker. */
 export async function listNames(): Promise<string[]> {
 	const rows = await db.select({ name: stenDoBallots.name }).from(stenDoBallots);
-	const seen = new Map<string, string>();
+	const seen = new Map<string, string>(STEN_VOTERS.map(name => [nameKey(name), name]));
 	for (const r of rows) {
 		const k = nameKey(r.name);
 		if (k && !seen.has(k)) seen.set(k, cleanName(r.name));

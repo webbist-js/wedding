@@ -53,3 +53,12 @@ describe('planClaim', () => {
 		expect(planClaim(rows, 'z', 'Greg')).toMatchObject({ kind: 'claim', target: rows[1] });
 	});
 });
+
+describe('current shortlist vote validation', () => {
+ it('rejects retired houses and clamps votes to the three-vote budget', async () => {
+  const { sanitizePicks } = await import('../src/lib/server/sten-do');
+  expect(sanitizePicks({ richmond: 3, throwley: 2, 'warren-hill': 1 })).toEqual({});
+  expect(sanitizePicks({ 'parkers-hill': 2, foldyard: 2, 'warren-hill': 1 })).toEqual({ 'parkers-hill': 2, foldyard: 1 });
+  expect(sanitizePicks({ foldyard: -2, 'parkers-hill': 'bad', skyfall: 1.9 })).toEqual({ skyfall: 1 });
+ });
+});

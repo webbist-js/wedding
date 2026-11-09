@@ -10,7 +10,7 @@
 	// Music + smooth-scroll only on the public guest-facing pages; the dashboard /
 	// login stay quiet, and The Sten Is Right voting game opts out too — it ships
 	// its own full-screen neon theme and theme tune, so no guest chrome or music.
-	const adminPrefixes = ['/dashboard', '/login', '/logout', '/the-sten-is-right'];
+	const adminPrefixes = ['/dashboard', '/login', '/logout', '/the-stendo', '/stendo'];
 	let isPublic = $derived(!adminPrefixes.some((p) => page.url.pathname.startsWith(p)));
 
 	// Lenis smooth scrolling on the public guest pages only (not the dashboard).

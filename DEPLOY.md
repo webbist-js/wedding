@@ -86,7 +86,7 @@ in the AI phase.
 
 ## Notes
 - **Migrations on future deploys:** run `npm run db:migrate` against Turso whenever
-  `src/lib/server/db/schema.ts` changes (currently up to `0025`). Migrations
+  `src/lib/server/db/schema.ts` changes (currently up to `0026`, which adds `sten_cp_responses` for /stendo). Migrations
   `0015`+ are hand-written SQL plus a `drizzle/meta/_journal.json` entry —
   `npm run db:generate` is broken (snapshots stop at 0014), so don't run it.
 - **Migration `0023_suppliers_lines_locks`** (2026-10-02) moves the supplier↔budget
