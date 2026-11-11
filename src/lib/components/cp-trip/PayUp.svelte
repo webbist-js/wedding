@@ -111,7 +111,7 @@
 					<span class="chip">{statusLabel(a.status, a.overdue)}</span>
 				</div>
 				<p class="owed"><Money pence={a.owed} /><small>group share</small></p>
-				{#if budgetLine.giftsReceived}<p class="fine">£356 share − £100 gift from Alex & Katie = £256 to pay, before any payments already received.</p>{/if}
+				{#if budgetLine.giftReceived}<p class="fine">{gbp(budgetLine.accommodation)} real share − {gbp(budgetLine.giftReceived)} gift from Alex & Katie = {gbp(budgetLine.total)} to pay, before any payments already received.</p>{/if}
 				{#if a.upfront}
 					<p class="upfront">Paid the whole booking to Center Parcs up front. Everyone else pays them back.</p>
 				{:else}

@@ -5,8 +5,10 @@
 // can pin every figure. All money is integer pence. Persistence lives in
 // $lib/server/cp-trip.ts.
 //
-// CURRENT_BUDGET is the active fixed £178-per-adult plan. ORIGINAL and
-// breakdown retain the previous lodge split for payment-history explanations.
+// CURRENT_BUDGET is the active fixed £178-per-adult plan: each group's real
+// share of their lodge, minus a gift from Alex & Katie. ORIGINAL and breakdown
+// retain the previous lodge split (with Oli & Phoebe in House 3) for
+// payment-history explanations.
 // The retired proposal calculator cannot change current payment amounts.
 
 // ---------------------------------------------------------------- booking ---
@@ -49,10 +51,10 @@ export const GROUPS: Group[] = [
 	{ id: 'kie-elisa', label: 'Kie & Elisa', house: 'h1', adults: 2 },
 	{ id: 'alex-katie', label: 'Alex & Katie', house: 'h1', adults: 2, paidUpfront: true },
 	{ id: 'mule', label: 'Mule', house: 'h1', adults: 1, twin: true },
+	{ id: 'oliver-phoebe', label: 'Oliver & Phoebe', house: 'h1', adults: 2, twin: true },
 	{ id: 'chris-jenn', label: 'Chris & Jenn', house: 'h2', adults: 2 },
 	{ id: 'adam-lysanne', label: 'Adam & Lysanne', house: 'h2', adults: 2, twin: true },
-	{ id: 'chris-hayley', label: 'Chris & Hayley & Theo', house: 'h3', adults: 2, kids: ['Theo'] },
-	{ id: 'oliver-phoebe', label: 'Oliver & Phoebe', house: 'h3', adults: 2, twin: true }
+	{ id: 'chris-hayley', label: 'Chris & Hayley & Theo', house: 'h3', adults: 2, kids: ['Theo'] }
 ];
 
 export const group = (id: GroupId) => GROUPS.find((g) => g.id === id)!;
@@ -118,13 +120,16 @@ export const HOUSES: House[] = [
 		costPence: 64_900,
 		accommodationPence: 64_900,
 		amenities: [],
-		blurb: 'Chris, Hayley and Theo’s family base, shared with Oli & Phoebe. Room for Theo’s naps and early nights.',
-		note: 'Oli & Phoebe take the twin room, so Theo sleeps in a travel cot with Chris & Hayley.'
+		blurb: 'Chris, Hayley and Theo’s family base. Room for Theo’s naps and early nights.'
 	}
 ];
 export const house = (id: HouseId) => HOUSES.find((h) => h.id === id)!;
 export const groupsIn = (id: HouseId) => GROUPS.filter((g) => g.house === id);
-export const HOUSE1_ADULTS = groupsIn('h1').reduce((n, g) => n + g.adults, 0); // 5
+export const HOUSE1_ADULTS = groupsIn('h1').reduce((n, g) => n + g.adults, 0); // 7
+
+/** The old plan had Oli & Phoebe in House 3. Only the retired breakdown uses this. */
+const legacyHouse = (g: Group): HouseId => (g.id === 'oliver-phoebe' ? 'h3' : g.house);
+const legacyGroupsIn = (id: HouseId) => GROUPS.filter((g) => legacyHouse(g) === id);
 
 /** Paid on the House 1 booking for Alex & Katie alone. Never shared. */
 export const EXTRAS = [
@@ -132,7 +137,7 @@ export const EXTRAS = [
 	{ label: 'Bike hire', pence: 6_400, group: 'alex-katie' as GroupId }
 ];
 
-/** Alex & Katie's private gifts towards two bookings. Fixed; never redistributed. */
+/** The £100 off each House 2 couple was promised. It's folded into their gift in CURRENT_BUDGET. */
 export const GIFTS: { from: GroupId; to: GroupId; pence: number }[] = [
 	{ from: 'alex-katie', to: 'chris-jenn', pence: 10_000 },
 	{ from: 'alex-katie', to: 'adam-lysanne', pence: 10_000 }
@@ -201,7 +206,7 @@ export type Contributions = Record<ContributorId, number>;
 /** Who can chip in: both House 2 couples, and Oli & Phoebe now they've moved out of House 1. */
 export const NO_CONTRIBUTIONS: Contributions = { 'chris-jenn': 0, 'adam-lysanne': 0, 'oliver-phoebe': 0 };
 export const CONTRIBUTORS: ContributorId[] = ['chris-jenn', 'adam-lysanne', 'oliver-phoebe'];
-export const HOUSE1_GROUPS = groupsIn('h1').map((g) => g.id);
+export const HOUSE1_GROUPS = legacyGroupsIn('h1').map((g) => g.id);
 /**
  * Where the Fancy House Tax goes: 60% to Alex & Katie (who carry Oli & Phoebe's
  * empty places and the Big House Tax) and 40% to Kie & Elisa. Mule's reduced
@@ -263,7 +268,7 @@ export function breakdown(contributions: Contributions = NO_CONTRIBUTIONS): Brea
 	const accommodation = new Map<GroupId, number>();
 	const absorbed = new Map<GroupId, number>();
 	for (const h of HOUSES) {
-		const occ = groupsIn(h.id);
+		const occ = legacyGroupsIn(h.id);
 		if (h.id === 'h1') {
 			// £310 a head for whoever's in it; the empty places fall to Alex & Katie.
 			for (const g of occ) accommodation.set(g.id, g.adults * HOUSE1_PER_HEAD);
@@ -307,34 +312,66 @@ export function breakdown(contributions: Contributions = NO_CONTRIBUTIONS): Brea
 }
 
 export const ORIGINAL = breakdown();
-/** Current fixed budget, replacing the original lodge split and voluntary calculator. */
+
+// --------------------------------------------------------- current budget ---
+
+/** Everyone except the hosts pays a flat £178 a head (Theo is free). */
 export const PER_ADULT = 17_800;
+export const HOST: GroupId = 'alex-katie';
 export const HOST_CONTRIBUTION = 200_000;
 export const ACCOMMODATION_TOTAL = HOUSES.reduce((sum, h) => sum + h.accommodationPence, 0);
 export const EXTRAS_TOTAL = EXTRAS.reduce((sum, e) => sum + e.pence, 0);
-/** Alex & Katie's own two places, at the same £178 a head as everyone else. */
-export const HOST_PLACES = group('alex-katie').adults * PER_ADULT;
-const otherAdultShares = GROUPS.filter((g) => g.id !== 'alex-katie').reduce((sum, g) => sum + g.adults * PER_ADULT, 0);
-/** Whatever the lodges cost beyond 13 × £178: Alex & Katie cover all of it. */
-export const ADDITIONAL_BIG_HOUSE_TAX = ACCOMMODATION_TOTAL - otherAdultShares - HOST_PLACES;
-const giftsTotal = GIFTS.reduce((sum, gift) => sum + gift.pence, 0);
-export const BUDGET_TOTAL = HOST_CONTRIBUTION + otherAdultShares - giftsTotal;
+
+/** What a night in each lodge really costs per adult: its price split by the adults sleeping there. */
+export const LODGE_PER_HEAD = Object.fromEntries(
+	HOUSES.map((h) => [h.id, h.accommodationPence / groupsIn(h.id).reduce((n, g) => n + g.adults, 0)])
+) as Record<HouseId, number>;
+
+/** Each group's real share of their own lodge, to the penny. */
+const realShares = new Map<GroupId, number>();
+for (const h of HOUSES) {
+	const occ = groupsIn(h.id);
+	const { shares } = allocate(h.accommodationPence, occ.map((g) => g.adults));
+	occ.forEach((g, i) => realShares.set(g.id, shares[i]));
+}
+
+/** What a group actually sends: £178 a head, less the £100 off promised to the House 2 couples. */
+const paysFor = (g: Group) =>
+	g.id === HOST ? HOST_CONTRIBUTION : g.adults * PER_ADULT - GIFTS.filter((x) => x.to === g.id).reduce((s, x) => s + x.pence, 0);
+
+export type BudgetLine = {
+	group: GroupId;
+	accommodation: number; // real share of their own lodge
+	giftReceived: number; // − real share minus what they pay, covered by Alex & Katie
+	giftsGiven: number; // + every other group's gift (Alex & Katie only)
+	extras: number; // gym + bikes (Alex & Katie only)
+	sharedPot: number; // what's left for food + activities (Alex & Katie only)
+	total: number; // what they pay
+};
+
+const guestLines = GROUPS.filter((g) => g.id !== HOST).map((g): BudgetLine => {
+	const accommodation = realShares.get(g.id)!;
+	const total = paysFor(g);
+	if (total > accommodation) throw new Error(`${g.label} would pay more than their real share`);
+	return { group: g.id, accommodation, giftReceived: accommodation - total, giftsGiven: 0, extras: 0, sharedPot: 0, total };
+});
+export const GIFTS_TOTAL = guestLines.reduce((sum, l) => sum + l.giftReceived, 0);
+export const BUDGET_TOTAL = HOST_CONTRIBUTION + guestLines.reduce((sum, l) => sum + l.total, 0);
 export const FOOD_ACTIVITY_POT = BUDGET_TOTAL - ACCOMMODATION_TOTAL - EXTRAS_TOTAL;
+const hostLine: BudgetLine = {
+	group: HOST,
+	accommodation: realShares.get(HOST)!,
+	giftReceived: 0,
+	giftsGiven: GIFTS_TOTAL,
+	extras: EXTRAS_TOTAL,
+	sharedPot: FOOD_ACTIVITY_POT,
+	total: HOST_CONTRIBUTION
+};
+if (hostLine.accommodation + hostLine.giftsGiven + hostLine.extras + hostLine.sharedPot !== HOST_CONTRIBUTION)
+	throw new Error('Alex & Katie’s receipt doesn’t add up to their contribution');
+
 export const CURRENT_BUDGET = {
-	lines: GROUPS.map((g) => {
-		const host = g.id === 'alex-katie';
-		const giftsReceived = GIFTS.filter((gift) => gift.to === g.id).reduce((sum, gift) => sum + gift.pence, 0);
-		return {
-			group: g.id,
-			accommodation: host ? HOST_PLACES : g.adults * PER_ADULT,
-			bigHouseTax: host ? ADDITIONAL_BIG_HOUSE_TAX : 0,
-			extras: host ? EXTRAS_TOTAL : 0,
-			giftsGiven: host ? giftsTotal : 0,
-			giftsReceived,
-			sharedPot: host ? FOOD_ACTIVITY_POT : 0,
-			total: host ? HOST_CONTRIBUTION : g.adults * PER_ADULT - giftsReceived
-		};
-	}),
+	lines: GROUPS.map((g) => (g.id === HOST ? hostLine : guestLines.find((l) => l.group === g.id)!)),
 	total: BUDGET_TOTAL
 };
 export const BUDGET_UPDATED_AT = '2026-11-11T00:00:00.000Z';

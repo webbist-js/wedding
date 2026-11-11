@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { CURRENT_BUDGET, ACCOMMODATION_TOTAL, EXTRAS_TOTAL, FOOD_ACTIVITY_POT, group, gbp, gbpShort } from '$lib/cp-trip';
+	import { CURRENT_BUDGET, GIFTS_TOTAL, HOST_CONTRIBUTION, ACCOMMODATION_TOTAL, EXTRAS_TOTAL, FOOD_ACTIVITY_POT, group, gbp, gbpShort } from '$lib/cp-trip';
 	const rows = CURRENT_BUDGET.lines.map((line) => ({
 		label: group(line.group).label,
 		own: line.total - line.giftsGiven,
-		gift: line.giftsReceived
+		gift: line.giftReceived
 	}));
 	const max = Math.max(...rows.map((r) => r.own + r.gift));
 	const spending = [
@@ -16,8 +16,8 @@
 <div class="budget-charts">
 	<section aria-labelledby="contributions-chart-title">
 		<h3 id="contributions-chart-title">Who covers each share</h3>
-		<p class="fine">Alex & Katie’s £2,000 is £1,800 on their row plus the two £100 gifts below. Gifts are counted once.</p>
-		<div class="legend"><span><i class="own"></i>Paid by the group</span><span><i class="gift"></i>£100 gift from Alex & Katie</span></div>
+		<p class="fine">Each bar is that group’s real share. Alex & Katie’s {gbpShort(HOST_CONTRIBUTION)} is {gbp(HOST_CONTRIBUTION - GIFTS_TOTAL)} on their row plus the {gbp(GIFTS_TOTAL)} of gifts below. Gifts are counted once.</p>
+		<div class="legend"><span><i class="own"></i>Paid by the group</span><span><i class="gift"></i>Gift from Alex & Katie</span></div>
 		{#each rows as row}
 			<div class="chart-row">
 				<div class="row-label"><span>{row.label}</span><b>{gbpShort(row.own)}</b></div>

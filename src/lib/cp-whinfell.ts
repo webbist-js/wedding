@@ -155,7 +155,7 @@ export const PACK: PackSection[] = [
 		id: 'theo',
 		title: 'For Theo',
 		note: 'A cot and highchair are already in the lodge.',
-		items: ['Cot linen', 'Swim nappies', 'Travel cot (Oli & Phoebe have the twin room)']
+		items: ['Cot linen', 'Swim nappies', 'Travel cot']
 	},
 	{
 		id: 'essentials',

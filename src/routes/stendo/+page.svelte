@@ -10,7 +10,8 @@
 	import ChoirPlayer from '$lib/components/cp-trip/ChoirPlayer.svelte';
 	import { HALLELUJAH } from '$lib/whinfell-song';
 	import {
-		BOOKING, GROUPS, HOUSES, PEOPLE, ADULTS, KIDS, EXTRAS, GIFTS, CURRENT_BUDGET, PER_ADULT, ADDITIONAL_BIG_HOUSE_TAX, ACCOMMODATION_TOTAL, EXTRAS_TOTAL, FOOD_ACTIVITY_POT, groupsIn, group, gbp, gbpShort, person, daysUntil, pastDeadline,
+		BOOKING, GROUPS, HOUSES, PEOPLE, ADULTS, KIDS, EXTRAS, CURRENT_BUDGET, HOST, LODGE_PER_HEAD, GIFTS_TOTAL, EXTRAS_TOTAL, FOOD_ACTIVITY_POT, groupsIn, group, gbp, gbpShort, person, daysUntil, pastDeadline,
+		type HouseId,
 		type Person
 	} from '$lib/cp-trip';
 	import { ITINERARY, PACK, SHOPPING, GALLERY, LODGE_IMAGES, BANNER, FACTS } from '$lib/cp-whinfell';
@@ -175,7 +176,7 @@
 	const solos = GROUPS.filter((g) => g.adults === 1);
 
 
-	const giftList = GIFTS.map((x) => gbpShort(x.pence)).join(' + ');
+	const houseAdults = (id: HouseId) => groupsIn(id).reduce((n, g) => n + g.adults, 0);
 
 	// Six cards so the grid fills (3 × 2, 2 × 3). The last is fixed facts, not an editable note.
 	const INFO: { key: 'arrival' | 'parking' | 'lodges' | 'shopping' | 'plans' | 'contact'; title: string; facts: string[]; fixed?: boolean }[] = [
@@ -205,11 +206,10 @@
 		<p class="rc-h">House {g.house.slice(1)}</p>
 		<h3>{g.label}</h3>
 		<dl>
-			<div><dt>{g.paidUpfront ? `Our two places · 2 × ${gbpShort(PER_ADULT)}` : `${g.adults} × ${gbpShort(PER_ADULT)} per adult`}</dt><dd>{gbp(l.accommodation)}</dd></div>
-			{#if l.bigHouseTax}<div class="tax"><dt>Additional Big House Tax</dt><dd>+{gbp(l.bigHouseTax)}</dd></div>{/if}
+			<div><dt>{g.id === HOST ? 'Our' : 'Real'} share of House {g.house.slice(1)}<small>{g.adults} × {gbpShort(LODGE_PER_HEAD[g.house])}</small></dt><dd>{gbp(l.accommodation)}</dd></div>
+			{#if l.giftReceived}<div class="gift"><dt>Gift from Alex & Katie</dt><dd>{gbp(-l.giftReceived)}</dd></div>{/if}
 			{#each EXTRAS.filter((e) => e.group === g.id) as e}<div><dt>{e.label}</dt><dd>{gbp(e.pence)}</dd></div>{/each}
-			{#if l.giftsGiven}<div><dt>Gifts ({giftList})</dt><dd>{gbp(l.giftsGiven)}</dd></div>{/if}
-			{#if l.giftsReceived}<div class="gift"><dt>Gift from Alex & Katie</dt><dd>{gbp(-l.giftsReceived)}</dd></div>{/if}
+			{#if l.giftsGiven}<div class="given"><dt>Gifts to everyone else</dt><dd>+{gbp(l.giftsGiven)}</dd></div>{/if}
 			{#if l.sharedPot}<div><dt>Shared food + activities pot</dt><dd>{gbp(l.sharedPot)}</dd></div>{/if}
 		</dl>
 		<p class="rc-total"><span>Total</span><b>{gbp(l.total)}</b></p>
@@ -353,8 +353,8 @@
 		<section class="costs wrap" id="costs" aria-labelledby="costs-title">
 			<p class="eyebrow">THE COSTS</p>
 			<h2 id="costs-title">Who pays <span>what.</span></h2>
-			<p class="section-intro">We’ve adjusted the costs for a few reasons, mainly the concerns raised about pricing. Katie and I are absorbing more of the cost so everyone else has the same base share: <strong>£178 per adult, whichever lodge you’re in</strong>. Our contribution is £2,000. The £100 gifts to Chris & Jenn and Adam & Lysanne still apply, so those couples pay £256 rather than £356.</p>
-			<p class="section-intro">Theo is free. Total funding is <strong>{gbp(CURRENT_BUDGET.total)}</strong>: accommodation and our gym and bike extras are covered, with <strong>{gbp(FOOD_ACTIVITY_POT)} left for shared food and activities</strong>. Everyone’s share and the full breakdown are below.</p>
+			<p class="section-intro">We’ve adjusted the costs for a few reasons, mainly the concerns raised about pricing. Katie and I are absorbing more of the cost so everyone else has the same base share: <strong>£178 per adult, whichever lodge you’re in</strong>. Our contribution is £2,000. Chris & Jenn and Adam & Lysanne keep the £100 off we promised, so they pay £256 rather than £356.</p>
+			<p class="section-intro">Theo is free. Total funding is <strong>{gbp(CURRENT_BUDGET.total)}</strong>: accommodation and our gym and bike extras are covered, with <strong>{gbp(FOOD_ACTIVITY_POT)} left for shared food and activities</strong>. Each receipt below shows what your place really costs and the gift from us that brings it down to what you pay.</p>
 
 			<div class="receipts">
 				{#each CURRENT_BUDGET.lines as l}{@render receipt(l)}{/each}
@@ -369,7 +369,7 @@
 					<p class="rc-total"><span>Total</span><b>{gbp(CURRENT_BUDGET.total)}</b></p>
 				</article>
 			</div>
-			<p class="fine">Accommodation only: {gbp(ACCOMMODATION_TOTAL)} − {ADULTS} × {gbpShort(PER_ADULT)} (all {ADULTS} adults, our two places included) = <strong>{gbp(ADDITIONAL_BIG_HOUSE_TAX)} additional Big House Tax</strong>. We cover this shortfall as well as the £200 gifts. The {gbp(FOOD_ACTIVITY_POT)} food and activities pot is what will remain once everyone has paid; it is not extra money to collect.</p>
+			<p class="fine">Real share = the lodge’s price split between the adults sleeping in it (Theo is free): {#each HOUSES as h, i}{i ? ' · ' : ''}House {h.number} {gbpShort(h.accommodationPence)} ÷ {houseAdults(h.id)} = {gbpShort(LODGE_PER_HEAD[h.id])}{/each}. Our gifts make up the difference between that and what you pay: <strong>{gbp(GIFTS_TOTAL)} in all</strong>. The {gbp(FOOD_ACTIVITY_POT)} food and activities pot is what will remain once everyone has paid; it is not extra money to collect.</p>
 			<TripBudgetCharts />
 
 		</section>
@@ -676,7 +676,8 @@
 	.rc dl div { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; padding: 4px 0; border-top: 1px dotted var(--line); }
 	.rc dd { margin: 0; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.rc .gift dd, .rc .gift dt { color: var(--moss); font-weight: 800; }
-	.rc .tax dd, .rc .tax dt { color: var(--ember); font-weight: 800; }
+	.rc .given dd, .rc .given dt { color: var(--ember); font-weight: 800; }
+	.rc dt small { display: block; font-size: 11px; font-weight: 400; opacity: .75; }
 	.trip :global(.gate) { margin-top: 24px; padding: 22px; border: 1px dashed var(--sun); border-radius: 8px; background: var(--paper-2); display: flex; flex-wrap: wrap; gap: 14px 20px; align-items: center; justify-content: space-between; max-width: 860px; }
 	.trip :global(.gate p) { font-size: 15px; max-width: 520px; }
 	.rc-sum { background-color: var(--ink); color: var(--paper); background-image: radial-gradient(circle at 50% 0, var(--paper) 6px, transparent 7px); }

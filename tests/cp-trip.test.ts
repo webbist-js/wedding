@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-	CURRENT_BUDGET, ACCOMMODATION_TOTAL, ADDITIONAL_BIG_HOUSE_TAX, FOOD_ACTIVITY_POT, EXTRAS_TOTAL, BOOKING, GROUPS, HOUSES, ORIGINAL, breakdown, lineFor, deltas, allocate, assertContribution, poundsToPence,
+	CURRENT_BUDGET, ACCOMMODATION_TOTAL, GIFTS_TOTAL, LODGE_PER_HEAD, FOOD_ACTIVITY_POT, EXTRAS_TOTAL, BOOKING, GROUPS, HOUSES, ORIGINAL, breakdown, lineFor, deltas, allocate, assertContribution, poundsToPence,
 	proposalStatus, publishAgreement, currentAgreement, ledger, validatePayment, BASELINE_AGREEMENT, ContributionError,
 	gbp, signed, countdown, daysUntil, groupsIn, PEOPLE, ADULTS, splitSaving, proposalSummary,
 	type Consent, type Agreement, type Payment, type GroupId, type Contributions
@@ -12,10 +12,10 @@ const NOW = Date.UTC(2026, 10, 10, 12);
 
 describe('who sleeps where', () => {
 	it('puts the right people in each lodge', () => {
-		expect(groupsIn('h1').map((g) => g.label)).toEqual(['Kie & Elisa', 'Alex & Katie', 'Mule']);
+		expect(groupsIn('h1').map((g) => g.label)).toEqual(['Kie & Elisa', 'Alex & Katie', 'Mule', 'Oliver & Phoebe']);
 		expect(groupsIn('h2').map((g) => g.label)).toEqual(['Chris & Jenn', 'Adam & Lysanne']);
-		expect(groupsIn('h3').map((g) => g.label)).toEqual(['Chris & Hayley & Theo', 'Oliver & Phoebe']);
-		expect(groupsIn('h1').reduce((n, g) => n + g.adults, 0)).toBe(5);
+		expect(groupsIn('h3').map((g) => g.label)).toEqual(['Chris & Hayley & Theo']);
+		expect(groupsIn('h1').reduce((n, g) => n + g.adults, 0)).toBe(7);
 		expect(ADULTS).toBe(13);
 		expect(PEOPLE).toHaveLength(13);
 	});
@@ -229,21 +229,38 @@ describe('consensus', () => {
 });
 
 describe('current budget and payments', () => {
+	it('splits each lodge between the adults sleeping in it', () => {
+		expect(LODGE_PER_HEAD).toEqual({ h1: 31_000, h2: 16_475, h3: 32_450 });
+		expect(Object.fromEntries(CURRENT_BUDGET.lines.map((l) => [l.group, l.accommodation]))).toEqual({
+			'kie-elisa': 62_000, 'alex-katie': 62_000, mule: 31_000, 'oliver-phoebe': 62_000,
+			'chris-jenn': 32_950, 'adam-lysanne': 32_950, 'chris-hayley': 64_900
+		});
+		expect(CURRENT_BUDGET.lines.reduce((s, l) => s + l.accommodation, 0)).toBe(ACCOMMODATION_TOTAL);
+	});
+
+	it('gifts everyone the gap between their real share and what they pay', () => {
+		expect(Object.fromEntries(CURRENT_BUDGET.lines.map((l) => [l.group, l.giftReceived]))).toEqual({
+			'kie-elisa': 26_400, 'alex-katie': 0, mule: 13_200, 'oliver-phoebe': 26_400,
+			'chris-jenn': 7_350, 'adam-lysanne': 7_350, 'chris-hayley': 29_300
+		});
+		expect(GIFTS_TOTAL).toBe(110_000);
+		const host = CURRENT_BUDGET.lines.find((l) => l.group === 'alex-katie')!;
+		expect(host).toMatchObject({ accommodation: 62_000, giftsGiven: 110_000, extras: 7_900, sharedPot: 20_100, total: 200_000 });
+	});
+
 	const pay = (id: number, group: GroupId, pence: number): Payment => ({ id, group, pence, receivedOn: '2026-11-20', note: '', createdAt: '2026-11-20T10:00:00Z' });
 
-	it('charges £178 per adult, deducts each £100 gift once, and keeps the hosts at £2,000', () => {
+	it('charges £178 per adult (£100 off for House 2) and keeps the hosts at £2,000', () => {
 		expect(Object.fromEntries(CURRENT_BUDGET.lines.map((l) => [l.group, l.total]))).toEqual({
 			'kie-elisa': 35_600, 'alex-katie': 200_000, mule: 17_800,
 			'chris-jenn': 25_600, 'adam-lysanne': 25_600,
 			'chris-hayley': 35_600, 'oliver-phoebe': 35_600
 		});
 		for (const line of CURRENT_BUDGET.lines) {
-			expect(line.accommodation + line.bigHouseTax + line.extras + line.giftsGiven - line.giftsReceived + line.sharedPot).toBe(line.total);
+			expect(line.accommodation - line.giftReceived + line.giftsGiven + line.extras + line.sharedPot).toBe(line.total);
 		}
 		expect(CURRENT_BUDGET.lines.reduce((sum, l) => sum + l.total, 0)).toBe(375_800);
 		expect(CURRENT_BUDGET.total).toBe(375_800);
-		expect(CURRENT_BUDGET.lines.find((l) => l.group === 'alex-katie')!.accommodation).toBe(35_600);
-		expect(ADDITIONAL_BIG_HOUSE_TAX).toBe(116_400);
 		expect(ACCOMMODATION_TOTAL).toBe(347_800);
 		expect(EXTRAS_TOTAL).toBe(7_900);
 		expect(FOOD_ACTIVITY_POT).toBe(20_100);
