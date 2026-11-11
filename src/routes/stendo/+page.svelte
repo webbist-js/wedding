@@ -10,7 +10,7 @@
 	import ChoirPlayer from '$lib/components/cp-trip/ChoirPlayer.svelte';
 	import { HALLELUJAH } from '$lib/whinfell-song';
 	import {
-		BOOKING, GROUPS, HOUSES, PEOPLE, ADULTS, KIDS, EXTRAS, GIFTS, CURRENT_BUDGET, PER_ADULT, HOST_PLACES, ADDITIONAL_BIG_HOUSE_TAX, ACCOMMODATION_TOTAL, EXTRAS_TOTAL, FOOD_ACTIVITY_POT, groupsIn, group, gbp, gbpShort, person, daysUntil, pastDeadline,
+		BOOKING, GROUPS, HOUSES, PEOPLE, ADULTS, KIDS, EXTRAS, GIFTS, CURRENT_BUDGET, PER_ADULT, ADDITIONAL_BIG_HOUSE_TAX, ACCOMMODATION_TOTAL, EXTRAS_TOTAL, FOOD_ACTIVITY_POT, groupsIn, group, gbp, gbpShort, person, daysUntil, pastDeadline,
 		type Person
 	} from '$lib/cp-trip';
 	import { ITINERARY, PACK, SHOPPING, GALLERY, LODGE_IMAGES, BANNER, FACTS } from '$lib/cp-whinfell';
@@ -205,7 +205,7 @@
 		<p class="rc-h">House {g.house.slice(1)}</p>
 		<h3>{g.label}</h3>
 		<dl>
-			<div><dt>{g.paidUpfront ? 'Our two places · 2 × £310' : `${g.adults} × ${gbpShort(PER_ADULT)} per adult`}</dt><dd>{gbp(l.accommodation)}</dd></div>
+			<div><dt>{g.paidUpfront ? `Our two places · 2 × ${gbpShort(PER_ADULT)}` : `${g.adults} × ${gbpShort(PER_ADULT)} per adult`}</dt><dd>{gbp(l.accommodation)}</dd></div>
 			{#if l.bigHouseTax}<div class="tax"><dt>Additional Big House Tax</dt><dd>+{gbp(l.bigHouseTax)}</dd></div>{/if}
 			{#each EXTRAS.filter((e) => e.group === g.id) as e}<div><dt>{e.label}</dt><dd>{gbp(e.pence)}</dd></div>{/each}
 			{#if l.giftsGiven}<div><dt>Gifts ({giftList})</dt><dd>{gbp(l.giftsGiven)}</dd></div>{/if}
@@ -369,7 +369,7 @@
 					<p class="rc-total"><span>Total</span><b>{gbp(CURRENT_BUDGET.total)}</b></p>
 				</article>
 			</div>
-			<p class="fine">Accommodation only: {gbp(ACCOMMODATION_TOTAL)} − 11 × {gbpShort(PER_ADULT)} − our two places at {gbp(HOST_PLACES)} = <strong>{gbp(ADDITIONAL_BIG_HOUSE_TAX)} additional Big House Tax</strong>. We cover this shortfall as well as the £200 gifts. The {gbp(FOOD_ACTIVITY_POT)} food and activities pot is what will remain once everyone has paid; it is not extra money to collect.</p>
+			<p class="fine">Accommodation only: {gbp(ACCOMMODATION_TOTAL)} − {ADULTS} × {gbpShort(PER_ADULT)} (all {ADULTS} adults, our two places included) = <strong>{gbp(ADDITIONAL_BIG_HOUSE_TAX)} additional Big House Tax</strong>. We cover this shortfall as well as the £200 gifts. The {gbp(FOOD_ACTIVITY_POT)} food and activities pot is what will remain once everyone has paid; it is not extra money to collect.</p>
 			<TripBudgetCharts />
 
 		</section>

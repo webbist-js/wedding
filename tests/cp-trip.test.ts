@@ -242,7 +242,8 @@ describe('current budget and payments', () => {
 		}
 		expect(CURRENT_BUDGET.lines.reduce((sum, l) => sum + l.total, 0)).toBe(375_800);
 		expect(CURRENT_BUDGET.total).toBe(375_800);
-		expect(ADDITIONAL_BIG_HOUSE_TAX).toBe(90_000);
+		expect(CURRENT_BUDGET.lines.find((l) => l.group === 'alex-katie')!.accommodation).toBe(35_600);
+		expect(ADDITIONAL_BIG_HOUSE_TAX).toBe(116_400);
 		expect(ACCOMMODATION_TOTAL).toBe(347_800);
 		expect(EXTRAS_TOTAL).toBe(7_900);
 		expect(FOOD_ACTIVITY_POT).toBe(20_100);

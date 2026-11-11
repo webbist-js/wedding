@@ -312,8 +312,10 @@ export const PER_ADULT = 17_800;
 export const HOST_CONTRIBUTION = 200_000;
 export const ACCOMMODATION_TOTAL = HOUSES.reduce((sum, h) => sum + h.accommodationPence, 0);
 export const EXTRAS_TOTAL = EXTRAS.reduce((sum, e) => sum + e.pence, 0);
-export const HOST_PLACES = group('alex-katie').adults * HOUSE1_PER_HEAD;
+/** Alex & Katie's own two places, at the same £178 a head as everyone else. */
+export const HOST_PLACES = group('alex-katie').adults * PER_ADULT;
 const otherAdultShares = GROUPS.filter((g) => g.id !== 'alex-katie').reduce((sum, g) => sum + g.adults * PER_ADULT, 0);
+/** Whatever the lodges cost beyond 13 × £178: Alex & Katie cover all of it. */
 export const ADDITIONAL_BIG_HOUSE_TAX = ACCOMMODATION_TOTAL - otherAdultShares - HOST_PLACES;
 const giftsTotal = GIFTS.reduce((sum, gift) => sum + gift.pence, 0);
 export const BUDGET_TOTAL = HOST_CONTRIBUTION + otherAdultShares - giftsTotal;
