@@ -214,6 +214,11 @@ export const RELIEF_SPLIT: { group: GroupId; percent: number }[] = [
 	{ group: 'kie-elisa', percent: 40 }
 ];
 export const RELIEF_GROUPS: GroupId[] = RELIEF_SPLIT.map((r) => r.group);
+/** How a sum chipped in splits between the House 1 couples, to the penny. */
+export function splitSaving(pence: number): { group: GroupId; pence: number }[] {
+	const { shares } = allocate(pence, RELIEF_SPLIT.map((r) => r.percent));
+	return RELIEF_SPLIT.map((r, i) => ({ group: r.group, pence: shares[i] }));
+}
 export const isContributor = (id: unknown): id is ContributorId => CONTRIBUTORS.includes(id as ContributorId);
 export const isHouse1 = (id: unknown): boolean => HOUSE1_GROUPS.includes(id as GroupId);
 export const isReliefGroup = (id: unknown): boolean => RELIEF_GROUPS.includes(id as GroupId);
@@ -487,17 +492,18 @@ export function daysUntil(isoDate: string, now: number) {
 
 // ------------------------------------------------------------- share text ---
 
-export function proposalSummary(c: Contributions): string {
+/** Group-chat text for a "what if". Pass `only` to include just that group's row. */
+export function proposalSummary(c: Contributions, only?: GroupId): string {
 	const b = breakdown(c);
 	const d = deltas(b);
-	const rows = GROUPS.map((g) => `${g.label}: ${gbp(lineFor(ORIGINAL, g.id).total)} → ${gbp(lineFor(b, g.id).total)} (${signed(d[g.id])})`);
+	const rows = GROUPS.filter((g) => !only || g.id === only).map((g) => `${g.label}: ${gbp(lineFor(ORIGINAL, g.id).total)} → ${gbp(lineFor(b, g.id).total)} (${signed(d[g.id])})`);
+	const split = splitSaving(b.pot).map((x) => `${group(x.group).label} save ${gbp(x.pence)}`).join(', ');
 	return [
 		'Center Parcs: Fancy House Tax idea (hypothetical, nothing agreed yet)',
-		CONTRIBUTORS.map((id) => `${group(id).label} chip in ${gbp(c[id])}`).join(', ') + '.',
-		`House 1 saves ${gbp(b.pot)}: 60% to Alex & Katie, 40% to Kie & Elisa.`,
+		CONTRIBUTORS.filter((id) => c[id] > 0).map((id) => `${group(id).label} chip in ${gbp(c[id])}`).join(', ') + '.',
+		`House 1 saves ${gbp(b.pot)}: ${split}.`,
 		'',
 		...rows,
-		'',
-		`Total still ${gbp(b.total)}.`
+		...(only ? [] : ['', `Total still ${gbp(b.total)}.`])
 	].join('\n');
 }

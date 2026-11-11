@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
 	BOOKING, GROUPS, HOUSES, ORIGINAL, breakdown, lineFor, deltas, allocate, assertContribution, poundsToPence,
 	proposalStatus, publishAgreement, currentAgreement, ledger, validatePayment, BASELINE_AGREEMENT, ContributionError,
-	gbp, signed, countdown, daysUntil, groupsIn, PEOPLE, ADULTS,
+	gbp, signed, countdown, daysUntil, groupsIn, PEOPLE, ADULTS, splitSaving, proposalSummary,
 	type Consent, type Agreement, type Payment, type GroupId, type Contributions
 } from '../src/lib/cp-trip';
 
@@ -140,6 +140,25 @@ describe('the Fancy House Tax', () => {
 			expect(Math.abs(lineFor(b, 'kie-elisa').relief - t * 0.4)).toBeLessThan(1);
 		}
 		expect(breakdown(C(1_234, 0, 0))).toEqual(breakdown(C(1_234, 0, 0)));
+	});
+
+	it('shows each offer’s saving split 60/40, to the penny', () => {
+		expect(splitSaving(5_000)).toEqual([{ group: 'alex-katie', pence: 3_000 }, { group: 'kie-elisa', pence: 2_000 }]);
+		expect(splitSaving(0)).toEqual([{ group: 'alex-katie', pence: 0 }, { group: 'kie-elisa', pence: 0 }]);
+		for (const p of [1, 3, 7, 999, 12_345]) expect(splitSaving(p).reduce((n, x) => n + x.pence, 0)).toBe(p);
+		// matches what the breakdown actually gives each couple
+		const b = breakdown(C(1_234, 0, 0));
+		for (const x of splitSaving(1_234)) expect(lineFor(b, x.group).relief).toBe(x.pence);
+	});
+
+	it('keeps shared "what if" text to the sharer’s own row', () => {
+		const mine = proposalSummary(C(5_000, 0, 0), 'chris-jenn');
+		expect(mine).toContain('Chris & Jenn: £229.50 → £279.50');
+		expect(mine).not.toContain('Kie & Elisa:');
+		expect(mine).not.toContain('Mule:');
+		expect(mine).toContain('Alex & Katie save £30.00, Kie & Elisa save £20.00');
+		const all = proposalSummary(C(5_000, 0, 0));
+		for (const g of GROUPS) expect(all).toContain(`${g.label}:`);
 	});
 
 	it('rejects invalid contributions', () => {

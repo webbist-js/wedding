@@ -6,7 +6,7 @@
 	import Money from './Money.svelte';
 	import {
 		GROUPS, CONTRIBUTORS, RELIEF_GROUPS, RELIEF_SPLIT, ORIGINAL, NO_CONTRIBUTIONS, MAX_CONTRIBUTION_PENCE, STEP_PENCE,
-		breakdown, deltas, lineFor, group, gbp, gbpShort, poundsToPence, proposalSummary, isContributor, isReliefGroup,
+		breakdown, deltas, lineFor, group, groupsIn, gbp, gbpShort, poundsToPence, proposalSummary, isContributor, isReliefGroup, splitSaving, EXTRAS,
 		type Contributions, type ContributorId, type GroupId, type ProposalStatus, type Agreement, type Consent
 	} from '$lib/cp-trip';
 
@@ -72,7 +72,7 @@
 	// ---- sharing ----
 	let shareMsg = $state('');
 	async function share() {
-		const text = proposalSummary(amounts);
+		const text = proposalSummary(amounts, seeAll ? undefined : (myGroup ?? undefined));
 		try {
 			if (navigator.share) await navigator.share({ title: 'Fancy House Tax idea', text });
 			else { await navigator.clipboard.writeText(text); shareMsg = 'Copied. Paste it in the group chat.'; }
@@ -166,6 +166,7 @@
 					<div class="slider" class:mine={myGroup === id}>
 						<p class="who">{g.label}{#if myGroup === id}<span class="you">you</span>{/if}</p>
 						<p class="amt"><Money pence={amounts[id]} /><small>extra, whole trip</small></p>
+						<p class="saves">{#if amounts[id] > 0}Saves {splitSaving(amounts[id]).map((x) => `${group(x.group).label} ${gbp(x.pence)}`).join(' and ')}{:else}Saves House 1 nothing yet{/if}</p>
 						<div class="step">
 							<button type="button" onclick={() => nudge(id, -STEP_PENCE)} disabled={amounts[id] === 0} aria-label={`£5 less from ${g.label}`}>−£5</button>
 							<input
@@ -195,9 +196,33 @@
 					{#each Array(6) as _, i}<i style:animation-delay={`${i * 0.35}s`}>£</i>{/each}
 				</div>
 				<div class="end h1"><span>HOUSE 1</span><b>saves <Money pence={proposed.pot} /></b></div>
-				<p class="per">{untouched ? 'Nothing moving yet. Everyone pays the original costs.' : seeAll ? `Alex & Katie save ${gbp(lineFor(proposed, 'alex-katie').relief)}, Kie & Elisa ${gbp(lineFor(proposed, 'kie-elisa').relief)}.` : 'Split 60% to Alex & Katie, 40% to Kie & Elisa.'}</p>
+				<p class="per">{untouched ? 'Nothing moving yet. Everyone pays the original costs.' : `${splitSaving(proposed.pot).map((x) => `${group(x.group).label} save ${gbp(x.pence)}`).join(', ')}.`}</p>
 			</div>
 
+			{#if myGroup}
+				{@const was = lineFor(ORIGINAL, myGroup)}
+				{@const now = lineFor(proposed, myGroup)}
+				{@const g = group(myGroup)}
+				<div class="mine-receipt" aria-live="polite">
+					<p class="mr-h">Your new cost · {g.label}</p>
+					<dl>
+						<div><dt>{g.house === 'h1' ? `House 1 · ${g.adults} × £310` : groupsIn(g.house).length > 1 ? `Half of House ${g.house.slice(1)}` : `House ${g.house.slice(1)}`}</dt><dd>{gbp(now.accommodation)}</dd></div>
+						{#if now.absorbed}<div><dt>Oli & Phoebe’s empty places</dt><dd>+{gbp(now.absorbed)}</dd></div>{/if}
+						{#if now.bigHouseTax > 0}<div><dt>Big House Tax</dt><dd>+{gbp(now.bigHouseTax)}</dd></div>{/if}
+						{#if now.bigHouseTax < 0}<div class="down"><dt>Big House Tax, paid by Alex & Katie</dt><dd>{gbp(now.bigHouseTax)}</dd></div>{/if}
+						{#each EXTRAS.filter((e) => e.group === myGroup) as e}<div><dt>{e.label}</dt><dd>+{gbp(e.pence)}</dd></div>{/each}
+						{#if now.giftsGiven}<div><dt>Gifts to House 2</dt><dd>+{gbp(now.giftsGiven)}</dd></div>{/if}
+						{#if now.giftsReceived}<div class="down"><dt>Gift from Alex & Katie</dt><dd>{gbp(-now.giftsReceived)}</dd></div>{/if}
+						<div class="sub"><dt>Your share today</dt><dd>{gbp(was.total)}</dd></div>
+						{#if now.contribution}<div class="up"><dt>You chip in</dt><dd>+{gbp(now.contribution)}</dd></div>{/if}
+						{#if now.relief}<div class="down"><dt>Your saving ({RELIEF_SPLIT.find((r) => r.group === myGroup)?.percent}% of {gbp(proposed.pot)})</dt><dd>{gbp(-now.relief)}</dd></div>{/if}
+						{#if !now.contribution && !now.relief}<div class="none"><dt>{isContributor(myGroup) ? 'Move your slider to see the change' : 'Nothing chipped in yet in this sketch'}</dt><dd>£0.00</dd></div>{/if}
+					</dl>
+					<p class="mr-total"><span>If we did this</span><b><Money pence={now.total} /></b></p>
+				</div>
+			{/if}
+
+			{#if seeAll}
 			<div class="table-wrap">
 				<table>
 					<caption class="sr">Original and proposed amount per group</caption>
@@ -205,7 +230,7 @@
 					<tbody>
 						{#each tableGroups as g}
 							{@const d = change[g.id]}
-							<tr class:you={myGroup === g.id} class:locked={g.house === 'h3'}>
+							<tr class:me-row={myGroup === g.id} class:locked={g.house === 'h3'}>
 								<th scope="row">{g.label}<small>House {g.house.slice(1)}{g.house === 'h3' ? ' · never changes' : ''}</small></th>
 								<td>{gbp(lineFor(ORIGINAL, g.id).total)}</td>
 								<td><b><Money pence={lineFor(proposed, g.id).total} /></b></td>
@@ -213,14 +238,15 @@
 							</tr>
 						{/each}
 					</tbody>
-					{#if seeAll}<tfoot><tr><th scope="row">Everyone</th><td>{gbp(ORIGINAL.total)}</td><td><b>{gbp(proposed.total)}</b></td><td>Still adds up ✓</td></tr></tfoot>{/if}
+					<tfoot><tr><th scope="row">Everyone</th><td>{gbp(ORIGINAL.total)}</td><td><b>{gbp(proposed.total)}</b></td><td>Still adds up ✓</td></tr></tfoot>
 				</table>
 			</div>
+			{/if}
 			<p class="fine">
 				{#if seeAll}
 					Any saving is split 60% to Alex & Katie, 40% to Kie & Elisa. Mule and Chris & Hayley don’t change, and the empty places, the Big House Tax, Alex & Katie’s £79 of gym and bikes, and the £100 gifts all stay as they are.
 				{:else}
-					This only shows your numbers. Any saving is split 60% to Alex & Katie, 40% to Kie & Elisa.
+					Only your own numbers are shown. Any saving is split 60% to Alex & Katie, 40% to Kie & Elisa; nobody else’s share moves.
 				{/if}
 				{#if seeAll && proposed.rounding.length}Pennies that don’t split evenly go to {proposed.rounding.map((id) => group(id).label).join(' and ')}, so the total stays exactly {gbp(ORIGINAL.total)}.{/if}
 			</p>
@@ -345,7 +371,7 @@
 	.lane { display: grid; grid-template-columns: 96px 1fr; column-gap: 14px; row-gap: 2px; align-items: start; padding: 14px; border-radius: 6px; background: #ffffff0a; border: 1px solid transparent; }
 	.lane .tag { grid-row: span 2; align-self: center; justify-self: start; padding: 5px 10px; border-radius: 999px; font: 700 11px var(--f-body); letter-spacing: .06em; text-transform: uppercase; }
 	.lane .names { font: 700 16px/1.35 var(--f-display); }
-	.lane small { grid-column: 2; font-size: 12px; color: #d9c9b0; }
+	.lane small { grid-column: 2; font-size: 13px; color: #eadcc5; }
 	.give .tag { background: var(--sun); color: var(--ink); }
 	.save .tag { background: #3a6e4b; color: #fff; }
 	.same .tag { background: #ffffff1f; color: var(--paper); }
@@ -358,7 +384,7 @@
 	.stamp { position: absolute; top: 22px; right: 22px; transform: rotate(4deg); border: 1px solid var(--ember); outline: 1px solid var(--ember); outline-offset: 2px; border-radius: 4px; color: var(--ember); padding: 6px 10px; font: 600 11px/1 var(--f-label); letter-spacing: .2em; }
 	.calc-head { max-width: 560px; padding-right: 120px; }
 	.calc-head h3 { font: 800 30px/1.1 var(--f-display); }
-	.calc-head p { font-size: 14px; color: var(--muted); margin-top: 6px; }
+	.calc-head p { font-size: 15px; color: var(--muted); margin-top: 6px; }
 	.sliders { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 22px; } /* 3 couples, or just yours */
 	.sliders.one { grid-template-columns: minmax(0, 560px); }
 	.slider { border: 1px solid var(--line); border-radius: 6px; background: var(--paper-2); padding: 20px; display: grid; gap: 12px; }
@@ -367,14 +393,14 @@
 	.you { font: 600 9px var(--f-label); letter-spacing: .16em; text-transform: uppercase; background: var(--ember); color: #fff; padding: 3px 8px; border-radius: 999px; }
 	.amt { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 	.amt :global(.money) { font: 800 52px/1 var(--f-display); color: var(--ember); font-variant-numeric: lining-nums; }
-	.amt small { font-size: 12px; color: var(--muted); }
+	.amt small { font-size: 13px; color: var(--muted); }
 	.step { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; }
 	.step button { min-width: 56px; min-height: 44px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); font-weight: 800; }
 	.step input { width: 100%; accent-color: var(--ember); min-height: 44px; }
 	.presets { display: flex; flex-wrap: wrap; gap: 6px; }
 	.presets button { min-height: 38px; padding: 4px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); font-weight: 700; font-size: 13px; }
 	.presets button[aria-pressed=true] { background: var(--ember); color: #fff; border-color: var(--ember); }
-	.custom label { font-size: 12px; font-weight: 700; color: var(--muted); }
+	.custom label { font-size: 13px; font-weight: 700; color: var(--muted); }
 	.custom div { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
 	.custom span { font-weight: 800; }
 	.custom input { width: 120px; min-height: 40px; border: 1px solid var(--line); background: var(--paper); padding: 6px 12px; border-radius: 6px; }
@@ -383,9 +409,10 @@
 
 	.flow { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; margin-top: 22px; padding: 20px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper-2); }
 	.end { display: grid; gap: 4px; text-align: center; padding: 12px 16px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); }
-	.end span { font: 600 10px var(--f-label); letter-spacing: .18em; }
+	.end span { font: 600 11px var(--f-label); letter-spacing: .16em; color: var(--ink); }
 	.end b { font-size: 13px; }
 	.end.h1 { background: var(--moss); color: #fff; border-color: var(--moss); }
+	.end.h1 span { color: #fff; }
 	.pipe { position: relative; height: 34px; border-block: 2px solid var(--line); overflow: hidden; }
 	.pipe i { position: absolute; top: 50%; left: -24px; width: 24px; height: 24px; margin-top: -12px; border-radius: 50%; background: var(--sun); color: var(--ink); font: 800 12px/24px var(--f-body); text-align: center; font-style: normal; opacity: 0; }
 	.moving .pipe i { animation: coin 2.1s linear infinite; }
@@ -397,8 +424,9 @@
 	th, td { text-align: right; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
 	th[scope=row], thead th:first-child { text-align: left; }
 	thead th { background: var(--ink); color: var(--paper); font: 600 10px var(--f-label); letter-spacing: .18em; text-transform: uppercase; white-space: nowrap; }
-	th small, td small { display: block; font-size: 11px; font-weight: 500; color: var(--muted); }
-	tr.you th { box-shadow: inset 3px 0 0 var(--sun); }
+	th small, td small { display: block; font-size: 12px; font-weight: 600; color: var(--muted); }
+	tr.me-row th { box-shadow: inset 3px 0 0 var(--sun); }
+	tr.me-row { background: #fbf1dc; }
 	tr.locked { background: #f3e9d8; }
 	td.d { white-space: nowrap; font-weight: 800; }
 	td.up { color: var(--ember); }
@@ -407,6 +435,18 @@
 	.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 	.calc-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 18px; }
 	.calc .fine { color: var(--muted); }
+	.saves { font-size: 13px; font-weight: 700; color: var(--moss); min-height: 20px; }
+	.mine-receipt { margin-top: 20px; max-width: 560px; padding: 20px 22px; border: 1px solid var(--line); border-top: 3px solid var(--sun); border-radius: 8px; background: var(--paper-2); }
+	.mr-h { font: 600 11px var(--f-label); letter-spacing: .18em; text-transform: uppercase; color: var(--gold-ink); }
+	.mine-receipt dl { margin: 10px 0 0; display: grid; gap: 0; }
+	.mine-receipt dl div { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-top: 1px dotted var(--line); font-size: 14px; }
+	.mine-receipt dd { margin: 0; font-weight: 700; white-space: nowrap; font-variant-numeric: lining-nums tabular-nums; }
+	.mine-receipt .sub { border-top: 1px solid var(--ink); font-weight: 800; }
+	.mine-receipt .up dd, .mine-receipt .up dt { color: var(--ember); font-weight: 800; }
+	.mine-receipt .down dd, .mine-receipt .down dt { color: var(--moss); font-weight: 800; }
+	.mine-receipt .none dt { color: var(--muted); font-style: italic; }
+	.mr-total { display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px; padding-top: 10px; border-top: 2px solid var(--ink); font-weight: 800; }
+	.mr-total :global(.money) { font: 800 30px var(--f-display); color: var(--ember); font-variant-numeric: lining-nums; }
 
 	.vote { margin-top: 24px; background: var(--paper-2); color: var(--ink); padding: 28px; border-radius: 8px; box-shadow: 0 24px 50px #12030766; }
 	.vote-head h3 { font: 800 30px/1.1 var(--f-display); margin-top: 8px; }

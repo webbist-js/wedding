@@ -553,7 +553,7 @@
 	.trip {
 		/* Gospel choir: robe burgundy, cream, gold leaf, a little forest green. */
 		--paper: #f7f0e2; --paper-2: #fffaf1; --ink: #2a0b13; --pine: #4a0e1f; --moss: #2f5e3f;
-		--ember: #8e1b30; --sun: #d8a849; --gold-ink: #7d5414; --muted: #6f5a56; --line: #e3d2b1;
+		--ember: #8e1b30; --sun: #d8a849; --gold-ink: #7d5414; --muted: #5a4541; --line: #e3d2b1;
 		--f-display: 'Playfair Display', Georgia, 'Times New Roman', serif; --f-body: 'Figtree', Arial, sans-serif;
 		--f-marker: 'Yellowtail', 'Brush Script MT', cursive; --f-label: 'Cinzel', Georgia, serif;
 		--ease: cubic-bezier(0.23, 1, 0.32, 1);
