@@ -14,11 +14,14 @@ describe('fixed trip budget UI', () => {
 		const now = Date.UTC(2026, 10, 11);
 		component = createClassComponent({ component: PayUp, target, props: {
 			ledger: ledger([], [{ id: 1, group: myGroup, pence: 10_000, receivedOn: '2026-11-11', note: '', createdAt: '2026-11-11T00:00:00Z' }], now),
-			paymentDetails: '', myGroup, organiser: false, now, act: vi.fn(), onPickName: vi.fn()
+			paymentDetails: '', organiser: false, now, act: vi.fn()
 		} });
 		expect(target.textContent).toContain('£356 share − £100 gift from Alex & Katie = £256');
 		expect(target.textContent).toContain('£156.00');
-		expect(target.querySelectorAll('.acct')).toHaveLength(1);
+		expect(target.querySelectorAll('.acct')).toHaveLength(7);
+		expect(target.textContent).toContain('Whole trip budget');
+		expect(target.textContent).toContain('Alex & Katie');
+		expect(target.querySelector('.org')).toBeNull();
 		expect(target.textContent).not.toContain('calculator');
 	});
 

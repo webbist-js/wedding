@@ -11,7 +11,7 @@
 	import { HALLELUJAH } from '$lib/whinfell-song';
 	import {
 		BOOKING, GROUPS, HOUSES, PEOPLE, ADULTS, KIDS, EXTRAS, GIFTS, CURRENT_BUDGET, PER_ADULT, HOST_PLACES, ADDITIONAL_BIG_HOUSE_TAX, ACCOMMODATION_TOTAL, EXTRAS_TOTAL, FOOD_ACTIVITY_POT, groupsIn, group, gbp, gbpShort, person, daysUntil, pastDeadline,
-		type Person, type GroupId, type HouseId
+		type Person
 	} from '$lib/cp-trip';
 	import { ITINERARY, PACK, SHOPPING, GALLERY, LODGE_IMAGES, BANNER, FACTS } from '$lib/cp-whinfell';
 	import type { TripState } from '$lib/server/cp-trip';
@@ -100,7 +100,7 @@
 	const TABS: { id: TabId; target: string; label: string; title: string; icon: 'home' | 'bed' | 'wallet' | 'party' | 'backpack' }[] = [
 		{ id: 'home', target: 'top', label: 'Home', title: 'We’re going to Whinfell', icon: 'home' },
 		{ id: 'lodges', target: 'lodges', label: 'Lodges', title: 'Who’s staying where', icon: 'bed' },
-		{ id: 'money', target: 'costs', label: 'Money', title: 'Your money', icon: 'wallet' },
+		{ id: 'money', target: 'costs', label: 'Money', title: 'Everyone’s costs', icon: 'wallet' },
 		{ id: 'plans', target: 'do', label: 'Plans', title: 'Things to do', icon: 'party' },
 		{ id: 'pack', target: 'pack', label: 'Pack', title: 'What to bring', icon: 'backpack' }
 	];
@@ -142,19 +142,9 @@
 		return () => removeEventListener('scroll', onScroll);
 	});
 
-	// ---- your next step: the one thing this person should do now ----
-	const myAccount = $derived(myGroup ? trip.ledger.accounts.find((a) => a.group === myGroup) ?? null : null);
-	type Step = { label: string; hint: string; target?: string; pick?: boolean };
-	const nextStep = $derived.by<Step>(() => {
-		if (!me || !myGroup) return { label: 'Tell us who you are', hint: 'See your share and have your say', pick: true };
-		if (myAccount && myAccount.outstanding > 0)
-			return { label: `Pay your ${gbp(myAccount.outstanding)}`, hint: late ? 'The deadline has passed' : `By 8 January · ${deadlineDays} ${deadlineDays === 1 ? 'day' : 'days'} left`, target: 'pay' };
-		return { label: 'Vote for things to do', hint: 'Help pick the group activity', target: 'do' };
-	});
-	function doNext(e: Event) {
-		if (nextStep.pick) picking = true;
-		else if (nextStep.target) goTo(nextStep.target, e);
-	}
+	// Everyone can see the complete budget without selecting a name.
+	const nextStep = { label: 'See everyone’s costs', hint: 'The new split, gifts and shared pot', target: 'costs' };
+	function doNext(e: Event) { goTo(nextStep.target, e); }
 
 	// ---- packing checklist ticks (this device only) ----
 	let ticked = $state<Record<string, boolean>>({});
@@ -184,21 +174,6 @@
 	const couples = GROUPS.filter((g) => g.adults > 1);
 	const solos = GROUPS.filter((g) => g.adults === 1);
 
-	// ---- whose numbers you see ----
-	// Everyone sees only their own group's money; Alex (signed in as organiser)
-	// sees the lot. "You" is the name picked on this phone, so this keeps the page
-	// personal and uncluttered. It isn't a lock: the trust model is the same as
-	// the rest of the Stendo pages.
-	const seeAll = $derived(organiser);
-	const myLine = $derived(myGroup ? CURRENT_BUDGET.lines.find((l) => l.group === myGroup)! : null);
-	const showHouseCost = (h: HouseId) => seeAll || (!!myGroup && group(myGroup).house === h);
-	/** Explain the fixed share, including gifts already deducted. */
-	function shareStory(id: GroupId): string {
-		const g = group(id);
-		const l = CURRENT_BUDGET.lines.find((line) => line.group === id)!;
-		if (g.paidUpfront) return `Your £2,000 includes your two original £310 places, ${gbp(ADDITIONAL_BIG_HOUSE_TAX)} additional Big House Tax, £200 in gifts, £79 for gym and bikes, and ${gbp(FOOD_ACTIVITY_POT)} for shared food and activities.`;
-		return `${g.adults} × ${gbp(PER_ADULT)} = ${gbp(l.accommodation)}.${l.giftsReceived ? ` Alex & Katie cover ${gbp(l.giftsReceived)} of your share as a gift, so you pay ${gbp(l.total)}.` : ''} Theo is free.`;
-	}
 
 	const giftList = GIFTS.map((x) => gbpShort(x.pence)).join(' + ');
 
@@ -226,7 +201,7 @@
 
 {#snippet receipt(l: (typeof CURRENT_BUDGET.lines)[number])}
 	{@const g = group(l.group)}
-	<article class="rc" class:mine={myGroup === g.id}>
+	<article class="rc">
 		<p class="rc-h">House {g.house.slice(1)}</p>
 		<h3>{g.label}</h3>
 		<dl>
@@ -253,12 +228,6 @@
 	</div>
 {/snippet}
 
-{#snippet pickToSee(what: string)}
-	<div class="gate">
-		<p><strong>Your numbers are just for you.</strong> Pick your name to see {what}.</p>
-		<button class="btn primary" type="button" onclick={() => (picking = true)}>Who are you?</button>
-	</div>
-{/snippet}
 
 <div class="trip">
 	<a class="skip" href="#lodges">Skip to who’s staying where</a>
@@ -345,7 +314,7 @@
 								{#each groupsIn(h.id) as g}<li class:mine={myGroup === g.id}>{g.label}{#if g.twin}<small>twin room</small>{/if}</li>{/each}
 							</ul>
 							{#if h.note}<p class="hnote">{h.note}</p>{/if}
-							{#if showHouseCost(h.id)}<p class="cost">{gbpShort(h.costPence)} <small>for the lodge, 3 nights{h.id === 'h1' && (seeAll || myGroup === 'alex-katie') ? ` · incl. £79 of Alex & Katie’s extras` : ''}</small></p>{/if}
+							<p class="cost">{gbpShort(h.costPence)} <small>for the lodge, 3 nights{h.id === 'h1' ? ` · incl. £79 of Alex & Katie’s extras` : ''}</small></p>
 						</div>
 					</article>
 				{/each}
@@ -384,41 +353,28 @@
 		<section class="costs wrap" id="costs" aria-labelledby="costs-title">
 			<p class="eyebrow">THE COSTS</p>
 			<h2 id="costs-title">Who pays <span>what.</span></h2>
-			{#if seeAll}
-				<p class="section-intro">£178 per adult, with Theo free. Alex & Katie put in £2,000, including £100 gifts towards Chris & Jenn and Adam & Lysanne: those couples each pay £256. Total funding: <strong>{gbp(CURRENT_BUDGET.total)}</strong>.</p>
-				<p class="org-note">Organiser view: you’re seeing everyone’s numbers. Everyone else only sees their own.</p>
-				<div class="receipts">
-					{#each CURRENT_BUDGET.lines as l}{@render receipt(l)}{/each}
-					<article class="rc rc-sum" aria-label="Grand total">
-						<p class="rc-h">All three lodges</p>
-						<h3>Where the money goes</h3>
-						<dl>
-							{#each HOUSES as h}<div><dt>House {h.number} accommodation</dt><dd>{gbp(h.accommodationPence)}</dd></div>{/each}
-							<div><dt>Gym + bikes</dt><dd>{gbp(EXTRAS_TOTAL)}</dd></div>
-							<div><dt>Food + activities pot</dt><dd>{gbp(FOOD_ACTIVITY_POT)}</dd></div>
-						</dl>
-						<p class="rc-total"><span>Total</span><b>{gbp(CURRENT_BUDGET.total)}</b></p>
-					</article>
-				</div>
-				<p class="fine">Accommodation only: {gbp(ACCOMMODATION_TOTAL)} − 11 × {gbpShort(PER_ADULT)} − our two places at {gbp(HOST_PLACES)} = <strong>{gbp(ADDITIONAL_BIG_HOUSE_TAX)} additional Big House Tax</strong>. We cover this shortfall as well as the £200 gifts. The {gbp(FOOD_ACTIVITY_POT)} food and activities pot is what will remain once everyone has paid; it is not extra money to collect.</p>
-				<TripBudgetCharts />
-			{:else if myGroup && myLine}
-				<p class="section-intro">The fixed share is £178 per adult. Any gift is already deducted below.</p>
-				<div class="receipts solo">
-					{@render receipt(myLine)}
-					<article class="rc-story">
-						<p class="rc-h">How it’s worked out</p>
-						<p>{shareStory(myGroup)}</p>
-						<p class="rc-story-total">Your share: <b>{gbp(myLine.total)}</b></p>
-						<a class="text-btn" href="#pay">How to pay it ↓</a>
-					</article>
-				</div>
-			{:else}
-				{@render pickToSee('what you owe')}
-			{/if}
+			<p class="section-intro">We’ve adjusted the costs for a few reasons, mainly the concerns raised about pricing. Katie and I are absorbing more of the cost so everyone else has the same base share: <strong>£178 per adult, whichever lodge you’re in</strong>. Our contribution is £2,000. The £100 gifts to Chris & Jenn and Adam & Lysanne still apply, so those couples pay £256 rather than £356.</p>
+			<p class="section-intro">Theo is free. Total funding is <strong>{gbp(CURRENT_BUDGET.total)}</strong>: accommodation and our gym and bike extras are covered, with <strong>{gbp(FOOD_ACTIVITY_POT)} left for shared food and activities</strong>. Everyone’s share and the full breakdown are below.</p>
+
+			<div class="receipts">
+				{#each CURRENT_BUDGET.lines as l}{@render receipt(l)}{/each}
+				<article class="rc rc-sum" aria-label="Grand total">
+					<p class="rc-h">All three lodges</p>
+					<h3>Where the money goes</h3>
+					<dl>
+						{#each HOUSES as h}<div><dt>House {h.number} accommodation</dt><dd>{gbp(h.accommodationPence)}</dd></div>{/each}
+						<div><dt>Gym + bikes</dt><dd>{gbp(EXTRAS_TOTAL)}</dd></div>
+						<div><dt>Food + activities pot</dt><dd>{gbp(FOOD_ACTIVITY_POT)}</dd></div>
+					</dl>
+					<p class="rc-total"><span>Total</span><b>{gbp(CURRENT_BUDGET.total)}</b></p>
+				</article>
+			</div>
+			<p class="fine">Accommodation only: {gbp(ACCOMMODATION_TOTAL)} − 11 × {gbpShort(PER_ADULT)} − our two places at {gbp(HOST_PLACES)} = <strong>{gbp(ADDITIONAL_BIG_HOUSE_TAX)} additional Big House Tax</strong>. We cover this shortfall as well as the £200 gifts. The {gbp(FOOD_ACTIVITY_POT)} food and activities pot is what will remain once everyone has paid; it is not extra money to collect.</p>
+			<TripBudgetCharts />
+
 		</section>
 
-		<PayUp ledger={trip.ledger} paymentDetails={trip.notes.payment} {myGroup} {organiser} {now} {act} onPickName={() => (picking = true)} />
+		<PayUp ledger={trip.ledger} paymentDetails={trip.notes.payment} {organiser} {now} {act} />
 
 		<ThingsToDo interest={trip.interest} {me} {act} onPickName={() => (picking = true)} />
 
@@ -714,7 +670,6 @@
 	.costs { padding-block: 16px 72px; scroll-margin-top: 10px; }
 	.receipts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 24px; } /* 7 groups + the total = 8 */
 	.rc { background: var(--paper-2); border: 1px solid var(--line); padding: 16px; display: grid; gap: 8px; align-content: start; background-image: radial-gradient(circle at 50% 0, var(--paper) 6px, transparent 7px); background-size: 18px 12px; background-repeat: repeat-x; padding-top: 22px; }
-	.rc.mine { box-shadow: 0 0 0 3px var(--ember); }
 	.rc-h { font: 600 10px var(--f-label); letter-spacing: .2em; text-transform: uppercase; color: var(--gold-ink); }
 	.rc h3 { font: 800 19px/1.2 var(--f-display); }
 	.rc dl { margin: 0; display: grid; gap: 2px; }
@@ -722,13 +677,6 @@
 	.rc dd { margin: 0; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.rc .gift dd, .rc .gift dt { color: var(--moss); font-weight: 800; }
 	.rc .tax dd, .rc .tax dt { color: var(--ember); font-weight: 800; }
-	.receipts.solo { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 860px; }
-	.rc-story { background: var(--ink); color: var(--paper); border-radius: 6px; padding: 22px; display: grid; gap: 12px; align-content: start; font-size: 15px; }
-	.rc-story .rc-h { color: var(--sun); }
-	.rc-story-total { border-top: 1px solid #d8a84966; padding-top: 12px; font-weight: 700; }
-	.rc-story-total b { font: 800 28px var(--f-display); color: var(--sun); margin-left: 6px; }
-	.rc-story .text-btn { color: var(--sun); justify-self: start; }
-	.org-note { margin-top: 10px; font: 600 11px var(--f-label); letter-spacing: .16em; text-transform: uppercase; color: var(--gold-ink); }
 	.trip :global(.gate) { margin-top: 24px; padding: 22px; border: 1px dashed var(--sun); border-radius: 8px; background: var(--paper-2); display: flex; flex-wrap: wrap; gap: 14px 20px; align-items: center; justify-content: space-between; max-width: 860px; }
 	.trip :global(.gate p) { font-size: 15px; max-width: 520px; }
 	.rc-sum { background-color: var(--ink); color: var(--paper); background-image: radial-gradient(circle at 50% 0, var(--paper) 6px, transparent 7px); }
@@ -876,7 +824,7 @@
 	@keyframes sheet-up { from { transform: translateY(100%); } }
 	@keyframes fade-in { from { opacity: 0; } }
 	@media (max-width: 720px) and (prefers-reduced-motion: reduce) { .sheet, .sheet-back, .tab-ink { animation: none; transition: none; } }
-	@media (max-width: 560px) { .receipts, .receipts.solo, .pack-grid { grid-template-columns: 1fr; } }
+	@media (max-width: 560px) { .receipts, .pack-grid { grid-template-columns: 1fr; } }
 	@media (max-width: 420px) { .shop { grid-template-columns: 1fr; } }
 	@media (prefers-reduced-motion: reduce) { .trip :global(.btn) { transition: none; } }
 </style>

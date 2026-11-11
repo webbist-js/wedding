@@ -9,20 +9,15 @@
 	type Props = {
 		ledger: Ledger;
 		paymentDetails: string;
-		myGroup: GroupId | null;
 		organiser: boolean;
 		now: number;
 		act: (body: Record<string, unknown>) => Promise<string | null>;
-		onPickName: () => void;
 	};
-	let { ledger, paymentDetails, myGroup, organiser, now, act, onPickName }: Props = $props();
-	// Each couple sees their own account; Alex (signed in as organiser) sees everyone's and the pot.
-	const seeAll = $derived(organiser);
+	let { ledger, paymentDetails, organiser, now, act }: Props = $props();
 
 	const daysLeft = $derived(daysUntil(BOOKING.deadline, now));
 	const late = $derived(pastDeadline(now));
 	const pct = $derived(ledger.owed ? Math.min(100, Math.round((ledger.collected / ledger.owed) * 100)) : 0);
-	const sorted = $derived(seeAll ? (myGroup ? [...ledger.accounts].sort((a, b) => Number(b.group === myGroup) - Number(a.group === myGroup)) : ledger.accounts) : ledger.accounts.filter((a) => a.group === myGroup));
 	const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
 	const statusLabel = (s: string, overdue: boolean) =>
@@ -53,7 +48,7 @@
 		try { await navigator.clipboard.writeText(text); copied = label; setTimeout(() => (copied = ''), 1600); } catch { /* select it by hand */ }
 	}
 	// e.g. "CHRIS HAYLEY WINFEL".
-	const myRef = $derived(myGroup ? `${group(myGroup).label.replace(' & Theo', '').replace(/ & /g, ' ').toUpperCase()} WINFEL` : '[YOUR NAMES] WINFEL');
+	const paymentRef = '[YOUR NAMES] WINFEL';
 
 	async function saveDetails() {
 		busy = true;
@@ -68,13 +63,12 @@
 	<h2 id="pay-title">Pay up, you <span>lovely lot.</span></h2>
 	<p class="section-intro">You’ve got until 8 January 2027 to send me your share, so absolutely no rush. The booking’s sorted — just get it over to me before then!</p>
 
-	<div class="top" class:solo={!seeAll}>
+	<div class="top">
 		<div class="deadline" class:late>
 			<p class="eyebrow">PAY BY</p>
 			<b>Fri 8 Jan 2027</b>
 			<span>{late ? 'The deadline has passed. Anything still owed is still owed.' : daysLeft === 0 ? 'Today’s the day!' : `${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} to go`}</span>
 		</div>
-		{#if seeAll}
 		<div class="pot">
 			<div class="pot-nums">
 				<div><span>Collected</span><b><Money pence={ledger.collected} /></b></div>
@@ -84,19 +78,18 @@
 			<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={pct} aria-label="Share of the trip budget funded"><i style:transform={`scaleX(${pct / 100})`}></i></div>
 			<p class="fine">{pct}% in, counting Alex & Katie’s share (they paid Center Parcs up front). Only Alex can mark money as received.{#if ledger.refunds} {gbp(ledger.refunds)} to hand back after an agreed change.{/if}</p>
 		</div>
-		{/if}
 	</div>
 
-	<p class="basis">£178 per adult; Theo is free. Any gift is already deducted from your share. Payments already received are deducted from your balance below.</p>
+	<p class="basis">£178 per adult; Theo is free. Gifts are already deducted from each group’s share. Payments received are deducted from the balances below.</p>
 
-	<ul class="accounts" class:solo={!seeAll}>
+	<ul class="accounts">
 		<li class="how" aria-labelledby="how-title">
 			<p class="h">Bank transfer to Alex</p>
 			<h3 id="how-title">How to pay</h3>
 			<dl class="bank">
 				<div><dt>Sort code</dt><dd>{BANK.sortCode}</dd><button type="button" class="copy" onclick={() => copy('sort', BANK.sortCode.replace(/-/g, ''))}>{copied === 'sort' ? 'Copied ✓' : 'Copy'}</button></div>
 				<div><dt>Account</dt><dd>{BANK.account}</dd><button type="button" class="copy" onclick={() => copy('acc', BANK.account)}>{copied === 'acc' ? 'Copied ✓' : 'Copy'}</button></div>
-				<div><dt>Reference</dt><dd>{myRef}</dd></div>
+				<div><dt>Reference</dt><dd>{paymentRef}</dd></div>
 			</dl>
 			{#if paymentDetails}<p class="details">{paymentDetails}</p>{/if}
 			{#if organiser}
@@ -109,15 +102,15 @@
 				{/if}
 			{/if}
 		</li>
-		{#each sorted as a (a.group)}
+		{#each ledger.accounts as a (a.group)}
 			{@const g = group(a.group)}
 			{@const budgetLine = CURRENT_BUDGET.lines.find((l) => l.group === a.group)!}
-			<li class="acct {a.status}" class:overdue={a.overdue} class:mine={myGroup === a.group}>
+			<li class="acct {a.status}" class:overdue={a.overdue}>
 				<div class="acct-top">
-					<div><p class="h">House {g.house.slice(1)}{myGroup === a.group ? ' · you' : ''}</p><h3>{g.label}</h3></div>
+					<div><p class="h">House {g.house.slice(1)}</p><h3>{g.label}</h3></div>
 					<span class="chip">{statusLabel(a.status, a.overdue)}</span>
 				</div>
-				<p class="owed"><Money pence={a.owed} /><small>your share</small></p>
+				<p class="owed"><Money pence={a.owed} /><small>group share</small></p>
 				{#if budgetLine.giftsReceived}<p class="fine">£356 share − £100 gift from Alex & Katie = £256 to pay, before any payments already received.</p>{/if}
 				{#if a.upfront}
 					<p class="upfront">Paid the whole booking to Center Parcs up front. Everyone else pays them back.</p>
@@ -137,13 +130,6 @@
 						{#each a.payments as p (p.id)}<li><span>{fmtDate(p.receivedOn)}{p.note ? ` · ${p.note}` : ''}</span><b>{p.pence < 0 ? `refund ${gbp(-p.pence)}` : gbp(p.pence)}</b></li>{/each}
 					</ul>
 				{/if}
-			</li>
-		{:else}
-			<li class="pick">
-				<p class="h">Your account</p>
-				<h3>What you owe</h3>
-				<p>Each couple only sees their own balance. Pick your name to see yours.</p>
-				<button class="btn primary" type="button" onclick={onPickName}>Who are you?</button>
 			</li>
 		{/each}
 	</ul>
@@ -183,7 +169,6 @@
 	.basis { margin-top: 16px; font-size: 13px; font-weight: 700; color: var(--moss); }
 	.accounts { list-style: none; padding: 0; margin: 18px 0 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; } /* 7 groups + how to pay = 8 */
 	.acct { background: var(--paper-2); border: 1px solid var(--line); border-top: 3px solid var(--line); border-radius: 6px; padding: 18px; display: grid; gap: 10px; align-content: start; }
-	.acct.mine { box-shadow: 0 0 0 1px var(--sun), 0 14px 30px #2a0b1314; }
 	.acct.partial { border-top-color: var(--sun); }
 	.acct.paid, .acct.overpaid { border-top-color: var(--moss); }
 	.acct.overdue { border-top-color: var(--ember); }
@@ -228,13 +213,8 @@
 	.tick { display: flex; gap: 8px; align-items: center; font-size: 13px; }
 	.org .fine { color: #d9c9b0; }
 	.bad { color: #ffb4a0; font-weight: 700; font-size: 13px; }
-	.top.solo { grid-template-columns: 1fr; }
-	.accounts.solo { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 860px; } /* how to pay + your account */
-	.pick { border: 1px dashed var(--sun); border-radius: 6px; padding: 18px; display: grid; gap: 10px; align-content: start; background: var(--paper-2); }
-	.pick h3 { font: 800 24px var(--f-display); }
-	.pick .btn { justify-self: start; }
 	@media (max-width: 1000px) { .accounts { grid-template-columns: 1fr 1fr; } }
-	@media (max-width: 560px) { .accounts, .accounts.solo { grid-template-columns: 1fr; } }
+	@media (max-width: 560px) { .accounts { grid-template-columns: 1fr; } }
 	@media (max-width: 760px) {
 		.pay { padding-block: 52px; }
 		.top { grid-template-columns: 1fr; }
