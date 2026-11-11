@@ -335,14 +335,17 @@ for (const h of HOUSES) {
 	occ.forEach((g, i) => realShares.set(g.id, shares[i]));
 }
 
-/** What a group actually sends: £178 a head, less the £100 off promised to the House 2 couples. */
-const paysFor = (g: Group) =>
-	g.id === HOST ? HOST_CONTRIBUTION : g.adults * PER_ADULT - GIFTS.filter((x) => x.to === g.id).reduce((s, x) => s + x.pence, 0);
+/** Turned down Alex & Katie's gift: they pay their full real share, and what the gift would have been goes to the shared pot. */
+export const GIFT_FORFEITED: GroupId[] = ['mule'];
+
+/** £178 a head, less the £100 off promised to the House 2 couples. */
+const flatShareFor = (g: Group) => g.adults * PER_ADULT - GIFTS.filter((x) => x.to === g.id).reduce((s, x) => s + x.pence, 0);
 
 export type BudgetLine = {
 	group: GroupId;
 	accommodation: number; // real share of their own lodge
 	giftReceived: number; // − real share minus what they pay, covered by Alex & Katie
+	giftForfeited: number; // the gift they turned down, now in the shared pot
 	giftsGiven: number; // + every other group's gift (Alex & Katie only)
 	extras: number; // gym + bikes (Alex & Katie only)
 	sharedPot: number; // what's left for food + activities (Alex & Katie only)
@@ -351,9 +354,20 @@ export type BudgetLine = {
 
 const guestLines = GROUPS.filter((g) => g.id !== HOST).map((g): BudgetLine => {
 	const accommodation = realShares.get(g.id)!;
-	const total = paysFor(g);
-	if (total > accommodation) throw new Error(`${g.label} would pay more than their real share`);
-	return { group: g.id, accommodation, giftReceived: accommodation - total, giftsGiven: 0, extras: 0, sharedPot: 0, total };
+	const flat = flatShareFor(g);
+	if (flat > accommodation) throw new Error(`${g.label} would pay more than their real share`);
+	const forfeited = GIFT_FORFEITED.includes(g.id);
+	const gift = accommodation - flat;
+	return {
+		group: g.id,
+		accommodation,
+		giftReceived: forfeited ? 0 : gift,
+		giftForfeited: forfeited ? gift : 0,
+		giftsGiven: 0,
+		extras: 0,
+		sharedPot: 0,
+		total: forfeited ? accommodation : flat
+	};
 });
 export const GIFTS_TOTAL = guestLines.reduce((sum, l) => sum + l.giftReceived, 0);
 export const BUDGET_TOTAL = HOST_CONTRIBUTION + guestLines.reduce((sum, l) => sum + l.total, 0);
@@ -362,6 +376,7 @@ const hostLine: BudgetLine = {
 	group: HOST,
 	accommodation: realShares.get(HOST)!,
 	giftReceived: 0,
+	giftForfeited: 0,
 	giftsGiven: GIFTS_TOTAL,
 	extras: EXTRAS_TOTAL,
 	sharedPot: FOOD_ACTIVITY_POT,

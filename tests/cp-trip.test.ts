@@ -240,36 +240,37 @@ describe('current budget and payments', () => {
 
 	it('gifts everyone the gap between their real share and what they pay', () => {
 		expect(Object.fromEntries(CURRENT_BUDGET.lines.map((l) => [l.group, l.giftReceived]))).toEqual({
-			'kie-elisa': 26_400, 'alex-katie': 0, mule: 13_200, 'oliver-phoebe': 26_400,
+			'kie-elisa': 26_400, 'alex-katie': 0, mule: 0, 'oliver-phoebe': 26_400,
 			'chris-jenn': 7_350, 'adam-lysanne': 7_350, 'chris-hayley': 29_300
 		});
-		expect(GIFTS_TOTAL).toBe(110_000);
+		expect(CURRENT_BUDGET.lines.find((l) => l.group === 'mule')).toMatchObject({ giftForfeited: 13_200, total: 31_000 });
+		expect(GIFTS_TOTAL).toBe(96_800);
 		const host = CURRENT_BUDGET.lines.find((l) => l.group === 'alex-katie')!;
-		expect(host).toMatchObject({ accommodation: 62_000, giftsGiven: 110_000, extras: 7_900, sharedPot: 20_100, total: 200_000 });
+		expect(host).toMatchObject({ accommodation: 62_000, giftsGiven: 96_800, extras: 7_900, sharedPot: 33_300, total: 200_000 });
 	});
 
 	const pay = (id: number, group: GroupId, pence: number): Payment => ({ id, group, pence, receivedOn: '2026-11-20', note: '', createdAt: '2026-11-20T10:00:00Z' });
 
-	it('charges £178 per adult (£100 off for House 2) and keeps the hosts at £2,000', () => {
+	it('charges £178 per adult (£100 off for House 2, Mule pays in full) and keeps the hosts at £2,000', () => {
 		expect(Object.fromEntries(CURRENT_BUDGET.lines.map((l) => [l.group, l.total]))).toEqual({
-			'kie-elisa': 35_600, 'alex-katie': 200_000, mule: 17_800,
+			'kie-elisa': 35_600, 'alex-katie': 200_000, mule: 31_000,
 			'chris-jenn': 25_600, 'adam-lysanne': 25_600,
 			'chris-hayley': 35_600, 'oliver-phoebe': 35_600
 		});
 		for (const line of CURRENT_BUDGET.lines) {
 			expect(line.accommodation - line.giftReceived + line.giftsGiven + line.extras + line.sharedPot).toBe(line.total);
 		}
-		expect(CURRENT_BUDGET.lines.reduce((sum, l) => sum + l.total, 0)).toBe(375_800);
-		expect(CURRENT_BUDGET.total).toBe(375_800);
+		expect(CURRENT_BUDGET.lines.reduce((sum, l) => sum + l.total, 0)).toBe(389_000);
+		expect(CURRENT_BUDGET.total).toBe(389_000);
 		expect(ACCOMMODATION_TOTAL).toBe(347_800);
 		expect(EXTRAS_TOTAL).toBe(7_900);
-		expect(FOOD_ACTIVITY_POT).toBe(20_100);
+		expect(FOOD_ACTIVITY_POT).toBe(33_300);
 		expect(ACCOMMODATION_TOTAL + EXTRAS_TOTAL + FOOD_ACTIVITY_POT).toBe(CURRENT_BUDGET.total);
 	});
 
 	it('credits the hosts’ upfront booking and does not invent payments from guests', () => {
 		const l = ledger([], [], NOW);
-		expect(l).toMatchObject({ collected: 200_000, owed: 375_800, outstanding: 175_800 });
+		expect(l).toMatchObject({ collected: 200_000, owed: 389_000, outstanding: 189_000 });
 		expect(l.accounts.find((a) => a.group === 'alex-katie')).toMatchObject({ status: 'paid', upfront: true, outstanding: 0, payments: [] });
 		expect(l.accounts.filter((a) => a.group !== 'alex-katie').every((a) => a.status === 'not-paid')).toBe(true);
 	});
@@ -290,7 +291,7 @@ describe('current budget and payments', () => {
 
 	it('tracks partial payments, corrections and overdue balances', () => {
 		const l = ledger([], [pay(1, 'mule', 10_000), pay(2, 'mule', -500)], Date.UTC(2027, 0, 9));
-		expect(l.accounts.find((a) => a.group === 'mule')).toMatchObject({ paid: 9_500, outstanding: 8_300, status: 'partial', overdue: true });
+		expect(l.accounts.find((a) => a.group === 'mule')).toMatchObject({ paid: 9_500, outstanding: 21_500, status: 'partial', overdue: true });
 		expect(ledger([], [], Date.UTC(2027, 0, 8, 23, 0)).overdue).toBe(false);
 	});
 

@@ -27,13 +27,13 @@ describe('fixed trip budget UI', () => {
 
 	it('shows funding once and separates accommodation, extras and the shared pot', () => {
 		component = createClassComponent({ component: TripBudgetCharts, target, props: {} });
-		expect(target.textContent).toContain('£3,758.00');
+		expect(target.textContent).toContain('£3,890.00');
 		expect(target.textContent).toContain('£3,478.00');
 		expect(target.textContent).toContain('£79.00');
-		expect(target.textContent).toContain('£201.00');
+		expect(target.textContent).toContain('£333.00');
 		const bars = [...target.querySelectorAll('[role="img"]')].map((bar) => bar.getAttribute('aria-label'));
 		expect(bars).toContain('Chris & Jenn: £256.00 paid themselves plus £73.50 covered by Alex & Katie');
 		expect(bars).toContain('Chris & Hayley & Theo: £356.00 paid themselves plus £293.00 covered by Alex & Katie');
-		expect(bars).toContain('Alex & Katie: £900.00 paid themselves');
+		expect(bars).toContain('Alex & Katie: £1,032.00 paid themselves');
 	});
 });

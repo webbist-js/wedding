@@ -208,6 +208,7 @@
 		<dl>
 			<div><dt>{g.id === HOST ? 'Our' : 'Real'} share of House {g.house.slice(1)}<small>{g.adults} × {gbpShort(LODGE_PER_HEAD[g.house])}</small></dt><dd>{gbp(l.accommodation)}</dd></div>
 			{#if l.giftReceived}<div class="gift"><dt>Gift from Alex & Katie</dt><dd>{gbp(-l.giftReceived)}</dd></div>{/if}
+			{#if l.giftForfeited}<div><dt>Gift turned down<small>{gbp(l.giftForfeited)} goes to the shared pot instead</small></dt><dd>{gbp(0)}</dd></div>{/if}
 			{#each EXTRAS.filter((e) => e.group === g.id) as e}<div><dt>{e.label}</dt><dd>{gbp(e.pence)}</dd></div>{/each}
 			{#if l.giftsGiven}<div class="given"><dt>Gifts to everyone else</dt><dd>+{gbp(l.giftsGiven)}</dd></div>{/if}
 			{#if l.sharedPot}<div><dt>Shared food + activities pot</dt><dd>{gbp(l.sharedPot)}</dd></div>{/if}
@@ -353,7 +354,7 @@
 		<section class="costs wrap" id="costs" aria-labelledby="costs-title">
 			<p class="eyebrow">THE COSTS</p>
 			<h2 id="costs-title">Who pays <span>what.</span></h2>
-			<p class="section-intro">We’ve adjusted the costs, mainly because of the concerns raised about pricing. Katie and I are taking on more of the cost so everyone starts from the same share: <strong>£178 per adult, whichever lodge you’re in</strong>, and Theo is free. Chris & Jenn and Adam & Lysanne get the £100 off we promised, so they pay £256 rather than £356. Our contribution is £2,000.</p>
+			<p class="section-intro">We’ve adjusted the costs, mainly because of the concerns raised about pricing. Katie and I are taking on more of the cost so everyone starts from the same share: <strong>£178 per adult, whichever lodge you’re in</strong>, and Theo is free. Chris & Jenn and Adam & Lysanne get the £100 off we promised, so they pay £256 rather than £356. Mule has turned down his gift and is paying his full £310, so that money goes to the shared pot. Our contribution is £2,000.</p>
 			<p class="section-intro">That brings the total to <strong>{gbpShort(CURRENT_BUDGET.total)}</strong>. It covers all three lodges and our gym and bike extras, with <strong>{gbpShort(FOOD_ACTIVITY_POT)} left for shared food and activities</strong>. Each receipt below shows what your place really costs and the gift from us that brings it down to what you pay.</p>
 
 			<div class="receipts">
