@@ -353,8 +353,8 @@
 		<section class="costs wrap" id="costs" aria-labelledby="costs-title">
 			<p class="eyebrow">THE COSTS</p>
 			<h2 id="costs-title">Who pays <span>what.</span></h2>
-			<p class="section-intro">We’ve adjusted the costs for a few reasons, mainly the concerns raised about pricing. Katie and I are absorbing more of the cost so everyone else has the same base share: <strong>£178 per adult, whichever lodge you’re in</strong>. Our contribution is £2,000. Chris & Jenn and Adam & Lysanne keep the £100 off we promised, so they pay £256 rather than £356.</p>
-			<p class="section-intro">Theo is free. Total funding is <strong>{gbp(CURRENT_BUDGET.total)}</strong>: accommodation and our gym and bike extras are covered, with <strong>{gbp(FOOD_ACTIVITY_POT)} left for shared food and activities</strong>. Each receipt below shows what your place really costs and the gift from us that brings it down to what you pay.</p>
+			<p class="section-intro">We’ve adjusted the costs, mainly because of the concerns raised about pricing. Katie and I are taking on more of the cost so everyone starts from the same share: <strong>£178 per adult, whichever lodge you’re in</strong>, and Theo is free. Chris & Jenn and Adam & Lysanne get the £100 off we promised, so they pay £256 rather than £356. Our contribution is £2,000.</p>
+			<p class="section-intro">That brings the total to <strong>{gbpShort(CURRENT_BUDGET.total)}</strong>. It covers all three lodges and our gym and bike extras, with <strong>{gbpShort(FOOD_ACTIVITY_POT)} left for shared food and activities</strong>. Each receipt below shows what your place really costs and the gift from us that brings it down to what you pay.</p>
 
 			<div class="receipts">
 				{#each CURRENT_BUDGET.lines as l}{@render receipt(l)}{/each}
