@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CURRENT_BUDGET, ACCOMMODATION_TOTAL, EXTRAS_TOTAL, FOOD_ACTIVITY_POT, group, gbp } from '$lib/cp-trip';
+	import { CURRENT_BUDGET, ACCOMMODATION_TOTAL, EXTRAS_TOTAL, FOOD_ACTIVITY_POT, group, gbp, gbpShort } from '$lib/cp-trip';
 	const rows = CURRENT_BUDGET.lines.map((line) => ({
 		label: group(line.group).label,
 		own: line.total - line.giftsGiven,
@@ -9,7 +9,7 @@
 	const spending = [
 		{ label: 'Accommodation', value: ACCOMMODATION_TOTAL, color: 'var(--moss)' },
 		{ label: 'Alex & Katie’s gym + bikes', value: EXTRAS_TOTAL, color: 'var(--ember)' },
-		{ label: 'Food + activities pot', value: FOOD_ACTIVITY_POT, color: 'var(--sun)' }
+		{ label: 'Food + activities pot', value: FOOD_ACTIVITY_POT, color: 'var(--pot-blue)' }
 	];
 </script>
 
@@ -17,10 +17,10 @@
 	<section aria-labelledby="contributions-chart-title">
 		<h3 id="contributions-chart-title">Who covers each share</h3>
 		<p class="fine">Alex & Katie’s £2,000 is £1,800 on their row plus the two £100 gifts below. Gifts are counted once.</p>
-		<div class="legend"><span><i class="own"></i>Paid by the group</span><span><i class="gift"></i>Covered by Alex & Katie</span></div>
+		<div class="legend"><span><i class="own"></i>Paid by the group</span><span><i class="gift"></i>£100 gift from Alex & Katie</span></div>
 		{#each rows as row}
 			<div class="chart-row">
-				<div class="row-label"><span>{row.label}</span><b>{gbp(row.own)}{#if row.gift} + {gbp(row.gift)} gift{/if}</b></div>
+				<div class="row-label"><span>{row.label}</span><b>{gbpShort(row.own)}</b></div>
 				<div class="track" role="img" aria-label={`${row.label}: ${gbp(row.own)} paid themselves${row.gift ? ` plus ${gbp(row.gift)} covered by Alex & Katie` : ''}`}>
 					<span class="own" style:width={`${row.own / max * 100}%`}></span>
 					<span class="gift" style:width={`${row.gift / max * 100}%`}></span>
@@ -41,7 +41,7 @@
 </div>
 
 <style>
-	.budget-charts { display: grid; gap: 32px; margin-top: 28px; }
+	.budget-charts { --pot-blue: #4f6f9b; display: grid; gap: 32px; margin-top: 28px; }
 	h3 { font: 700 25px/1.2 var(--f-display); margin-bottom: 10px; }
 	.fine { font-size: 13px; color: var(--muted); line-height: 1.6; }
 	.legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 16px 0; font-size: 13px; }
