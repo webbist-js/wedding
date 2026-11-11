@@ -93,7 +93,7 @@ export async function pledge(group: unknown, pence: unknown) {
 
 /** A House 1 group approves the amounts currently on the table, or withdraws. */
 export async function approve(group: unknown, amounts: Contributions | null) {
-	if (!isGroupId(group) || !isReliefGroup(group)) throw new Error('Only House 1 approves this');
+	if (!isGroupId(group) || !isReliefGroup(group)) throw new Error('Only Alex & Katie and Kie & Elisa approve this');
 	if (amounts === null) return upsertConsent(group, { approvedCj: null, approvedAl: null, approvedOp: null });
 	const current = proposalStatus(await consents(), currentAgreement(await agreements()));
 	// You can only say yes to what's actually been pledged right now.

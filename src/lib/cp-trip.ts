@@ -205,12 +205,15 @@ export const NO_CONTRIBUTIONS: Contributions = { 'chris-jenn': 0, 'adam-lysanne'
 export const CONTRIBUTORS: ContributorId[] = ['chris-jenn', 'adam-lysanne', 'oliver-phoebe'];
 export const HOUSE1_GROUPS = groupsIn('h1').map((g) => g.id);
 /**
- * Who the Fancy House Tax savings go to: everyone staying in House 1, split
- * per adult (couples get two slices, Mule one). They're also the groups who
- * need to approve.
+ * Where the Fancy House Tax goes: 60% to Alex & Katie (who carry Oli & Phoebe's
+ * empty places and the Big House Tax) and 40% to Kie & Elisa. Mule's reduced
+ * £300 doesn't move. These two are also the groups who need to approve.
  */
-export const RELIEF_GROUPS: GroupId[] = HOUSE1_GROUPS;
-export const RELIEF_ADULTS = RELIEF_GROUPS.reduce((n, id) => n + group(id).adults, 0); // 5
+export const RELIEF_SPLIT: { group: GroupId; percent: number }[] = [
+	{ group: 'alex-katie', percent: 60 },
+	{ group: 'kie-elisa', percent: 40 }
+];
+export const RELIEF_GROUPS: GroupId[] = RELIEF_SPLIT.map((r) => r.group);
 export const isContributor = (id: unknown): id is ContributorId => CONTRIBUTORS.includes(id as ContributorId);
 export const isHouse1 = (id: unknown): boolean => HOUSE1_GROUPS.includes(id as GroupId);
 export const isReliefGroup = (id: unknown): boolean => RELIEF_GROUPS.includes(id as GroupId);
@@ -268,7 +271,7 @@ export function breakdown(contributions: Contributions = NO_CONTRIBUTIONS): Brea
 		}
 	}
 
-	const reliefAlloc = allocate(pot, RELIEF_GROUPS.map((id) => group(id).adults));
+	const reliefAlloc = allocate(pot, RELIEF_SPLIT.map((r) => r.percent));
 	const relief = new Map(RELIEF_GROUPS.map((id, i) => [id, reliefAlloc.shares[i]]));
 	const rounding = RELIEF_GROUPS.filter((_, i) => reliefAlloc.extraPenny[i]);
 
@@ -368,7 +371,7 @@ export function proposalStatus(consents: Consent[], agreed: Agreement): Proposal
 
 /**
  * The only way a proposal becomes owed money. Refuses unless every House 2
- * chipping-in couple pledged and everyone in House 1 approved those exact amounts.
+ * chipping-in couple pledged and Alex & Katie and Kie & Elisa approved those exact amounts.
  */
 export function publishAgreement(consents: Consent[], current: Agreement, now: Date): Agreement {
 	const s = proposalStatus(consents, current);
@@ -491,7 +494,7 @@ export function proposalSummary(c: Contributions): string {
 	return [
 		'Center Parcs: Fancy House Tax idea (hypothetical, nothing agreed yet)',
 		CONTRIBUTORS.map((id) => `${group(id).label} chip in ${gbp(c[id])}`).join(', ') + '.',
-		`Everyone in House 1 shares the ${gbp(b.pot)}, per adult.`,
+		`House 1 saves ${gbp(b.pot)}: 60% to Alex & Katie, 40% to Kie & Elisa.`,
 		'',
 		...rows,
 		'',
