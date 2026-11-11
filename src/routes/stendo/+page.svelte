@@ -200,12 +200,17 @@
 	function shareStory(id: GroupId): string {
 		const g = group(id);
 		const l = lineFor(ORIGINAL, id);
-		if (g.paidUpfront) return `You paid Center Parcs for the whole booking up front, so your share is already settled. It includes your half of House 1, the ${gbpShort(BIG_HOUSE_TAX_TOTAL)} Big House Tax, your gym pass and bikes, and the £100 gifts.`;
-		const base = g.house === 'h1' ? `House 1 works out at £310 a head, so ${gbp(l.accommodation)} for ${g.adults === 1 ? 'you' : 'the two of you'}.` : g.house === 'h2' ? `You’re splitting House 2, so your half is ${gbp(l.accommodation)}.` : `House 3 is yours: ${gbp(l.accommodation)}.`;
+		if (g.paidUpfront) return `You paid Center Parcs for the whole booking up front, so your share is already settled. It covers your two House 1 places, Oli & Phoebe’s two empty ones, the ${gbpShort(BIG_HOUSE_TAX_TOTAL)} Big House Tax, your gym pass and bikes, and the £100 gifts.`;
+		const mates = groupsIn(g.house).filter((x) => x.id !== id).map((x) => x.label.replace(' & Theo', ''));
+		const n = g.house.slice(1);
+		const base = g.house === 'h1'
+			? `House 1 works out at £310 a head, so ${gbp(l.accommodation)} for ${g.adults === 1 ? 'you' : 'the two of you'}.`
+			: mates.length ? `You’re splitting House ${n} with ${mates.join(' and ')}, so your half is ${gbp(l.accommodation)}.` : `House ${n} is yours: ${gbp(l.accommodation)}.`;
 		const tax = l.bigHouseTax < 0 ? ` Alex & Katie cover ${gbp(-l.bigHouseTax)} of that (the Big House Tax), bringing you to a round ${gbpShort(l.accommodation + l.bigHouseTax)}.` : '';
 		const gift = l.giftsReceived ? ` Alex & Katie are chipping in ${gbpShort(l.giftsReceived)} as a gift.` : '';
 		return base + tax + gift;
 	}
+
 	const giftList = GIFTS.map((x) => gbpShort(x.pence)).join(' + ');
 
 	// Six cards so the grid fills (3 × 2, 2 × 3). The last is fixed facts, not an editable note.
@@ -236,7 +241,8 @@
 		<p class="rc-h">House {g.house.slice(1)}</p>
 		<h3>{g.label}</h3>
 		<dl>
-			<div><dt>{g.house === 'h1' ? `House 1 · ${g.adults} × £310` : g.house === 'h2' ? 'Half of House 2' : 'House 3'}</dt><dd>{gbp(l.accommodation)}</dd></div>
+			<div><dt>{g.house === 'h1' ? `House 1 · ${g.adults} × £310` : groupsIn(g.house).length > 1 ? `Half of House ${g.house.slice(1)}` : `House ${g.house.slice(1)}`}</dt><dd>{gbp(l.accommodation)}</dd></div>
+			{#if l.absorbed}<div class="tax"><dt>Oli & Phoebe’s empty House 1 places</dt><dd>+{gbp(l.absorbed)}</dd></div>{/if}
 			{#if l.bigHouseTax > 0}<div class="tax"><dt>Big House Tax</dt><dd>+{gbp(l.bigHouseTax)}</dd></div>{/if}
 			{#if l.bigHouseTax < 0}<div class="gift"><dt>Big House Tax, paid by Alex & Katie</dt><dd>{gbp(l.bigHouseTax)}</dd></div>{/if}
 			{#each EXTRAS.filter((e) => e.group === g.id) as e}<div><dt>{e.label}</dt><dd>{gbp(e.pence)}</dd></div>{/each}
@@ -391,7 +397,7 @@
 			<p class="eyebrow">THE ORIGINAL COSTS</p>
 			<h2 id="costs-title">Who pays <span>what.</span></h2>
 			{#if seeAll}
-				<p class="section-intro">The booking came to <strong>{gbp(BOOKING.totalPence)}</strong>. Everyone pays for their own lodge. House 1 starts at {gbpShort(lineFor(ORIGINAL, 'mule').accommodation)} a head, then Alex & Katie take on {gbpShort(BIG_HOUSE_TAX_TOTAL)} of <strong>Big House Tax</strong> so Kie & Elisa and Oli & Phoebe pay a round £550 and Mule pays £300.</p>
+				<p class="section-intro">The booking came to <strong>{gbp(BOOKING.totalPence)}</strong>. Everyone pays for their own lodge. House 1 is £310 a head; Oli & Phoebe have moved to House 3, so Alex & Katie pick up their two places, plus {gbpShort(BIG_HOUSE_TAX_TOTAL)} of <strong>Big House Tax</strong> so Kie & Elisa pay a round £550 and Mule pays £300.</p>
 				<p class="org-note">Organiser view: you’re seeing everyone’s numbers. Everyone else only sees their own.</p>
 				<div class="receipts">
 					{#each ORIGINAL.lines as l}{@render receipt(l)}{/each}
@@ -404,7 +410,7 @@
 						<p class="rc-total"><span>Total</span><b>{gbp(ORIGINAL.total)}</b></p>
 					</article>
 				</div>
-				<p class="fine">The Big House Tax, the gym pass and bike hire, and the gifts are all Alex & Katie’s, and none of it is part of any sharing idea. Everything adds up to exactly {gbp(ORIGINAL.total)}.</p>
+				<p class="fine">The empty House 1 places, the Big House Tax, the gym pass and bike hire, and the gifts are all Alex & Katie’s, and none of it is part of any sharing idea. Everything adds up to exactly {gbp(ORIGINAL.total)}.</p>
 			{:else if myGroup && myLine}
 				<p class="section-intro">Everyone pays for their own lodge. Here’s exactly how yours adds up.</p>
 				<div class="receipts solo">

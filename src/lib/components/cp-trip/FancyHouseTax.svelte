@@ -1,7 +1,7 @@
 <script lang="ts">
 	// The Great Cost-Sharing Debate. The calculator on the left is a toy: it
 	// never touches what anyone owes. The panel on the right is the real thing:
-	// House 2 pledges, approvals from the two couples who'd save, and Alex
+	// House 2 pledges, Kie & Elisa's approval (they'd get the savings), and Alex
 	// publishing an agreed split.
 	import Money from './Money.svelte';
 	import {
@@ -27,7 +27,6 @@
 	let typedError = $state<Record<ContributorId, string>>({ 'chris-jenn': '', 'adam-lysanne': '' });
 	const proposed = $derived(breakdown(amounts));
 	const change = $derived(deltas(proposed));
-	const perCouple = $derived(proposed.pot / RELIEF_GROUPS.length);
 	const untouched = $derived(proposed.pot === 0);
 	const presets = [0, 1_000, 2_500, 5_000, 7_500];
 
@@ -63,6 +62,7 @@
 	const sliderGroups = $derived(role === 'giver' ? CONTRIBUTORS.filter((id) => id === myGroup) : CONTRIBUTORS);
 	const tableGroups = $derived(seeAll ? GROUPS : GROUPS.filter((g) => g.id === myGroup));
 	const showCalc = $derived(role === 'all' || role === 'giver' || role === 'receiver');
+	const needed = CONTRIBUTORS.length + RELIEF_GROUPS.length;
 	const answered = $derived(CONTRIBUTORS.filter((id) => status.pledges[id] !== null).length + RELIEF_GROUPS.filter((id) => status.approvals[id] === 'approved').length);
 
 	const changeWords = (id: GroupId, d: number) =>
@@ -108,9 +108,9 @@
 			<div class="letter">
 				<p class="dear">Dear all,</p>
 				<p>House 1 is considerably more expensive because it’s got all the fun stuff, and realistically we’ll probably spend most of our time there.</p>
-				<p>Obviously, the other houses were chosen to keep costs down, and everyone’s already paying for their own accommodation. But if the people in House 2 are happy to chip in a little towards the communal facilities, we could bring House 1 down slightly for Kie & Elisa and Oli & Phoebe. (Katie and I are already covering the Big House Tax, and Mule’s already paying less, so any savings go to those two couples.)</p>
+				<p>Obviously, the other houses were chosen to keep costs down, and everyone’s already paying for their own accommodation. But if the people in House 2 are happy to chip in a little towards the communal facilities, we could bring House 1 down slightly for Kie & Elisa. (Katie and I are already covering the Big House Tax and Oli & Phoebe’s old places, and Mule’s already paying less, so any savings go to Kie & Elisa.)</p>
 				<p>Absolutely no pressure — I didn’t want to make that decision for anyone. So let’s see what everyone thinks!</p>
-				<p>Chris, Hayley and Theo are completely excluded from this. They’ve got their own family setup to worry about.</p>
+				<p>House 3 (Chris, Hayley, Theo, Oli and Phoebe) is completely excluded from this. They’ve got their own setup to worry about.</p>
 				<p class="sig">Alex</p>
 			</div>
 
@@ -124,12 +124,12 @@
 					</li>
 					<li class="lane save" class:me={role === 'receiver'}>
 						<span class="tag">Save</span>
-						<span class="names">Kie & Elisa<br />Oli & Phoebe</span>
-						<small>Split evenly between them</small>
+						<span class="names">Kie & Elisa</span>
+						<small>The whole saving goes to them</small>
 					</li>
 					<li class="lane same" class:me={role === 'out'}>
 						<span class="tag">No change</span>
-						<span class="names">Alex & Katie · Mule<br />Chris & Hayley & Theo</span>
+						<span class="names">Alex & Katie · Mule<br />House 3: Chris & Hayley, Oli & Phoebe</span>
 						<small>Shares stay exactly as they are</small>
 					</li>
 				</ol>
@@ -145,7 +145,7 @@
 					{:else if role === 'receiver'}
 						<p>Once both House 2 couples have answered, you’ll see your new share and can say yes to it.</p>
 					{:else}
-						<p>{myGroup === 'chris-hayley' ? 'None of this touches House 3.' : 'This doesn’t change what you pay.'} Your share stays at <strong>{gbp(lineFor(ORIGINAL, myGroup as GroupId).total)}</strong> whatever happens.</p>
+						<p>{group(myGroup as GroupId).house === 'h3' ? 'None of this touches House 3.' : 'This doesn’t change what you pay.'} Your share stays at <strong>{gbp(lineFor(ORIGINAL, myGroup as GroupId).total)}</strong> whatever happens.</p>
 					{/if}
 				</div>
 			</aside>
@@ -193,8 +193,8 @@
 				<div class="pipe" aria-hidden="true">
 					{#each Array(6) as _, i}<i style:animation-delay={`${i * 0.35}s`}>£</i>{/each}
 				</div>
-				<div class="end h1"><span>KIE & ELISA · OLI & PHOEBE</span><b>save <Money pence={proposed.pot} /></b></div>
-				<p class="per">{untouched ? 'Nothing moving yet. Everyone pays the original costs.' : `That’s ${gbp(Math.round(perCouple))} off for each of those two couples. Alex & Katie, Mule and House 3 untouched.`}</p>
+				<div class="end h1"><span>KIE & ELISA</span><b>save <Money pence={proposed.pot} /></b></div>
+				<p class="per">{untouched ? 'Nothing moving yet. Everyone pays the original costs.' : `That’s ${gbp(proposed.pot)} off Kie & Elisa’s share. Alex & Katie, Mule and House 3 untouched.`}</p>
 			</div>
 
 			<div class="table-wrap">
@@ -217,9 +217,9 @@
 			</div>
 			<p class="fine">
 				{#if seeAll}
-					Kie & Elisa and Oliver & Phoebe split the savings evenly. Alex & Katie and Mule don’t change: the Big House Tax, Alex & Katie’s £79 of gym and bikes, and the £100 gifts all stay as they are.
+					The whole saving goes to Kie & Elisa. Alex & Katie, Mule and House 3 don’t change: the empty places, the Big House Tax, Alex & Katie’s £79 of gym and bikes, and the £100 gifts all stay as they are.
 				{:else}
-					This only shows your numbers. Any savings are split evenly between Kie & Elisa and Oliver & Phoebe, and nobody else’s share moves.
+					This only shows your numbers. Any saving goes to Kie & Elisa, and nobody else’s share moves.
 				{/if}
 				{#if seeAll && proposed.rounding.length}Pennies that don’t split evenly go to {proposed.rounding.map((id) => group(id).label).join(' and ')}, so the total stays exactly {gbp(ORIGINAL.total)}.{/if}
 			</p>
@@ -240,7 +240,7 @@
 				<h3 id="vote-title">{agreedIsOriginal ? 'Right now: the original costs.' : `Agreed: split no. ${agreed.version}`}</h3>
 				<p>
 					{#if agreedIsOriginal}
-						Nobody has agreed to change anything, so everyone pays the original amounts. It only changes if <strong>both House 2 couples say what they’d chip in</strong>, <strong>Kie & Elisa and Oliver & Phoebe say yes to those exact amounts</strong>, and Alex then publishes it. Saying nothing counts as no.
+						Nobody has agreed to change anything, so everyone pays the original amounts. It only changes if <strong>both House 2 couples say what they’d chip in</strong>, <strong>Kie & Elisa say yes to those exact amounts</strong>, and Alex then publishes it. Saying nothing counts as no.
 					{:else}
 						{#if seeAll}Chris & Jenn chip in {gbp(agreed.contributions['chris-jenn'])}, Adam & Lysanne {gbp(agreed.contributions['adam-lysanne'])}.
 						{:else if role === 'giver'}You agreed to chip in {gbp(agreed.contributions[myGroup as ContributorId])}.
@@ -252,8 +252,8 @@
 			</div>
 
 			<div class="progress">
-				<p><b>{answered} of 4</b> answered</p>
-				<div class="meter" aria-hidden="true"><i style:width={`${(answered / 4) * 100}%`}></i></div>
+				<p><b>{answered} of {needed}</b> answered</p>
+				<div class="meter" aria-hidden="true"><i style:width={`${(answered / needed) * 100}%`}></i></div>
 			</div>
 
 			<ul class="board">
@@ -291,7 +291,7 @@
 						</button>
 						{#if myPledge !== null}<button class="btn" type="button" disabled={busy} onclick={() => run({ action: 'pledge', group: myGroup, pence: null })}>Take back our answer</button>{/if}
 					</div>
-					<p class="fine">{myPledge === null ? 'You haven’t answered yet.' : `You said ${gbp(myPledge)}.`} Changing it means Kie & Elisa and Oliver & Phoebe have to say yes again. Nothing is owed until Alex publishes an agreed split.</p>
+					<p class="fine">{myPledge === null ? 'You haven’t answered yet.' : `You said ${gbp(myPledge)}.`} Changing it means Kie & Elisa have to say yes again. Nothing is owed until Alex publishes an agreed split.</p>
 				{:else if isReliefGroup(myGroup)}
 					<p><strong>{group(myGroup).label}:</strong> {#if !tableAmounts}nothing to approve yet. Both House 2 couples need to say what they’d be happy with first.{:else}you’d pay <b>{gbp(myProposedTotal ?? 0)}</b> instead of {gbp(lineFor(ORIGINAL, myGroup).total)}.{/if}</p>
 					{#if tableAmounts}
@@ -413,7 +413,7 @@
 	.progress b { font: 800 18px var(--f-display); }
 	.meter { flex: 1; max-width: 320px; height: 6px; border-radius: 999px; background: var(--line); overflow: hidden; }
 	.meter i { display: block; height: 100%; background: var(--moss); border-radius: inherit; transition: width 400ms var(--ease); }
-	.board { list-style: none; padding: 0; margin: 14px 0 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; } /* 4 answers: 4, 2 × 2, 1 × 4 */
+	.board { list-style: none; padding: 0; margin: 14px 0 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; } /* 3 answers: 3 across, then 1 × 3 */
 	.board li { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; row-gap: 6px; align-items: center; padding: 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); }
 	.board li.me { border-color: var(--sun); box-shadow: 0 0 0 1px var(--sun); }
 	.dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--sun); }
@@ -426,7 +426,7 @@
 	.table-now { margin-top: 14px; font-size: 14px; font-weight: 700; }
 	.mine-box { margin-top: 16px; padding: 18px 20px; border-radius: 6px; border-left: 3px solid var(--sun); background: var(--paper); display: grid; gap: 10px; font-size: 15px; }
 	.mine-box .how-h { color: var(--gold-ink); }
-	@media (max-width: 960px) { .intro { grid-template-columns: 1fr; } .board { grid-template-columns: 1fr 1fr; } }
+	@media (max-width: 960px) { .intro { grid-template-columns: 1fr; } }
 	@media (max-width: 520px) { .board { grid-template-columns: 1fr; } .letter { padding: 24px 22px 22px; } .lane { grid-template-columns: 1fr; } .lane .tag { grid-row: auto; } .lane small { grid-column: 1; } }
 	.row { display: flex; flex-wrap: wrap; gap: 10px; }
 	.org { margin-top: 14px; padding: 16px 18px; border-radius: 6px; background: var(--ink); color: var(--paper); display: grid; gap: 8px; font-size: 14px; }

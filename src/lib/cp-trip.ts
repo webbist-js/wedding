@@ -50,11 +50,11 @@ export type Group = {
 export const GROUPS: Group[] = [
 	{ id: 'kie-elisa', label: 'Kie & Elisa', house: 'h1', adults: 2 },
 	{ id: 'alex-katie', label: 'Alex & Katie', house: 'h1', adults: 2, paidUpfront: true },
-	{ id: 'oliver-phoebe', label: 'Oliver & Phoebe', house: 'h1', adults: 2, twin: true },
 	{ id: 'mule', label: 'Mule', house: 'h1', adults: 1, twin: true },
 	{ id: 'chris-jenn', label: 'Chris & Jenn', house: 'h2', adults: 2 },
 	{ id: 'adam-lysanne', label: 'Adam & Lysanne', house: 'h2', adults: 2, twin: true },
-	{ id: 'chris-hayley', label: 'Chris & Hayley & Theo', house: 'h3', adults: 2, kids: ['Theo'] }
+	{ id: 'chris-hayley', label: 'Chris & Hayley & Theo', house: 'h3', adults: 2, kids: ['Theo'] },
+	{ id: 'oliver-phoebe', label: 'Oliver & Phoebe', house: 'h3', adults: 2, twin: true }
 ];
 
 export const group = (id: GroupId) => GROUPS.find((g) => g.id === id)!;
@@ -120,8 +120,8 @@ export const HOUSES: House[] = [
 		costPence: 64_900,
 		accommodationPence: 64_900,
 		amenities: [],
-		blurb: 'Their own family base, with room for Theo’s naps and early nights.',
-		note: 'There may be a spare twin room if Theo sleeps in a travel cot.'
+		blurb: 'Chris, Hayley and Theo’s family base, shared with Oli & Phoebe. Room for Theo’s naps and early nights.',
+		note: 'Oli & Phoebe take the twin room, so Theo sleeps in a travel cot with Chris & Hayley.'
 	}
 ];
 export const house = (id: HouseId) => HOUSES.find((h) => h.id === id)!;
@@ -137,19 +137,24 @@ export const EXTRAS = [
 /** Alex & Katie's private gifts towards three bookings. Fixed; never redistributed. */
 export const GIFTS: { from: GroupId; to: GroupId; pence: number }[] = [
 	{ from: 'alex-katie', to: 'chris-jenn', pence: 10_000 },
-	{ from: 'alex-katie', to: 'adam-lysanne', pence: 10_000 },
-	{ from: 'alex-katie', to: 'chris-hayley', pence: 10_000 }
+	{ from: 'alex-katie', to: 'adam-lysanne', pence: 10_000 }
 ];
 
 /**
- * House 1 isn't split evenly. Kie & Elisa and Oliver & Phoebe pay a round £550
- * and Mule £300; Alex & Katie pick up the difference as the Big House Tax.
- * Each entry is how far below an equal per-adult share that group sits.
+ * House 1 was booked for seven adults at £310 a head. Oli & Phoebe have since
+ * moved to House 3, and Alex & Katie take on their two empty places.
+ */
+export const HOUSE1_PER_HEAD = 31_000;
+export const HOUSE1_ABSORBER: GroupId = 'alex-katie';
+
+/**
+ * On top of that, Kie & Elisa pay a round £550 and Mule £300; Alex & Katie
+ * pick up the difference as the Big House Tax. Each entry is how far below
+ * the £310 a head that group sits.
  */
 export const BIG_HOUSE_TAX_PAYER: GroupId = 'alex-katie';
 export const BIG_HOUSE_TAX: { group: GroupId; pence: number }[] = [
 	{ group: 'kie-elisa', pence: 7_000 },
-	{ group: 'oliver-phoebe', pence: 7_000 },
 	{ group: 'mule', pence: 1_000 }
 ];
 export const BIG_HOUSE_TAX_TOTAL = BIG_HOUSE_TAX.reduce((s, x) => s + x.pence, 0);
@@ -183,7 +188,8 @@ export function allocate(total: number, weights: number[]): { shares: number[]; 
 
 export type Line = {
 	group: GroupId;
-	accommodation: number; // their equal share of their own lodge
+	accommodation: number; // their share of their own lodge (House 1: £310 a head)
+	absorbed: number; // + House 1's empty places (Alex & Katie only)
 	bigHouseTax: number; // + Alex & Katie's top-up, − what it saves the others
 	extras: number; // gym + bikes (Alex & Katie only)
 	giftsGiven: number; // + paid on others' behalf
@@ -198,18 +204,18 @@ export const NO_CONTRIBUTIONS: Contributions = { 'chris-jenn': 0, 'adam-lysanne'
 export const CONTRIBUTORS: ContributorId[] = ['chris-jenn', 'adam-lysanne'];
 export const HOUSE1_GROUPS = groupsIn('h1').map((g) => g.id);
 /**
- * Who the Fancy House Tax savings go to: the two House 1 couples. Alex & Katie
- * already carry the Big House Tax and Mule already pays a reduced £300, so
- * neither moves. These two are also the only groups who need to approve.
+ * Who the Fancy House Tax savings go to: Kie & Elisa, the one House 1 couple
+ * not already covered. Alex & Katie carry the Big House Tax and the empty
+ * places, and Mule already pays a reduced £300, so neither moves. Kie & Elisa
+ * are also the only group who need to approve.
  */
-export const RELIEF_GROUPS: GroupId[] = ['kie-elisa', 'oliver-phoebe'];
-export const RELIEF_ADULTS = RELIEF_GROUPS.reduce((n, id) => n + group(id).adults, 0); // 4
+export const RELIEF_GROUPS: GroupId[] = ['kie-elisa'];
 export const isContributor = (id: unknown): id is ContributorId => CONTRIBUTORS.includes(id as ContributorId);
 export const isHouse1 = (id: unknown): boolean => HOUSE1_GROUPS.includes(id as GroupId);
 export const isReliefGroup = (id: unknown): boolean => RELIEF_GROUPS.includes(id as GroupId);
 
 export const STEP_PENCE = 500; // calculator steps in £5
-export const MAX_CONTRIBUTION_PENCE = 50_000; // £500 per couple, a sanity cap
+export const MAX_CONTRIBUTION_PENCE = 25_000; // £250 per couple: two of them can never push Kie & Elisa below £0
 
 export class ContributionError extends Error {}
 
@@ -248,10 +254,17 @@ export function breakdown(contributions: Contributions = NO_CONTRIBUTIONS): Brea
 	const pot = c['chris-jenn'] + c['adam-lysanne'];
 
 	const accommodation = new Map<GroupId, number>();
+	const absorbed = new Map<GroupId, number>();
 	for (const h of HOUSES) {
 		const occ = groupsIn(h.id);
-		const { shares } = allocate(h.accommodationPence, occ.map((g) => g.adults));
-		occ.forEach((g, i) => accommodation.set(g.id, shares[i]));
+		if (h.id === 'h1') {
+			// £310 a head for whoever's in it; the empty places fall to Alex & Katie.
+			for (const g of occ) accommodation.set(g.id, g.adults * HOUSE1_PER_HEAD);
+			absorbed.set(HOUSE1_ABSORBER, h.accommodationPence - occ.reduce((n, g) => n + g.adults * HOUSE1_PER_HEAD, 0));
+		} else {
+			const { shares } = allocate(h.accommodationPence, occ.map((g) => g.adults));
+			occ.forEach((g, i) => accommodation.set(g.id, shares[i]));
+		}
 	}
 
 	const reliefAlloc = allocate(pot, RELIEF_GROUPS.map((id) => group(id).adults));
@@ -260,6 +273,7 @@ export function breakdown(contributions: Contributions = NO_CONTRIBUTIONS): Brea
 
 	const lines: Line[] = GROUPS.map((g) => {
 		const acc = accommodation.get(g.id)!;
+		const abs = absorbed.get(g.id) ?? 0;
 		const r = relief.get(g.id) ?? 0;
 		const bht = bigHouseTaxFor(g.id);
 		if (acc + bht - r < 0) throw new ContributionError(`${g.label}’s share of House 1 can’t go below £0`);
@@ -270,13 +284,14 @@ export function breakdown(contributions: Contributions = NO_CONTRIBUTIONS): Brea
 		return {
 			group: g.id,
 			accommodation: acc,
+			absorbed: abs,
 			bigHouseTax: bht,
 			extras,
 			giftsGiven,
 			giftsReceived,
 			contribution,
 			relief: r,
-			total: acc + bht + extras + giftsGiven - giftsReceived + contribution - r
+			total: acc + abs + bht + extras + giftsGiven - giftsReceived + contribution - r
 		};
 	});
 	const total = lines.reduce((s, l) => s + l.total, 0);
@@ -355,7 +370,7 @@ export function proposalStatus(consents: Consent[], agreed: Agreement): Proposal
 
 /**
  * The only way a proposal becomes owed money. Refuses unless every House 2
- * couple pledged and both receiving couples approved those exact amounts.
+ * couple pledged and Kie & Elisa approved those exact amounts.
  */
 export function publishAgreement(consents: Consent[], current: Agreement, now: Date): Agreement {
 	const s = proposalStatus(consents, current);
@@ -478,7 +493,7 @@ export function proposalSummary(c: Contributions): string {
 	return [
 		'Center Parcs: Fancy House Tax idea (hypothetical, nothing agreed yet)',
 		`Chris & Jenn chip in ${gbp(c['chris-jenn'])}, Adam & Lysanne chip in ${gbp(c['adam-lysanne'])}.`,
-		`Kie & Elisa and Oliver & Phoebe save ${gbp(b.pot)} between them.`,
+		`Kie & Elisa save ${gbp(b.pot)}.`,
 		'',
 		...rows,
 		'',
