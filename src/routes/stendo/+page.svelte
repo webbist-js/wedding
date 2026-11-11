@@ -3,15 +3,15 @@
 	import { onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import Countdown from '$lib/components/cp-trip/Countdown.svelte';
-	import FancyHouseTax from '$lib/components/cp-trip/FancyHouseTax.svelte';
+	import TripBudgetCharts from '$lib/components/cp-trip/TripBudgetCharts.svelte';
 	import PayUp from '$lib/components/cp-trip/PayUp.svelte';
 	import ThingsToDo from '$lib/components/cp-trip/ThingsToDo.svelte';
 	import TripIcon from '$lib/components/cp-trip/TripIcon.svelte';
 	import ChoirPlayer from '$lib/components/cp-trip/ChoirPlayer.svelte';
 	import { HALLELUJAH } from '$lib/whinfell-song';
 	import {
-		BOOKING, GROUPS, HOUSES, PEOPLE, ADULTS, KIDS, EXTRAS, GIFTS, BIG_HOUSE_TAX_TOTAL, ORIGINAL, groupsIn, group, lineFor, gbp, gbpShort, person, daysUntil, pastDeadline,
-		isContributor, isReliefGroup, type Person, type GroupId, type HouseId
+		BOOKING, GROUPS, HOUSES, PEOPLE, ADULTS, KIDS, EXTRAS, GIFTS, CURRENT_BUDGET, PER_ADULT, HOST_PLACES, ADDITIONAL_BIG_HOUSE_TAX, ACCOMMODATION_TOTAL, EXTRAS_TOTAL, FOOD_ACTIVITY_POT, groupsIn, group, gbp, gbpShort, person, daysUntil, pastDeadline,
+		type Person, type GroupId, type HouseId
 	} from '$lib/cp-trip';
 	import { ITINERARY, PACK, SHOPPING, GALLERY, LODGE_IMAGES, BANNER, FACTS } from '$lib/cp-whinfell';
 	import type { TripState } from '$lib/server/cp-trip';
@@ -149,10 +149,6 @@
 		if (!me || !myGroup) return { label: 'Tell us who you are', hint: 'See your share and have your say', pick: true };
 		if (myAccount && myAccount.outstanding > 0)
 			return { label: `Pay your ${gbp(myAccount.outstanding)}`, hint: late ? 'The deadline has passed' : `By 8 January · ${deadlineDays} ${deadlineDays === 1 ? 'day' : 'days'} left`, target: 'pay' };
-		if (isContributor(myGroup) && trip.status.pledges[myGroup] === null)
-			return { label: 'Answer the Fancy House Tax question', hint: 'Takes a minute. £0 is a fine answer.', target: 'debate' };
-		if (isReliefGroup(myGroup) && trip.status.proposal && trip.status.approvals[myGroup] !== 'approved')
-			return { label: 'Check your new share', hint: 'Everyone chipping in has answered. Say yes if you’re happy.', target: 'debate' };
 		return { label: 'Vote for things to do', hint: 'Help pick the group activity', target: 'do' };
 	});
 	function doNext(e: Event) {
@@ -194,21 +190,14 @@
 	// personal and uncluttered. It isn't a lock: the trust model is the same as
 	// the rest of the Stendo pages.
 	const seeAll = $derived(organiser);
-	const myLine = $derived(myGroup ? lineFor(ORIGINAL, myGroup) : null);
+	const myLine = $derived(myGroup ? CURRENT_BUDGET.lines.find((l) => l.group === myGroup)! : null);
 	const showHouseCost = (h: HouseId) => seeAll || (!!myGroup && group(myGroup).house === h);
-	/** Plain-English summary of how one group's original share is made up. */
+	/** Explain the fixed share, including gifts already deducted. */
 	function shareStory(id: GroupId): string {
 		const g = group(id);
-		const l = lineFor(ORIGINAL, id);
-		if (g.paidUpfront) return `You paid Center Parcs for the whole booking up front, so your share is already settled. It covers your two House 1 places, Oli & Phoebe’s two empty ones, the ${gbpShort(BIG_HOUSE_TAX_TOTAL)} Big House Tax, your gym pass and bikes, and the £100 gifts.`;
-		const mates = groupsIn(g.house).filter((x) => x.id !== id).map((x) => x.label.replace(' & Theo', ''));
-		const n = g.house.slice(1);
-		const base = g.house === 'h1'
-			? `House 1 works out at £310 a head, so ${gbp(l.accommodation)} for ${g.adults === 1 ? 'you' : 'the two of you'}.`
-			: mates.length ? `You’re splitting House ${n} with ${mates.join(' and ')}, so your half is ${gbp(l.accommodation)}.` : `House ${n} is yours: ${gbp(l.accommodation)}.`;
-		const tax = l.bigHouseTax < 0 ? ` Alex & Katie cover ${gbp(-l.bigHouseTax)} of that (the Big House Tax), bringing you to a round ${gbpShort(l.accommodation + l.bigHouseTax)}.` : '';
-		const gift = l.giftsReceived ? ` Alex & Katie are chipping in ${gbpShort(l.giftsReceived)} as a gift.` : '';
-		return base + tax + gift;
+		const l = CURRENT_BUDGET.lines.find((line) => line.group === id)!;
+		if (g.paidUpfront) return `Your £2,000 includes your two original £310 places, ${gbp(ADDITIONAL_BIG_HOUSE_TAX)} additional Big House Tax, £200 in gifts, £79 for gym and bikes, and ${gbp(FOOD_ACTIVITY_POT)} for shared food and activities.`;
+		return `${g.adults} × ${gbp(PER_ADULT)} = ${gbp(l.accommodation)}.${l.giftsReceived ? ` Alex & Katie cover ${gbp(l.giftsReceived)} of your share as a gift, so you pay ${gbp(l.total)}.` : ''} Theo is free.`;
 	}
 
 	const giftList = GIFTS.map((x) => gbpShort(x.pence)).join(' + ');
@@ -235,19 +224,18 @@
 	<link rel="preconnect" href="https://centerparcs.scene7.com" />
 </svelte:head>
 
-{#snippet receipt(l: (typeof ORIGINAL.lines)[number])}
+{#snippet receipt(l: (typeof CURRENT_BUDGET.lines)[number])}
 	{@const g = group(l.group)}
 	<article class="rc" class:mine={myGroup === g.id}>
 		<p class="rc-h">House {g.house.slice(1)}</p>
 		<h3>{g.label}</h3>
 		<dl>
-			<div><dt>{g.house === 'h1' ? `House 1 · ${g.adults} × £310` : groupsIn(g.house).length > 1 ? `Half of House ${g.house.slice(1)}` : `House ${g.house.slice(1)}`}</dt><dd>{gbp(l.accommodation)}</dd></div>
-			{#if l.absorbed}<div class="tax"><dt>Oli & Phoebe’s empty House 1 places</dt><dd>+{gbp(l.absorbed)}</dd></div>{/if}
-			{#if l.bigHouseTax > 0}<div class="tax"><dt>Big House Tax</dt><dd>+{gbp(l.bigHouseTax)}</dd></div>{/if}
-			{#if l.bigHouseTax < 0}<div class="gift"><dt>Big House Tax, paid by Alex & Katie</dt><dd>{gbp(l.bigHouseTax)}</dd></div>{/if}
+			<div><dt>{g.paidUpfront ? 'Our two places · 2 × £310' : `${g.adults} × ${gbpShort(PER_ADULT)} per adult`}</dt><dd>{gbp(l.accommodation)}</dd></div>
+			{#if l.bigHouseTax}<div class="tax"><dt>Additional Big House Tax</dt><dd>+{gbp(l.bigHouseTax)}</dd></div>{/if}
 			{#each EXTRAS.filter((e) => e.group === g.id) as e}<div><dt>{e.label}</dt><dd>{gbp(e.pence)}</dd></div>{/each}
 			{#if l.giftsGiven}<div><dt>Gifts ({giftList})</dt><dd>{gbp(l.giftsGiven)}</dd></div>{/if}
 			{#if l.giftsReceived}<div class="gift"><dt>Gift from Alex & Katie</dt><dd>{gbp(-l.giftsReceived)}</dd></div>{/if}
+			{#if l.sharedPot}<div><dt>Shared food + activities pot</dt><dd>{gbp(l.sharedPot)}</dd></div>{/if}
 		</dl>
 		<p class="rc-total"><span>Total</span><b>{gbp(l.total)}</b></p>
 	</article>
@@ -281,7 +269,7 @@
 			{#key activeTab}<span in:fly={{ y: reducedMotion ? 0 : 10, duration: reducedMotion ? 0 : 260 }}>{TABS[activeIndex].title}</span>{/key}
 		</div>
 		<div class="mast-links">
-			<a href="#lodges">Lodges</a><a href="#debate">Costs</a><a href="#pay">Pay</a><a href="#do">Do</a><a href="#pack">Pack</a>
+			<a href="#lodges">Lodges</a><a href="#costs">Costs</a><a href="#pay">Pay</a><a href="#do">Do</a><a href="#pack">Pack</a>
 			<button type="button" class="song-link" onclick={() => player?.showLyrics()}><TripIcon name="music" size={14} strokeWidth={2.5} /> Lyrics</button>
 			<button type="button" class="me" onclick={() => (picking = true)} aria-label={me ? `You’re ${me.name}. Change` : 'Who are you?'}><span class="me-full">{me ? `Hi, ${me.name}` : 'Who are you?'}</span><span class="me-short" aria-hidden="true">{me ? me.name.slice(0, 1) : '?'}</span></button>
 		</div>
@@ -392,27 +380,30 @@
 			<p class="fine">Nothing’s booked beyond the lodges yet. Activities and meals out are below, once we know what people fancy.</p>
 		</section>
 
-		<!-- ORIGINAL COSTS -->
+		<!-- CURRENT BUDGET -->
 		<section class="costs wrap" id="costs" aria-labelledby="costs-title">
-			<p class="eyebrow">THE ORIGINAL COSTS</p>
+			<p class="eyebrow">THE COSTS</p>
 			<h2 id="costs-title">Who pays <span>what.</span></h2>
 			{#if seeAll}
-				<p class="section-intro">The booking came to <strong>{gbp(BOOKING.totalPence)}</strong>. Everyone pays for their own lodge. House 1 is £310 a head; Oli & Phoebe have moved to House 3, so Alex & Katie pick up their two places, plus {gbpShort(BIG_HOUSE_TAX_TOTAL)} of <strong>Big House Tax</strong> so Kie & Elisa pay a round £550 and Mule pays £300.</p>
+				<p class="section-intro">£178 per adult, with Theo free. Alex & Katie put in £2,000, including £100 gifts towards Chris & Jenn and Adam & Lysanne: those couples each pay £256. Total funding: <strong>{gbp(CURRENT_BUDGET.total)}</strong>.</p>
 				<p class="org-note">Organiser view: you’re seeing everyone’s numbers. Everyone else only sees their own.</p>
 				<div class="receipts">
-					{#each ORIGINAL.lines as l}{@render receipt(l)}{/each}
+					{#each CURRENT_BUDGET.lines as l}{@render receipt(l)}{/each}
 					<article class="rc rc-sum" aria-label="Grand total">
 						<p class="rc-h">All three lodges</p>
-						<h3>The whole booking</h3>
+						<h3>Where the money goes</h3>
 						<dl>
-							{#each HOUSES as h}<div><dt>House {h.number}</dt><dd>{gbp(h.costPence)}</dd></div>{/each}
+							{#each HOUSES as h}<div><dt>House {h.number} accommodation</dt><dd>{gbp(h.accommodationPence)}</dd></div>{/each}
+							<div><dt>Gym + bikes</dt><dd>{gbp(EXTRAS_TOTAL)}</dd></div>
+							<div><dt>Food + activities pot</dt><dd>{gbp(FOOD_ACTIVITY_POT)}</dd></div>
 						</dl>
-						<p class="rc-total"><span>Total</span><b>{gbp(ORIGINAL.total)}</b></p>
+						<p class="rc-total"><span>Total</span><b>{gbp(CURRENT_BUDGET.total)}</b></p>
 					</article>
 				</div>
-				<p class="fine">The empty House 1 places, the Big House Tax, the gym pass and bike hire, and the gifts are all Alex & Katie’s, and none of it is part of any sharing idea. Everything adds up to exactly {gbp(ORIGINAL.total)}.</p>
+				<p class="fine">Accommodation only: {gbp(ACCOMMODATION_TOTAL)} − 11 × {gbpShort(PER_ADULT)} − our two places at {gbp(HOST_PLACES)} = <strong>{gbp(ADDITIONAL_BIG_HOUSE_TAX)} additional Big House Tax</strong>. We cover this shortfall as well as the £200 gifts. The {gbp(FOOD_ACTIVITY_POT)} food and activities pot is what will remain once everyone has paid; it is not extra money to collect.</p>
+				<TripBudgetCharts />
 			{:else if myGroup && myLine}
-				<p class="section-intro">Everyone pays for their own lodge. Here’s exactly how yours adds up.</p>
+				<p class="section-intro">The fixed share is £178 per adult. Any gift is already deducted below.</p>
 				<div class="receipts solo">
 					{@render receipt(myLine)}
 					<article class="rc-story">
@@ -427,9 +418,7 @@
 			{/if}
 		</section>
 
-		<FancyHouseTax status={trip.status} agreed={trip.agreed} consents={trip.consents} {myGroup} {organiser} {act} onPickName={() => (picking = true)} />
-
-		<PayUp ledger={trip.ledger} agreed={trip.agreed} paymentDetails={trip.notes.payment} {myGroup} {organiser} {now} {act} onPickName={() => (picking = true)} />
+		<PayUp ledger={trip.ledger} paymentDetails={trip.notes.payment} {myGroup} {organiser} {now} {act} onPickName={() => (picking = true)} />
 
 		<ThingsToDo interest={trip.interest} {me} {act} onPickName={() => (picking = true)} />
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-	BOOKING, GROUPS, HOUSES, ORIGINAL, breakdown, lineFor, deltas, allocate, assertContribution, poundsToPence,
+	CURRENT_BUDGET, ACCOMMODATION_TOTAL, ADDITIONAL_BIG_HOUSE_TAX, FOOD_ACTIVITY_POT, EXTRAS_TOTAL, BOOKING, GROUPS, HOUSES, ORIGINAL, breakdown, lineFor, deltas, allocate, assertContribution, poundsToPence,
 	proposalStatus, publishAgreement, currentAgreement, ledger, validatePayment, BASELINE_AGREEMENT, ContributionError,
 	gbp, signed, countdown, daysUntil, groupsIn, PEOPLE, ADULTS, splitSaving, proposalSummary,
 	type Consent, type Agreement, type Payment, type GroupId, type Contributions
@@ -220,7 +220,7 @@ describe('consensus', () => {
 		expect(() => publishAgreement(partial, BASELINE_AGREEMENT, new Date())).toThrow();
 		// a pledge on its own doesn't move anything owed
 		const l = ledger([], [], NOW);
-		expect(l.accounts.find((a) => a.group === 'chris-jenn')!.owed).toBe(22_950);
+		expect(l.accounts.find((a) => a.group === 'chris-jenn')!.owed).toBe(25_600);
 		const v1 = publishAgreement(allYes(fifty), BASELINE_AGREEMENT, new Date('2026-12-01T00:00:00Z'));
 		expect(v1).toMatchObject({ version: 1, contributions: fifty });
 		expect(() => publishAgreement(allYes(fifty), v1, new Date())).toThrow(/already/);
@@ -228,60 +228,51 @@ describe('consensus', () => {
 	});
 });
 
-describe('payments', () => {
+describe('current budget and payments', () => {
 	const pay = (id: number, group: GroupId, pence: number): Payment => ({ id, group, pence, receivedOn: '2026-11-20', note: '', createdAt: '2026-11-20T10:00:00Z' });
 
-	it('starts with only Alex & Katie paid (they paid the booking) and nothing invented', () => {
+	it('charges £178 per adult, deducts each £100 gift once, and keeps the hosts at £2,000', () => {
+		expect(Object.fromEntries(CURRENT_BUDGET.lines.map((l) => [l.group, l.total]))).toEqual({
+			'kie-elisa': 35_600, 'alex-katie': 200_000, mule: 17_800,
+			'chris-jenn': 25_600, 'adam-lysanne': 25_600,
+			'chris-hayley': 35_600, 'oliver-phoebe': 35_600
+		});
+		for (const line of CURRENT_BUDGET.lines) {
+			expect(line.accommodation + line.bigHouseTax + line.extras + line.giftsGiven - line.giftsReceived + line.sharedPot).toBe(line.total);
+		}
+		expect(CURRENT_BUDGET.lines.reduce((sum, l) => sum + l.total, 0)).toBe(375_800);
+		expect(CURRENT_BUDGET.total).toBe(375_800);
+		expect(ADDITIONAL_BIG_HOUSE_TAX).toBe(90_000);
+		expect(ACCOMMODATION_TOTAL).toBe(347_800);
+		expect(EXTRAS_TOTAL).toBe(7_900);
+		expect(FOOD_ACTIVITY_POT).toBe(20_100);
+		expect(ACCOMMODATION_TOTAL + EXTRAS_TOTAL + FOOD_ACTIVITY_POT).toBe(CURRENT_BUDGET.total);
+	});
+
+	it('credits the hosts’ upfront booking and does not invent payments from guests', () => {
 		const l = ledger([], [], NOW);
-		expect(l.collected).toBe(159_900);
-		expect(l.owed).toBe(355_700);
-		expect(l.outstanding).toBe(355_700 - 159_900);
-		const ak = l.accounts.find((a) => a.group === 'alex-katie')!;
-		expect(ak).toMatchObject({ status: 'paid', upfront: true, outstanding: 0, payments: [] });
-		expect(l.accounts.filter((a) => a.group !== 'alex-katie').every((a) => a.status === 'not-paid' && !a.overdue)).toBe(true);
+		expect(l).toMatchObject({ collected: 200_000, owed: 375_800, outstanding: 175_800 });
+		expect(l.accounts.find((a) => a.group === 'alex-katie')).toMatchObject({ status: 'paid', upfront: true, outstanding: 0, payments: [] });
+		expect(l.accounts.filter((a) => a.group !== 'alex-katie').every((a) => a.status === 'not-paid')).toBe(true);
 	});
 
-	it('keeps Alex & Katie settled whatever the agreed split', () => {
-		const v1: Agreement = { version: 1, contributions: { 'chris-jenn': 5_000, 'adam-lysanne': 5_000, 'oliver-phoebe': 0 }, publishedAt: '2026-12-01T00:00:00Z' };
-		const ak = ledger([v1], [], Date.UTC(2027, 0, 9)).accounts.find((a) => a.group === 'alex-katie')!;
-		expect(ak).toMatchObject({ owed: 153_900, status: 'paid', overdue: false, refundDue: 0 });
+	it('uses the fixed budget even when an old calculator agreement exists, retaining payments and history', () => {
+		const old: Agreement = { version: 1, contributions: { 'chris-jenn': 5_000, 'adam-lysanne': 5_000, 'oliver-phoebe': 0 }, publishedAt: '2026-11-10T12:00:00Z' };
+		const payments = [pay(1, 'chris-jenn', 22_950)];
+		const account = ledger([old], payments, NOW).accounts.find((a) => a.group === 'chris-jenn')!;
+		expect(account).toMatchObject({ owed: 25_600, paid: 22_950, outstanding: 2_650, status: 'partial', payments });
+		expect(account.history.map((h) => h.owed)).toEqual([22_950, 27_950, 25_600]);
 	});
 
-	it('tracks partial and full payments', () => {
-		const l = ledger([], [pay(1, 'mule', 10_000), pay(2, 'kie-elisa', 55_000)], NOW);
-		expect(l.accounts.find((a) => a.group === 'mule')).toMatchObject({ status: 'partial', paid: 10_000, outstanding: 20_000 });
-		expect(l.accounts.find((a) => a.group === 'kie-elisa')).toMatchObject({ status: 'paid', outstanding: 0 });
-		expect(l.collected).toBe(159_900 + 65_000);
-		expect(l.outstanding).toBe(355_700 - 159_900 - 65_000);
+	it('settles both gifted couples at £256 and preserves overpayments as refunds', () => {
+		const l = ledger([], [pay(1, 'chris-jenn', 25_600), pay(2, 'adam-lysanne', 25_600), pay(3, 'kie-elisa', 55_000)], NOW);
+		for (const id of ['chris-jenn', 'adam-lysanne']) expect(l.accounts.find((a) => a.group === id)).toMatchObject({ status: 'paid', outstanding: 0, refundDue: 0 });
+		expect(l.accounts.find((a) => a.group === 'kie-elisa')).toMatchObject({ status: 'overpaid', refundDue: 19_400, outstanding: 0 });
 	});
 
-	it('keeps partial payments intact after an agreed change, and shows the adjustment', () => {
-		const payments = [pay(1, 'mule', 10_000), pay(2, 'chris-jenn', 22_950)];
-		const v1: Agreement = { version: 1, contributions: { 'chris-jenn': 5_000, 'adam-lysanne': 5_000, 'oliver-phoebe': 0 }, publishedAt: '2026-12-01T00:00:00Z' };
-		const l = ledger([v1], payments, NOW);
-		const mule = l.accounts.find((a) => a.group === 'mule')!;
-		expect(mule.payments).toEqual([payments[0]]);
-		expect(mule).toMatchObject({ paid: 10_000, owed: 30_000, outstanding: 20_000, status: 'partial' });
-		expect(mule.history.map((h) => h.owed)).toEqual([30_000]);
-		const ke = l.accounts.find((a) => a.group === 'kie-elisa')!;
-		expect(ke.history.map((h) => h.owed)).toEqual([55_000, 51_000]);
-		const cj = l.accounts.find((a) => a.group === 'chris-jenn')!;
-		expect(cj).toMatchObject({ paid: 22_950, owed: 27_950, outstanding: 5_000, status: 'partial' });
-		expect(l.owed).toBe(355_700);
-		expect(l.collected).toBe(32_950 + 153_900);
-	});
-
-	it('flags refunds when a group paid more than its new agreed amount', () => {
-		const v1: Agreement = { version: 1, contributions: { 'chris-jenn': 5_000, 'adam-lysanne': 5_000, 'oliver-phoebe': 0 }, publishedAt: '2026-12-01T00:00:00Z' };
-		const l = ledger([v1], [pay(1, 'kie-elisa', 55_000)], NOW);
-		expect(l.accounts.find((a) => a.group === 'kie-elisa')).toMatchObject({ status: 'overpaid', refundDue: 4_000, outstanding: 0 });
-	});
-
-	it('marks unpaid balances overdue after 8 January 2027, without forgiving them', () => {
-		const after = Date.UTC(2027, 0, 9, 9);
-		const l = ledger([], [pay(1, 'mule', 30_000)], after);
-		expect(l.accounts.find((a) => a.group === 'mule')!.overdue).toBe(false);
-		expect(l.accounts.find((a) => a.group === 'kie-elisa')).toMatchObject({ overdue: true, outstanding: 55_000 });
+	it('tracks partial payments, corrections and overdue balances', () => {
+		const l = ledger([], [pay(1, 'mule', 10_000), pay(2, 'mule', -500)], Date.UTC(2027, 0, 9));
+		expect(l.accounts.find((a) => a.group === 'mule')).toMatchObject({ paid: 9_500, outstanding: 8_300, status: 'partial', overdue: true });
 		expect(ledger([], [], Date.UTC(2027, 0, 8, 23, 0)).overdue).toBe(false);
 	});
 

@@ -1,15 +1,13 @@
 <script lang="ts">
-	// Pay Up, You Lovely Lot. Built on the agreed split only; calculator
-	// numbers never get here. Payments are added by the organiser and never edited.
+	// Pay Up, You Lovely Lot. Uses the current fixed budget. Payments are added by the organiser and never edited.
 	import Money from './Money.svelte';
 	import {
 		BOOKING, BANK, GROUPS, group, gbp, poundsToPence, daysUntil, pastDeadline,
-		type Ledger, type GroupId, type Agreement
+		CURRENT_BUDGET, type Ledger, type GroupId
 	} from '$lib/cp-trip';
 
 	type Props = {
 		ledger: Ledger;
-		agreed: Agreement;
 		paymentDetails: string;
 		myGroup: GroupId | null;
 		organiser: boolean;
@@ -17,7 +15,7 @@
 		act: (body: Record<string, unknown>) => Promise<string | null>;
 		onPickName: () => void;
 	};
-	let { ledger, agreed, paymentDetails, myGroup, organiser, now, act, onPickName }: Props = $props();
+	let { ledger, paymentDetails, myGroup, organiser, now, act, onPickName }: Props = $props();
 	// Each couple sees their own account; Alex (signed in as organiser) sees everyone's and the pot.
 	const seeAll = $derived(organiser);
 
@@ -44,7 +42,7 @@
 	async function addPayment(e: SubmitEvent) {
 		e.preventDefault();
 		const p = poundsToPence(pAmount);
-		if (!p) { pErr = 'Enter an amount like 550 or 199.50.'; return; }
+		if (!p) { pErr = 'Enter an amount like 256 or 178.50.'; return; }
 		busy = true;
 		pErr = (await act({ action: 'payment', group: pg, pence: pRefund ? -p : p, receivedOn: pDate, note: pNote })) ?? '';
 		busy = false;
@@ -81,18 +79,15 @@
 			<div class="pot-nums">
 				<div><span>Collected</span><b><Money pence={ledger.collected} /></b></div>
 				<div><span>Still to come in</span><b><Money pence={ledger.outstanding} /></b></div>
-				<div><span>Whole booking</span><b>{gbp(ledger.owed)}</b></div>
+				<div><span>Whole trip budget</span><b>{gbp(ledger.owed)}</b></div>
 			</div>
-			<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={pct} aria-label="Share of the booking paid back"><i style:transform={`scaleX(${pct / 100})`}></i></div>
+			<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={pct} aria-label="Share of the trip budget funded"><i style:transform={`scaleX(${pct / 100})`}></i></div>
 			<p class="fine">{pct}% in, counting Alex & Katie’s share (they paid Center Parcs up front). Only Alex can mark money as received.{#if ledger.refunds} {gbp(ledger.refunds)} to hand back after an agreed change.{/if}</p>
 		</div>
 		{/if}
 	</div>
 
-	<p class="basis">
-		{agreed.version === 0 ? 'Amounts are the original costs.' : `Amounts use agreed split no. ${agreed.version}.`}
-		Ideas from the Fancy House Tax calculator don’t count until everyone has agreed and it’s published.
-	</p>
+	<p class="basis">£178 per adult; Theo is free. Any gift is already deducted from your share. Payments already received are deducted from your balance below.</p>
 
 	<ul class="accounts" class:solo={!seeAll}>
 		<li class="how" aria-labelledby="how-title">
@@ -116,12 +111,14 @@
 		</li>
 		{#each sorted as a (a.group)}
 			{@const g = group(a.group)}
+			{@const budgetLine = CURRENT_BUDGET.lines.find((l) => l.group === a.group)!}
 			<li class="acct {a.status}" class:overdue={a.overdue} class:mine={myGroup === a.group}>
 				<div class="acct-top">
 					<div><p class="h">House {g.house.slice(1)}{myGroup === a.group ? ' · you' : ''}</p><h3>{g.label}</h3></div>
 					<span class="chip">{statusLabel(a.status, a.overdue)}</span>
 				</div>
 				<p class="owed"><Money pence={a.owed} /><small>your share</small></p>
+				{#if budgetLine.giftsReceived}<p class="fine">£356 share − £100 gift from Alex & Katie = £256 to pay, before any payments already received.</p>{/if}
 				{#if a.upfront}
 					<p class="upfront">Paid the whole booking to Center Parcs up front. Everyone else pays them back.</p>
 				{:else}
@@ -132,7 +129,7 @@
 				{/if}
 				{#if a.history.length > 1}
 					<ul class="hist">
-						{#each a.history.slice(1) as h, i}<li>Changed {gbp(a.history[i].owed)} → {gbp(h.owed)} on {fmtDate(h.at)} (agreed split no. {h.version})</li>{/each}
+						{#each a.history.slice(1) as h, i}<li>Changed {gbp(a.history[i].owed)} → {gbp(h.owed)} on {fmtDate(h.at)} ({h.version === -1 ? '£178-per-adult budget' : `agreed split no. ${h.version}`})</li>{/each}
 					</ul>
 				{/if}
 				{#if a.payments.length}

@@ -1,14 +1,13 @@
 import type { RequestHandler } from './$types';
 import { json, error } from '@sveltejs/kit';
-import { tripState, pledge, approve, publish, recordPayment, setInterest, setNote } from '$lib/server/cp-trip';
-import type { Contributions } from '$lib/cp-trip';
+import { tripState, recordPayment, setInterest, setNote } from '$lib/server/cp-trip';
 
 const fresh = { 'cache-control': 'no-store' };
 
-// Polled by /stendo for live pledges, approvals, payments and poll results.
+// Polled by /stendo for payments and activity poll results.
 export const GET: RequestHandler = async ({ locals }) => json({ ...(await tripState()), organiser: locals.authed }, { headers: fresh });
 
-// Everyone: pledge / approve / interest. Organiser only: publish / payment / note.
+// Everyone: interest. Organiser only: payment / note. Legacy calculator actions are retired.
 export const POST: RequestHandler = async ({ request, locals }) => {
 	let body: Record<string, unknown>;
 	try {
@@ -21,16 +20,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	try {
 		switch (body.action) {
 			case 'pledge':
-				await pledge(body.group, body.pence);
-				break;
 			case 'approve':
-				await approve(body.group, (body.amounts ?? null) as Contributions | null);
-				break;
+			case 'publish':
+				throw error(410, 'The calculator has been retired. The fixed £178-per-adult budget now applies.');
 			case 'interest':
 				await setInterest(body.person, body.activity, body.on === true);
-				break;
-			case 'publish':
-				await publish();
 				break;
 			case 'payment':
 				await recordPayment({ group: body.group, pence: body.pence, receivedOn: body.receivedOn, note: body.note });

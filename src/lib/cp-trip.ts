@@ -5,11 +5,9 @@
 // can pin every figure. All money is integer pence. Persistence lives in
 // $lib/server/cp-trip.ts.
 //
-// Three money concepts, kept apart on purpose:
-//   original: the confirmed baseline below (what everyone owes today);
-//   proposed: what the Fancy House Tax calculator shows (never stored as owed);
-//   agreed:   a redistribution every affected group signed up to and Alex
-//             published. Only agreed figures ever reach the payment tracker.
+// CURRENT_BUDGET is the active fixed £178-per-adult plan. ORIGINAL and
+// breakdown retain the previous lodge split for payment-history explanations.
+// The retired proposal calculator cannot change current payment amounts.
 
 // ---------------------------------------------------------------- booking ---
 
@@ -126,7 +124,7 @@ export const HOUSES: House[] = [
 ];
 export const house = (id: HouseId) => HOUSES.find((h) => h.id === id)!;
 export const groupsIn = (id: HouseId) => GROUPS.filter((g) => g.house === id);
-export const HOUSE1_ADULTS = groupsIn('h1').reduce((n, g) => n + g.adults, 0); // 7
+export const HOUSE1_ADULTS = groupsIn('h1').reduce((n, g) => n + g.adults, 0); // 5
 
 /** Paid on the House 1 booking for Alex & Katie alone. Never shared. */
 export const EXTRAS = [
@@ -134,7 +132,7 @@ export const EXTRAS = [
 	{ label: 'Bike hire', pence: 6_400, group: 'alex-katie' as GroupId }
 ];
 
-/** Alex & Katie's private gifts towards three bookings. Fixed; never redistributed. */
+/** Alex & Katie's private gifts towards two bookings. Fixed; never redistributed. */
 export const GIFTS: { from: GroupId; to: GroupId; pence: number }[] = [
 	{ from: 'alex-katie', to: 'chris-jenn', pence: 10_000 },
 	{ from: 'alex-katie', to: 'adam-lysanne', pence: 10_000 }
@@ -309,6 +307,36 @@ export function breakdown(contributions: Contributions = NO_CONTRIBUTIONS): Brea
 }
 
 export const ORIGINAL = breakdown();
+/** Current fixed budget, replacing the original lodge split and voluntary calculator. */
+export const PER_ADULT = 17_800;
+export const HOST_CONTRIBUTION = 200_000;
+export const ACCOMMODATION_TOTAL = HOUSES.reduce((sum, h) => sum + h.accommodationPence, 0);
+export const EXTRAS_TOTAL = EXTRAS.reduce((sum, e) => sum + e.pence, 0);
+export const HOST_PLACES = group('alex-katie').adults * HOUSE1_PER_HEAD;
+const otherAdultShares = GROUPS.filter((g) => g.id !== 'alex-katie').reduce((sum, g) => sum + g.adults * PER_ADULT, 0);
+export const ADDITIONAL_BIG_HOUSE_TAX = ACCOMMODATION_TOTAL - otherAdultShares - HOST_PLACES;
+const giftsTotal = GIFTS.reduce((sum, gift) => sum + gift.pence, 0);
+export const BUDGET_TOTAL = HOST_CONTRIBUTION + otherAdultShares - giftsTotal;
+export const FOOD_ACTIVITY_POT = BUDGET_TOTAL - ACCOMMODATION_TOTAL - EXTRAS_TOTAL;
+export const CURRENT_BUDGET = {
+	lines: GROUPS.map((g) => {
+		const host = g.id === 'alex-katie';
+		const giftsReceived = GIFTS.filter((gift) => gift.to === g.id).reduce((sum, gift) => sum + gift.pence, 0);
+		return {
+			group: g.id,
+			accommodation: host ? HOST_PLACES : g.adults * PER_ADULT,
+			bigHouseTax: host ? ADDITIONAL_BIG_HOUSE_TAX : 0,
+			extras: host ? EXTRAS_TOTAL : 0,
+			giftsGiven: host ? giftsTotal : 0,
+			giftsReceived,
+			sharedPot: host ? FOOD_ACTIVITY_POT : 0,
+			total: host ? HOST_CONTRIBUTION : g.adults * PER_ADULT - giftsReceived
+		};
+	}),
+	total: BUDGET_TOTAL
+};
+export const BUDGET_UPDATED_AT = '2026-11-11T00:00:00.000Z';
+
 export const lineFor = (b: Breakdown, id: GroupId) => b.lines.find((l) => l.group === id)!;
 
 /** Proposed minus original, per group. Positive means they'd pay more. */
@@ -415,16 +443,16 @@ export type Ledger = { accounts: Account[]; owed: number; collected: number; out
 export const pastDeadline = (now: number) => now > BOOKING.deadlineEndsAt;
 
 /**
- * Balances against the agreed split only. Payments are an append-only list:
- * a new agreement changes what's owed, never what was received.
+ * Balances against the current fixed £178-per-adult budget. Historical agreements
+ * are retained for the audit trail and cannot change current amounts. Payments are an append-only list:
+ * changing the budget never changes what was received.
  */
 export function ledger(agreements: Agreement[], payments: Payment[], now: number): Ledger {
 	const versions = [BASELINE_AGREEMENT, ...agreements.filter((a) => a.version > 0)].sort((a, b) => a.version - b.version);
-	const current = versions[versions.length - 1];
-	const b = breakdown(current.contributions);
+	const b = CURRENT_BUDGET;
 	const late = pastDeadline(now);
 	const accounts = GROUPS.map((g) => {
-		const owed = lineFor(b, g.id).total;
+		const owed = b.lines.find((l) => l.group === g.id)!.total;
 		const mine = payments.filter((p) => p.group === g.id);
 		const upfront = !!g.paidUpfront;
 		const paid = (upfront ? owed : 0) + mine.reduce((s, p) => s + p.pence, 0);
@@ -436,6 +464,7 @@ export function ledger(agreements: Agreement[], payments: Payment[], now: number
 			const amount = lineFor(breakdown(v.contributions), g.id).total;
 			if (!history.length || history[history.length - 1].owed !== amount) history.push({ version: v.version, owed: amount, at: v.publishedAt });
 		}
+		if (history[history.length - 1]?.owed !== owed) history.push({ version: -1, owed, at: BUDGET_UPDATED_AT });
 		return { group: g.id, owed, paid, outstanding, refundDue, status, upfront, overdue: late && outstanding > 0, payments: mine, history };
 	});
 	return {
