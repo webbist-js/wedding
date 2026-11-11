@@ -314,3 +314,49 @@ export const stenCpResponses = sqliteTable('sten_cp_responses', {
   createdAt: integer('created_at', { mode: 'timestamp' }),
   updatedAt: integer('updated_at', { mode: 'timestamp' })
 });
+
+// ---- The Stendo Vol. 03: the booked Center Parcs trip (/stendo) ----
+
+// One row per paying group. House 2 couples store their own pledge; House 1
+// groups store the exact pair of amounts they approved. See $lib/cp-trip.ts.
+export const cpTripConsents = sqliteTable('cp_trip_consents', {
+  groupId: text('group_id').primaryKey(),
+  pledgePence: integer('pledge_pence'),
+  approvedCj: integer('approved_cj'),
+  approvedAl: integer('approved_al'),
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
+});
+
+// Published redistributions. Append-only; the highest version is what's owed.
+export const cpTripAgreements = sqliteTable('cp_trip_agreements', {
+  version: integer('version').primaryKey(),
+  contributionCj: integer('contribution_cj').notNull(),
+  contributionAl: integer('contribution_al').notNull(),
+  consentsJson: text('consents_json').notNull().default('[]'),
+  publishedAt: integer('published_at', { mode: 'timestamp' }).notNull()
+});
+
+// Money received. Append-only: corrections are negative rows, never edits.
+export const cpTripPayments = sqliteTable('cp_trip_payments', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  groupId: text('group_id').notNull(),
+  amountPence: integer('amount_pence').notNull(),
+  receivedOn: text('received_on').notNull(),
+  note: text('note').notNull().default(''),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull()
+});
+
+// Activity poll: one row per person per activity they fancy.
+export const cpTripInterest = sqliteTable('cp_trip_interest', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  personId: text('person_id').notNull(),
+  activityId: text('activity_id').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+});
+
+// Organiser-edited text: payment details and the "useful info" sections.
+export const cpTripNotes = sqliteTable('cp_trip_notes', {
+  key: text('key').primaryKey(),
+  body: text('body').notNull().default(''),
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
+});

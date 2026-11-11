@@ -86,7 +86,7 @@ in the AI phase.
 
 ## Notes
 - **Migrations on future deploys:** run `npm run db:migrate` against Turso whenever
-  `src/lib/server/db/schema.ts` changes (currently up to `0026`, which adds `sten_cp_responses` for /stendo). Migrations
+  `src/lib/server/db/schema.ts` changes (currently up to `0027`, which adds the `cp_trip_*` tables for the booked trip at /stendo). Migrations
   `0015`+ are hand-written SQL plus a `drizzle/meta/_journal.json` entry —
   `npm run db:generate` is broken (snapshots stop at 0014), so don't run it.
 - **Migration `0023_suppliers_lines_locks`** (2026-10-02) moves the supplier↔budget
@@ -95,6 +95,9 @@ in the AI phase.
   lines (the latter renamed from `confirmed`), and seeds the `venueLocked`
   setting. The matching one-off data fix lives in
   `scripts/prod-data-fixes/2026-10-02-link-suppliers.sql` and has been applied.
+- **Migration `0027_cp_trip`** (2026-11-10) adds five new tables for the booked
+  Center Parcs trip at /stendo: pledges/approvals, published agreed splits,
+  append-only payments, the activity poll and organiser notes. Additive only.
 - **Migration `0025_sten_do_ballots`** (2026-11-06) adds the Sten Is Right voting
   table and voter-ID unique index. Applied to Turso after a SQL backup; all
   existing table data was verified unchanged within the migration transaction.

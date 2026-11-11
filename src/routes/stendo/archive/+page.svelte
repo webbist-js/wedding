@@ -420,7 +420,7 @@
 
 <div class="stendo">
     <a class="skip-link" href="#houses">Skip to the houses</a>
-    <aside class="archive-banner" aria-label="Archived page"><span>ARCHIVED · VOL. 01</span><p>This was the house hunt. It didn’t stick. <a href="/stendo">The new plan is Center Parcs →</a></p></aside>
+    <aside class="archive-banner" aria-label="Archived page"><span>ARCHIVED · VOL. 01</span><p>This was the house hunt. It didn’t stick. <a href="/stendo/archive/center-parcs">Vol. 02 was the Center Parcs pitch</a>, and <a href="/stendo">we’ve booked it →</a></p></aside>
     <header class="hero">
         <nav class="masthead wrap" aria-label="Page navigation">
             <a class="brand" href="#top"><span class="record-mark" aria-hidden="true">●</span> STEN RECORDS<span class="edition">INDEPENDENT HOLIDAY DECISIONS</span></a>

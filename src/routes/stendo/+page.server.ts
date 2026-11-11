@@ -1,8 +1,6 @@
 import type { PageServerLoad } from './$types';
-import { summary, allResponses } from '$lib/server/stendo';
+import { tripState } from '$lib/server/cp-trip';
 
-// Totals for everyone; the per-person table only for a signed-in organiser.
-export const load: PageServerLoad = async ({ locals }) => {
-	const [s, rows] = await Promise.all([summary(), locals.authed ? allResponses() : Promise.resolve(null)]);
-	return { ...s, organiser: rows };
-};
+// Everything SSR'd so the page is complete on first paint; the client polls
+// /stendo/trip for fresh pledges, approvals, payments and poll results.
+export const load: PageServerLoad = async ({ locals }) => ({ trip: await tripState(), organiser: locals.authed, now: Date.now() });

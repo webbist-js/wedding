@@ -1,0 +1,827 @@
+[
+	{
+		"start": 2.68,
+		"end": 4.04,
+		"text": "WE'RE GOING!",
+		"reply": "WE'RE GOING!",
+		"part": "Intro",
+		"voice": "choir"
+	},
+	{
+		"start": 4.04,
+		"end": 6.04,
+		"text": "TO WHINFELL!",
+		"reply": "TO WHINFELL!",
+		"part": "Intro",
+		"voice": "choir"
+	},
+	{
+		"start": 6.7,
+		"end": 8.96,
+		"text": "THREE WHOLE NIGHTS!",
+		"reply": "THREE WHOLE NIGHTS!",
+		"part": "Intro",
+		"voice": "choir"
+	},
+	{
+		"start": 10.44,
+		"end": 12.9,
+		"text": "OH, CAN YOU FEEL IT?!",
+		"part": "Intro",
+		"voice": "choir"
+	},
+	{
+		"start": 13.34,
+		"end": 14.96,
+		"text": "SOMEBODY TELL ME WHERE WE'RE GOING!",
+		"part": "Intro",
+		"voice": "lead"
+	},
+	{
+		"start": 15.38,
+		"end": 16.62,
+		"text": "WHINFELL FOREST!",
+		"part": "Intro",
+		"voice": "choir"
+	},
+	{
+		"start": 16.62,
+		"end": 18.22,
+		"text": "AND WHAT'S WAITING THERE?!",
+		"part": "Intro",
+		"voice": "lead"
+	},
+	{
+		"start": 18.54,
+		"end": 20.36,
+		"text": "A HOT TUB AND A SAUNA!",
+		"part": "Intro",
+		"voice": "choir"
+	},
+	{
+		"start": 20.52,
+		"end": 23.1,
+		"text": "GOOD LORD, SOMEBODY GET MY SWIMMING TRUNKS!",
+		"part": "Intro",
+		"voice": "lead"
+	},
+	{
+		"start": 30.0,
+		"end": 31.88,
+		"text": "I got thirteen friends!",
+		"part": "Verse 1",
+		"voice": "lead"
+	},
+	{
+		"start": 31.88,
+		"end": 33.4,
+		"text": "THIRTEEN FRIENDS!",
+		"echo": true,
+		"part": "Verse 1",
+		"voice": "choir"
+	},
+	{
+		"start": 33.4,
+		"end": 35.42,
+		"text": "I got three big lodges!",
+		"part": "Verse 1",
+		"voice": "lead"
+	},
+	{
+		"start": 35.46,
+		"end": 37.18,
+		"text": "THREE BIG LODGES!",
+		"echo": true,
+		"part": "Verse 1",
+		"voice": "choir"
+	},
+	{
+		"start": 37.18,
+		"end": 38.44,
+		"text": "I got a bicycle!",
+		"part": "Verse 1",
+		"voice": "lead"
+	},
+	{
+		"start": 39.0,
+		"end": 40.02,
+		"text": "A BICYCLE!",
+		"echo": true,
+		"part": "Verse 1",
+		"voice": "choir"
+	},
+	{
+		"start": 40.02,
+		"end": 42.54,
+		"text": "And a very detailed website!",
+		"part": "Verse 1",
+		"voice": "lead"
+	},
+	{
+		"start": 42.54,
+		"end": 44.56,
+		"text": "OH LORD, HE'S MADE A WEBSITE!",
+		"echo": true,
+		"part": "Verse 1",
+		"voice": "choir"
+	},
+	{
+		"start": 44.56,
+		"end": 46.4,
+		"text": "We dreamed of Swiss mountains!",
+		"part": "Verse 1",
+		"voice": "lead"
+	},
+	{
+		"start": 46.4,
+		"end": 47.72,
+		"text": "SWISS MOUNTAINS!",
+		"echo": true,
+		"part": "Verse 1",
+		"voice": "choir"
+	},
+	{
+		"start": 47.72,
+		"end": 50.06,
+		"text": "We dreamed of castles too!",
+		"part": "Verse 1",
+		"voice": "lead"
+	},
+	{
+		"start": 50.1,
+		"end": 51.3,
+		"text": "CASTLES TOO!",
+		"echo": true,
+		"part": "Verse 1",
+		"voice": "choir"
+	},
+	{
+		"start": 51.3,
+		"end": 53.14,
+		"text": "But a little one's arriving!",
+		"part": "Verse 1",
+		"voice": "lead"
+	},
+	{
+		"start": 53.14,
+		"end": 54.86,
+		"text": "A BABY'S COMING!",
+		"echo": true,
+		"part": "Verse 1",
+		"voice": "choir"
+	},
+	{
+		"start": 54.86,
+		"end": 57.94,
+		"text": "So we found somewhere for the whole damn crew!",
+		"part": "Verse 1",
+		"voice": "lead"
+	},
+	{
+		"start": 57.94,
+		"end": 60.4,
+		"text": "AND WE'VE BOOKED! BOOKED! BOOKED!",
+		"part": "Verse 1",
+		"voice": "choir"
+	},
+	{
+		"start": 60.64,
+		"end": 62.06,
+		"text": "OH, WE'VE BOOKED WHINFELL!",
+		"part": "Verse 1",
+		"voice": "choir"
+	},
+	{
+		"start": 62.1,
+		"end": 63.26,
+		"text": "OH, HAPPY WEEKEND!",
+		"part": "Chorus",
+		"voice": "choir"
+	},
+	{
+		"start": 63.52,
+		"end": 65.02,
+		"text": "OH, HAPPY WEEKEND!",
+		"echo": true,
+		"part": "Chorus",
+		"voice": "choir"
+	},
+	{
+		"start": 65.26,
+		"end": 66.92,
+		"text": "WE'RE GOING TO THE TREES!",
+		"part": "Chorus",
+		"voice": "choir"
+	},
+	{
+		"start": 67.64,
+		"end": 68.54,
+		"text": "TO THE TREES!",
+		"echo": true,
+		"part": "Chorus",
+		"voice": "choir"
+	},
+	{
+		"start": 69.12,
+		"end": 70.3,
+		"text": "WE GOT THE HOT TUB!",
+		"part": "Chorus",
+		"voice": "choir"
+	},
+	{
+		"start": 70.32,
+		"end": 71.12,
+		"text": "GOT THE HOT TUB!",
+		"echo": true,
+		"part": "Chorus",
+		"voice": "choir"
+	},
+	{
+		"start": 71.14,
+		"end": 72.04,
+		"text": "WE GOT THE SAUNA!",
+		"part": "Chorus",
+		"voice": "choir"
+	},
+	{
+		"start": 72.16,
+		"end": 72.84,
+		"text": "GOT THE SAUNA!",
+		"echo": true,
+		"part": "Chorus",
+		"voice": "choir"
+	},
+	{
+		"start": 72.86,
+		"end": 76.36,
+		"text": "AND A BAG OF TESCO CHEESE!",
+		"part": "Chorus",
+		"voice": "choir"
+	},
+	{
+		"start": 76.44,
+		"end": 77.1,
+		"text": "AMEN!",
+		"echo": true,
+		"part": "Chorus",
+		"voice": "choir"
+	},
+	{
+		"start": 77.34,
+		"end": 78.62,
+		"text": "SOMEBODY SAY WHINFELL!",
+		"part": "Chorus",
+		"voice": "lead"
+	},
+	{
+		"start": 79.1,
+		"end": 79.58,
+		"text": "WHINFELL!",
+		"part": "Chorus",
+		"voice": "choir"
+	},
+	{
+		"start": 79.84,
+		"end": 80.66,
+		"text": "SAY IT LIKE YOU MEAN IT!",
+		"part": "Chorus",
+		"voice": "lead"
+	},
+	{
+		"start": 81.0,
+		"end": 83.6,
+		"text": "WHINFEEEEELL!",
+		"part": "Chorus",
+		"voice": "choir"
+	},
+	{
+		"start": 84.26,
+		"end": 85.1,
+		"text": "Who's going cycling?",
+		"part": "Verse 2",
+		"voice": "lead"
+	},
+	{
+		"start": 85.28,
+		"end": 85.94,
+		"text": "WE'RE GOING CYCLING!",
+		"echo": true,
+		"part": "Verse 2",
+		"voice": "choir"
+	},
+	{
+		"start": 86.04,
+		"end": 86.78,
+		"text": "Who's going swimming?",
+		"part": "Verse 2",
+		"voice": "lead"
+	},
+	{
+		"start": 86.78,
+		"end": 87.7,
+		"text": "WE'RE GOING SWIMMING!",
+		"echo": true,
+		"part": "Verse 2",
+		"voice": "choir"
+	},
+	{
+		"start": 87.7,
+		"end": 88.68,
+		"text": "Who's playing badminton?",
+		"part": "Verse 2",
+		"voice": "lead"
+	},
+	{
+		"start": 88.86,
+		"end": 89.56,
+		"text": "WE'RE PLAYING BADMINTON!",
+		"echo": true,
+		"part": "Verse 2",
+		"voice": "choir"
+	},
+	{
+		"start": 89.56,
+		"end": 90.4,
+		"text": "Who's pulled a hamstring?",
+		"part": "Verse 2",
+		"voice": "lead"
+	},
+	{
+		"start": 90.56,
+		"end": 91.26,
+		"text": "WE AIN'T EVEN STARTED!",
+		"echo": true,
+		"part": "Verse 2",
+		"voice": "choir"
+	},
+	{
+		"start": 91.26,
+		"end": 92.16,
+		"text": "Who's going bowling?",
+		"part": "Verse 2",
+		"voice": "lead"
+	},
+	{
+		"start": 92.32,
+		"end": 93.1,
+		"text": "WE'RE GOING BOWLING!",
+		"echo": true,
+		"part": "Verse 2",
+		"voice": "choir"
+	},
+	{
+		"start": 93.1,
+		"end": 93.92,
+		"text": "Who's cooking dinner?",
+		"part": "Verse 2",
+		"voice": "lead"
+	},
+	{
+		"start": 94.1,
+		"end": 94.78,
+		"text": "SOMEBODY BETTER!",
+		"echo": true,
+		"part": "Verse 2",
+		"voice": "choir"
+	},
+	{
+		"start": 94.78,
+		"end": 95.82,
+		"text": "Who's got the board games?",
+		"part": "Verse 2",
+		"voice": "lead"
+	},
+	{
+		"start": 95.92,
+		"end": 96.76,
+		"text": "WE GOT THE BOARD GAMES!",
+		"echo": true,
+		"part": "Verse 2",
+		"voice": "choir"
+	},
+	{
+		"start": 96.76,
+		"end": 97.38,
+		"text": "Who's bringing snacks?",
+		"part": "Verse 2",
+		"voice": "lead"
+	},
+	{
+		"start": 97.58,
+		"end": 98.42,
+		"text": "WE BROUGHT THE WHOLE DAMN SHOP!",
+		"echo": true,
+		"part": "Verse 2",
+		"voice": "choir"
+	},
+	{
+		"start": 98.42,
+		"end": 99.2,
+		"text": "EAT!",
+		"reply": "EAT!",
+		"part": "Verse 2",
+		"voice": "choir"
+	},
+	{
+		"start": 99.2,
+		"end": 100.1,
+		"text": "PLAY!",
+		"reply": "PLAY!",
+		"part": "Verse 2",
+		"voice": "choir"
+	},
+	{
+		"start": 100.1,
+		"end": 101.0,
+		"text": "LAUGH!",
+		"reply": "LAUGH!",
+		"part": "Verse 2",
+		"voice": "choir"
+	},
+	{
+		"start": 101.0,
+		"end": 102.12,
+		"text": "GET LOST ALONG THE WAY!",
+		"part": "Verse 2",
+		"voice": "choir"
+	},
+	{
+		"start": 102.12,
+		"end": 103.84,
+		"text": "Kee and Eleesa, Ollie and Phoebe,",
+		"part": "Rap break",
+		"voice": "rap"
+	},
+	{
+		"start": 103.84,
+		"end": 105.62,
+		"text": "Katie and Alex, we're taking it easy.",
+		"part": "Rap break",
+		"voice": "rap"
+	},
+	{
+		"start": 105.62,
+		"end": 107.48,
+		"text": "Chris and Jenn, Adam and Lysanne,",
+		"part": "Rap break",
+		"voice": "rap"
+	},
+	{
+		"start": 107.48,
+		"end": 109.16,
+		"text": "Chris and Hayley, Theo's got a plan.",
+		"part": "Rap break",
+		"voice": "rap"
+	},
+	{
+		"start": 109.16,
+		"end": 110.82,
+		"text": "Mule's on a bike doing six miles an hour,",
+		"part": "Rap break",
+		"voice": "rap"
+	},
+	{
+		"start": 110.82,
+		"end": 112.6,
+		"text": "Somebody's been missing for the best part of an hour.",
+		"part": "Rap break",
+		"voice": "rap"
+	},
+	{
+		"start": 112.6,
+		"end": 114.42,
+		"text": "Got the bowling, got the swimming, got the shuttlecock flying,",
+		"part": "Rap break",
+		"voice": "rap"
+	},
+	{
+		"start": 114.5,
+		"end": 116.24,
+		"text": "Got a man on the badminton court dramatically dying!",
+		"part": "Rap break",
+		"voice": "rap"
+	},
+	{
+		"start": 116.24,
+		"end": 118.0,
+		"text": "Got the pizzas, got the pasta, got the crisps and the dip,",
+		"part": "Rap break",
+		"voice": "rap"
+	},
+	{
+		"start": 118.0,
+		"end": 119.8,
+		"text": "Got a suitcase full of snacks for a three-night trip.",
+		"part": "Rap break",
+		"voice": "rap"
+	},
+	{
+		"start": 119.8,
+		"end": 121.58,
+		"text": "Got the sauna, got the bubbles, got the hot tub on steam,",
+		"part": "Rap break",
+		"voice": "rap"
+	},
+	{
+		"start": 121.58,
+		"end": 123.64,
+		"text": "Got a bloke in Lycra living out his wildest dream!",
+		"part": "Rap break",
+		"voice": "rap"
+	},
+	{
+		"start": 126.54,
+		"end": 127.7,
+		"text": "OH, HAPPY WEEKEND!",
+		"part": "Chorus",
+		"voice": "choir"
+	},
+	{
+		"start": 127.98,
+		"end": 129.52,
+		"text": "OH, HAPPY WEEKEND!",
+		"echo": true,
+		"part": "Chorus",
+		"voice": "choir"
+	},
+	{
+		"start": 129.52,
+		"end": 131.54,
+		"text": "WE'RE GOING TO THE TREES!",
+		"part": "Chorus",
+		"voice": "choir"
+	},
+	{
+		"start": 131.54,
+		"end": 133.22,
+		"text": "TO THE TREES!",
+		"echo": true,
+		"part": "Chorus",
+		"voice": "choir"
+	},
+	{
+		"start": 133.22,
+		"end": 134.8,
+		"text": "WE GOT THE HOT TUB!",
+		"part": "Chorus",
+		"voice": "choir"
+	},
+	{
+		"start": 134.82,
+		"end": 135.66,
+		"text": "GOT THE HOT TUB!",
+		"echo": true,
+		"part": "Chorus",
+		"voice": "choir"
+	},
+	{
+		"start": 135.66,
+		"end": 136.46,
+		"text": "WE GOT THE SAUNA!",
+		"part": "Chorus",
+		"voice": "choir"
+	},
+	{
+		"start": 136.68,
+		"end": 137.32,
+		"text": "GOT THE SAUNA!",
+		"echo": true,
+		"part": "Chorus",
+		"voice": "choir"
+	},
+	{
+		"start": 137.32,
+		"end": 139.6,
+		"text": "AND A BAG OF TESCO CHEESE!",
+		"part": "Chorus",
+		"voice": "choir"
+	},
+	{
+		"start": 139.6,
+		"end": 140.6,
+		"text": "AMEN!",
+		"echo": true,
+		"part": "Chorus",
+		"voice": "choir"
+	},
+	{
+		"start": 140.8,
+		"end": 143.02,
+		"text": "And here's to Kee and Eleesa,",
+		"part": "Bridge",
+		"voice": "alto"
+	},
+	{
+		"start": 143.72,
+		"end": 147.52,
+		"text": "With a little one on the way.",
+		"part": "Bridge",
+		"voice": "alto"
+	},
+	{
+		"start": 147.52,
+		"end": 151.48,
+		"text": "One more little voice to join us,",
+		"part": "Bridge",
+		"voice": "alto"
+	},
+	{
+		"start": 151.68,
+		"end": 154.16,
+		"text": "One more reason to celebrate.",
+		"part": "Bridge",
+		"voice": "alto"
+	},
+	{
+		"start": 154.8,
+		"end": 158.2,
+		"text": "One more heart, one more smile...",
+		"part": "Bridge",
+		"voice": "choir"
+	},
+	{
+		"start": 158.8,
+		"end": 160.38,
+		"text": "Can the baby play badminton?",
+		"part": "Bridge",
+		"voice": "lead"
+	},
+	{
+		"start": 160.68,
+		"end": 162.08,
+		"text": "Give it a little while.",
+		"part": "Bridge",
+		"voice": "alto"
+	},
+	{
+		"start": 162.4,
+		"end": 163.68,
+		"text": "WHO'S READY FOR WHINFELL?!",
+		"part": "Finale",
+		"voice": "lead"
+	},
+	{
+		"start": 163.72,
+		"end": 165.46,
+		"text": "WE ARE! WE ARE!",
+		"part": "Finale",
+		"voice": "choir"
+	},
+	{
+		"start": 165.48,
+		"end": 167.28,
+		"text": "WHO'S READY FOR THE HOT TUB?!",
+		"part": "Finale",
+		"voice": "lead"
+	},
+	{
+		"start": 167.4,
+		"end": 169.08,
+		"text": "WE ARE! WE ARE!",
+		"part": "Finale",
+		"voice": "choir"
+	},
+	{
+		"start": 169.12,
+		"end": 170.94,
+		"text": "WHO'S READY FOR BADMINTON?!",
+		"part": "Finale",
+		"voice": "lead"
+	},
+	{
+		"start": 171.38,
+		"end": 172.62,
+		"text": "WE ARE! WE ARE!",
+		"part": "Finale",
+		"voice": "choir"
+	},
+	{
+		"start": 172.68,
+		"end": 174.64,
+		"text": "WHO KNOWS WHERE THE LODGE IS?!",
+		"part": "Finale",
+		"voice": "lead"
+	},
+	{
+		"start": 175.42,
+		"end": 175.82,
+		"text": "...Nobody.",
+		"part": "Finale",
+		"voice": "choir"
+	},
+	{
+		"start": 176.3,
+		"end": 177.72,
+		"text": "THEN FOLLOW THE SPIRIT!",
+		"part": "Finale",
+		"voice": "lead"
+	},
+	{
+		"start": 177.9,
+		"end": 178.9,
+		"text": "WHINFELL! WHINFELL!",
+		"part": "Finale",
+		"voice": "choir"
+	},
+	{
+		"start": 178.9,
+		"end": 179.9,
+		"text": "OH, WE'VE BOOKED WHINFELL!",
+		"part": "Finale",
+		"voice": "choir"
+	},
+	{
+		"start": 180.0,
+		"end": 181.4,
+		"text": "WE'RE GOING TO THE TREES!",
+		"part": "Final vamp",
+		"voice": "choir"
+	},
+	{
+		"start": 181.4,
+		"end": 181.8,
+		"text": "TO THE TREES!",
+		"echo": true,
+		"part": "Final vamp",
+		"voice": "choir"
+	},
+	{
+		"start": 181.82,
+		"end": 184.6,
+		"text": "WE'RE GOING TO THE SPA!",
+		"part": "Final vamp",
+		"voice": "choir"
+	},
+	{
+		"start": 184.6,
+		"end": 186.9,
+		"text": "TO THE SPA!",
+		"echo": true,
+		"part": "Final vamp",
+		"voice": "choir"
+	},
+	{
+		"start": 187.16,
+		"end": 189.36,
+		"text": "WE'RE GOING TO THE LEISURE CENTRE!",
+		"part": "Final vamp",
+		"voice": "choir"
+	},
+	{
+		"start": 189.36,
+		"end": 191.5,
+		"text": "HALLELUJAH!",
+		"echo": true,
+		"part": "Final vamp",
+		"voice": "choir"
+	},
+	{
+		"start": 191.52,
+		"end": 193.6,
+		"text": "THREE NIGHTS OF GLORY!",
+		"part": "Final vamp",
+		"voice": "lead"
+	},
+	{
+		"start": 194.02,
+		"end": 197.32,
+		"text": "THREE NIGHTS OF JOY!",
+		"part": "Final vamp",
+		"voice": "choir"
+	},
+	{
+		"start": 197.32,
+		"end": 198.66,
+		"text": "THREE NIGHTS OF BADMINTON!",
+		"part": "Final vamp",
+		"voice": "lead"
+	},
+	{
+		"start": 198.66,
+		"end": 202.36,
+		"text": "OH, LORD, THAT'S A LOT OF BADMINTON!",
+		"part": "Final vamp",
+		"voice": "choir"
+	},
+	{
+		"start": 203.06,
+		"end": 212.6,
+		"text": "WHINFEEEEEEEEEEEEELL!",
+		"part": "Final vamp",
+		"voice": "choir"
+	},
+	{
+		"start": 213.26,
+		"end": 215.42,
+		"text": "Has anyone packed the shuttlecocks?",
+		"part": "Final vamp",
+		"voice": "lead"
+	},
+	{
+		"start": 215.76,
+		"end": 218.0,
+		"text": "...Lord have mercy.",
+		"part": "Final vamp",
+		"voice": "choir"
+	}
+]

@@ -14,13 +14,13 @@ export const SONG = {
 };
 
 /** Index of the line being sung at `t`, or -1 between lines. */
-export function lineAt(lines: LyricLine[], t: number): number {
+export function lineAt(lines: readonly { start: number; end: number }[], t: number): number {
 	for (let i = lines.length - 1; i >= 0; i--) if (t >= lines[i].start) return t < lines[i].end ? i : -1;
 	return -1;
 }
 
 /** Index of the most recent line started at `t` (keeps the last line on screen in gaps). */
-export function lastLineAt(lines: LyricLine[], t: number): number {
+export function lastLineAt(lines: readonly { start: number }[], t: number): number {
 	for (let i = lines.length - 1; i >= 0; i--) if (t >= lines[i].start) return i;
 	return -1;
 }
