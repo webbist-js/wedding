@@ -33,7 +33,7 @@ export const BANK = { sortCode: '11-73-40', account: '10908769' } as const;
 
 export type HouseId = 'h1' | 'h2' | 'h3';
 export type GroupId = 'kie-elisa' | 'alex-katie' | 'oliver-phoebe' | 'mule' | 'chris-jenn' | 'adam-lysanne' | 'chris-hayley';
-export type ContributorId = 'chris-jenn' | 'adam-lysanne';
+export type ContributorId = 'chris-jenn' | 'adam-lysanne' | 'oliver-phoebe';
 
 export type Group = {
 	id: GroupId;
@@ -200,22 +200,23 @@ export type Line = {
 };
 
 export type Contributions = Record<ContributorId, number>;
-export const NO_CONTRIBUTIONS: Contributions = { 'chris-jenn': 0, 'adam-lysanne': 0 };
-export const CONTRIBUTORS: ContributorId[] = ['chris-jenn', 'adam-lysanne'];
+/** Who can chip in: both House 2 couples, and Oli & Phoebe now they've moved out of House 1. */
+export const NO_CONTRIBUTIONS: Contributions = { 'chris-jenn': 0, 'adam-lysanne': 0, 'oliver-phoebe': 0 };
+export const CONTRIBUTORS: ContributorId[] = ['chris-jenn', 'adam-lysanne', 'oliver-phoebe'];
 export const HOUSE1_GROUPS = groupsIn('h1').map((g) => g.id);
 /**
- * Who the Fancy House Tax savings go to: Kie & Elisa, the one House 1 couple
- * not already covered. Alex & Katie carry the Big House Tax and the empty
- * places, and Mule already pays a reduced £300, so neither moves. Kie & Elisa
- * are also the only group who need to approve.
+ * Who the Fancy House Tax savings go to: everyone staying in House 1, split
+ * per adult (couples get two slices, Mule one). They're also the groups who
+ * need to approve.
  */
-export const RELIEF_GROUPS: GroupId[] = ['kie-elisa'];
+export const RELIEF_GROUPS: GroupId[] = HOUSE1_GROUPS;
+export const RELIEF_ADULTS = RELIEF_GROUPS.reduce((n, id) => n + group(id).adults, 0); // 5
 export const isContributor = (id: unknown): id is ContributorId => CONTRIBUTORS.includes(id as ContributorId);
 export const isHouse1 = (id: unknown): boolean => HOUSE1_GROUPS.includes(id as GroupId);
 export const isReliefGroup = (id: unknown): boolean => RELIEF_GROUPS.includes(id as GroupId);
 
 export const STEP_PENCE = 500; // calculator steps in £5
-export const MAX_CONTRIBUTION_PENCE = 25_000; // £250 per couple: two of them can never push Kie & Elisa below £0
+export const MAX_CONTRIBUTION_PENCE = 25_000; // £250 per couple: even three maxed-out offers keep every House 1 share above £0
 
 export class ContributionError extends Error {}
 
@@ -250,8 +251,8 @@ export type Breakdown = {
  * With no contributions this is the confirmed baseline.
  */
 export function breakdown(contributions: Contributions = NO_CONTRIBUTIONS): Breakdown {
-	const c = { 'chris-jenn': assertContribution(contributions['chris-jenn']), 'adam-lysanne': assertContribution(contributions['adam-lysanne']) };
-	const pot = c['chris-jenn'] + c['adam-lysanne'];
+	const c = Object.fromEntries(CONTRIBUTORS.map((id) => [id, assertContribution(contributions[id])])) as Contributions;
+	const pot = CONTRIBUTORS.reduce((n, id) => n + c[id], 0);
 
 	const accommodation = new Map<GroupId, number>();
 	const absorbed = new Map<GroupId, number>();
@@ -331,12 +332,12 @@ export type Agreement = {
 export const BASELINE_AGREEMENT: Agreement = { version: 0, contributions: NO_CONTRIBUTIONS, publishedAt: '2026-11-10T00:00:00.000Z' };
 
 export const sameContributions = (a: Contributions | null | undefined, b: Contributions | null | undefined) =>
-	!!a && !!b && a['chris-jenn'] === b['chris-jenn'] && a['adam-lysanne'] === b['adam-lysanne'];
+	!!a && !!b && CONTRIBUTORS.every((id) => a[id] === b[id]);
 
 export type ApprovalState = 'approved' | 'waiting' | 'outdated';
 
 export type ProposalStatus = {
-	/** The amounts on the table, once both House 2 couples have answered. */
+	/** The amounts on the table, once every chipping-in couple has answered. */
 	proposal: Contributions | null;
 	pledges: Record<ContributorId, number | null>;
 	approvals: Record<GroupId, ApprovalState>;
@@ -350,10 +351,7 @@ export type ProposalStatus = {
 export function proposalStatus(consents: Consent[], agreed: Agreement): ProposalStatus {
 	const byGroup = new Map(consents.map((c) => [c.group, c]));
 	const pledges = Object.fromEntries(CONTRIBUTORS.map((id) => [id, byGroup.get(id)?.pledge ?? null])) as Record<ContributorId, number | null>;
-	const proposal =
-		pledges['chris-jenn'] !== null && pledges['adam-lysanne'] !== null
-			? { 'chris-jenn': pledges['chris-jenn'], 'adam-lysanne': pledges['adam-lysanne'] }
-			: null;
+	const proposal = CONTRIBUTORS.every((id) => pledges[id] !== null) ? (pledges as Contributions) : null;
 	const approvals = Object.fromEntries(
 		RELIEF_GROUPS.map((id) => {
 			const a = byGroup.get(id)?.approved ?? null;
@@ -370,7 +368,7 @@ export function proposalStatus(consents: Consent[], agreed: Agreement): Proposal
 
 /**
  * The only way a proposal becomes owed money. Refuses unless every House 2
- * couple pledged and Kie & Elisa approved those exact amounts.
+ * chipping-in couple pledged and everyone in House 1 approved those exact amounts.
  */
 export function publishAgreement(consents: Consent[], current: Agreement, now: Date): Agreement {
 	const s = proposalStatus(consents, current);
@@ -492,8 +490,8 @@ export function proposalSummary(c: Contributions): string {
 	const rows = GROUPS.map((g) => `${g.label}: ${gbp(lineFor(ORIGINAL, g.id).total)} → ${gbp(lineFor(b, g.id).total)} (${signed(d[g.id])})`);
 	return [
 		'Center Parcs: Fancy House Tax idea (hypothetical, nothing agreed yet)',
-		`Chris & Jenn chip in ${gbp(c['chris-jenn'])}, Adam & Lysanne chip in ${gbp(c['adam-lysanne'])}.`,
-		`Kie & Elisa save ${gbp(b.pot)}.`,
+		CONTRIBUTORS.map((id) => `${group(id).label} chip in ${gbp(c[id])}`).join(', ') + '.',
+		`Everyone in House 1 shares the ${gbp(b.pot)}, per adult.`,
 		'',
 		...rows,
 		'',

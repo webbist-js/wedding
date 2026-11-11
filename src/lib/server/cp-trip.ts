@@ -25,7 +25,7 @@ async function consents(): Promise<Consent[]> {
 		.map((r) => ({
 			group: r.groupId as GroupId,
 			pledge: isContributor(r.groupId) ? r.pledgePence : null,
-			approved: isReliefGroup(r.groupId) && r.approvedCj !== null && r.approvedAl !== null ? { 'chris-jenn': r.approvedCj, 'adam-lysanne': r.approvedAl } : null,
+			approved: isReliefGroup(r.groupId) && r.approvedCj !== null && r.approvedAl !== null && r.approvedOp !== null ? { 'chris-jenn': r.approvedCj, 'adam-lysanne': r.approvedAl, 'oliver-phoebe': r.approvedOp } : null,
 			updatedAt: r.updatedAt ? r.updatedAt.toISOString() : null
 		}));
 }
@@ -34,7 +34,7 @@ async function agreements(): Promise<Agreement[]> {
 	const rows = await db.select().from(cpTripAgreements);
 	return rows.map((r) => ({
 		version: r.version,
-		contributions: { 'chris-jenn': r.contributionCj, 'adam-lysanne': r.contributionAl },
+		contributions: { 'chris-jenn': r.contributionCj, 'adam-lysanne': r.contributionAl, 'oliver-phoebe': r.contributionOp },
 		publishedAt: r.publishedAt.toISOString()
 	}));
 }
@@ -77,7 +77,7 @@ export async function tripState() {
 }
 export type TripState = Awaited<ReturnType<typeof tripState>>;
 
-async function upsertConsent(group: GroupId, values: { pledgePence?: number | null; approvedCj?: number | null; approvedAl?: number | null }) {
+async function upsertConsent(group: GroupId, values: { pledgePence?: number | null; approvedCj?: number | null; approvedAl?: number | null; approvedOp?: number | null }) {
 	const now = new Date();
 	await db
 		.insert(cpTripConsents)
@@ -85,20 +85,20 @@ async function upsertConsent(group: GroupId, values: { pledgePence?: number | nu
 		.onConflictDoUpdate({ target: cpTripConsents.groupId, set: { ...values, updatedAt: now } });
 }
 
-/** A House 2 couple sets (or withdraws) their own pledge. */
+/** A chipping-in couple (House 2, or Oli & Phoebe) sets or withdraws their own pledge. */
 export async function pledge(group: unknown, pence: unknown) {
-	if (!isContributor(group)) throw new Error('Only House 2 couples can pledge');
+	if (!isContributor(group)) throw new Error('Only Chris & Jenn, Adam & Lysanne and Oli & Phoebe can chip in');
 	await upsertConsent(group, { pledgePence: pence === null ? null : assertContribution(pence) });
 }
 
 /** A House 1 group approves the amounts currently on the table, or withdraws. */
 export async function approve(group: unknown, amounts: Contributions | null) {
-	if (!isGroupId(group) || !isReliefGroup(group)) throw new Error('Only Kie & Elisa approve this');
-	if (amounts === null) return upsertConsent(group, { approvedCj: null, approvedAl: null });
+	if (!isGroupId(group) || !isReliefGroup(group)) throw new Error('Only House 1 approves this');
+	if (amounts === null) return upsertConsent(group, { approvedCj: null, approvedAl: null, approvedOp: null });
 	const current = proposalStatus(await consents(), currentAgreement(await agreements()));
 	// You can only say yes to what's actually been pledged right now.
 	if (!current.proposal || !sameContributions(current.proposal, amounts)) throw new Error('Those amounts have changed — have another look');
-	await upsertConsent(group, { approvedCj: amounts['chris-jenn'], approvedAl: amounts['adam-lysanne'] });
+	await upsertConsent(group, { approvedCj: amounts['chris-jenn'], approvedAl: amounts['adam-lysanne'], approvedOp: amounts['oliver-phoebe'] });
 }
 
 export async function publish() {
@@ -108,6 +108,7 @@ export async function publish() {
 		version: next.version,
 		contributionCj: next.contributions['chris-jenn'],
 		contributionAl: next.contributions['adam-lysanne'],
+		contributionOp: next.contributions['oliver-phoebe'],
 		consentsJson: JSON.stringify(c),
 		publishedAt: new Date(next.publishedAt)
 	});

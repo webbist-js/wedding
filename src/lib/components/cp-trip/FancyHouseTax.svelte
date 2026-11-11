@@ -1,11 +1,11 @@
 <script lang="ts">
 	// The Great Cost-Sharing Debate. The calculator on the left is a toy: it
 	// never touches what anyone owes. The panel on the right is the real thing:
-	// House 2 pledges, Kie & Elisa's approval (they'd get the savings), and Alex
+	// pledges from the chipping-in couples, House 1's approvals, and Alex
 	// publishing an agreed split.
 	import Money from './Money.svelte';
 	import {
-		GROUPS, CONTRIBUTORS, RELIEF_GROUPS, ORIGINAL, NO_CONTRIBUTIONS, MAX_CONTRIBUTION_PENCE, STEP_PENCE,
+		GROUPS, CONTRIBUTORS, RELIEF_GROUPS, RELIEF_ADULTS, ORIGINAL, NO_CONTRIBUTIONS, MAX_CONTRIBUTION_PENCE, STEP_PENCE,
 		breakdown, deltas, lineFor, group, gbp, gbpShort, poundsToPence, proposalSummary, isContributor, isReliefGroup,
 		type Contributions, type ContributorId, type GroupId, type ProposalStatus, type Agreement, type Consent
 	} from '$lib/cp-trip';
@@ -22,9 +22,10 @@
 	let { status, agreed, consents, myGroup, organiser, act, onPickName }: Props = $props();
 
 	// ---- the calculator (local only) ----
-	let amounts = $state<Contributions>({ 'chris-jenn': 0, 'adam-lysanne': 0 });
-	let typed = $state<Record<ContributorId, string>>({ 'chris-jenn': '', 'adam-lysanne': '' });
-	let typedError = $state<Record<ContributorId, string>>({ 'chris-jenn': '', 'adam-lysanne': '' });
+	const blank = <T,>(v: T) => Object.fromEntries(CONTRIBUTORS.map((id) => [id, v])) as Record<ContributorId, T>;
+	let amounts = $state<Contributions>({ ...NO_CONTRIBUTIONS });
+	let typed = $state<Record<ContributorId, string>>(blank(''));
+	let typedError = $state<Record<ContributorId, string>>(blank(''));
 	const proposed = $derived(breakdown(amounts));
 	const change = $derived(deltas(proposed));
 	const untouched = $derived(proposed.pot === 0);
@@ -50,9 +51,9 @@
 		else { amounts[id] = p; typedError[id] = ''; }
 	}
 	function reset() {
-		amounts = { 'chris-jenn': 0, 'adam-lysanne': 0 };
-		typed = { 'chris-jenn': '', 'adam-lysanne': '' };
-		typedError = { 'chris-jenn': '', 'adam-lysanne': '' };
+		amounts = { ...NO_CONTRIBUTIONS };
+		typed = blank('');
+		typedError = blank('');
 	}
 
 	// Whose numbers you see: your own, unless you're Alex signed in as organiser.
@@ -108,9 +109,9 @@
 			<div class="letter">
 				<p class="dear">Dear all,</p>
 				<p>House 1 is considerably more expensive because it’s got all the fun stuff, and realistically we’ll probably spend most of our time there.</p>
-				<p>Obviously, the other houses were chosen to keep costs down, and everyone’s already paying for their own accommodation. But if the people in House 2 are happy to chip in a little towards the communal facilities, we could bring House 1 down slightly for Kie & Elisa. (Katie and I are already covering the Big House Tax and Oli & Phoebe’s old places, and Mule’s already paying less, so any savings go to Kie & Elisa.)</p>
+				<p>Obviously, the other houses were chosen to keep costs down, and everyone’s already paying for their own accommodation. But if the people in House 2 are happy to chip in a little towards the communal facilities, we could bring House 1 down slightly for everyone staying in it. Oli & Phoebe have moved to House 3, but they’re welcome to chip in too if they’d like to.</p>
 				<p>Absolutely no pressure — I didn’t want to make that decision for anyone. So let’s see what everyone thinks!</p>
-				<p>House 3 (Chris, Hayley, Theo, Oli and Phoebe) is completely excluded from this. They’ve got their own setup to worry about.</p>
+				<p>Chris, Hayley and Theo are completely excluded from this. They’ve got their own family setup to worry about.</p>
 				<p class="sig">Alex</p>
 			</div>
 
@@ -119,17 +120,17 @@
 				<ol class="lanes">
 					<li class="lane give" class:me={role === 'giver'}>
 						<span class="tag">Chip in</span>
-						<span class="names">Chris & Jenn<br />Adam & Lysanne</span>
-						<small>House 2, if they’d like to</small>
+						<span class="names">Chris & Jenn · Adam & Lysanne<br />Oli & Phoebe</span>
+						<small>If they’d like to. £0 is fine.</small>
 					</li>
 					<li class="lane save" class:me={role === 'receiver'}>
 						<span class="tag">Save</span>
-						<span class="names">Kie & Elisa</span>
-						<small>The whole saving goes to them</small>
+						<span class="names">Everyone in House 1</span>
+						<small>Kie & Elisa, Alex & Katie and Mule, shared per person</small>
 					</li>
 					<li class="lane same" class:me={role === 'out'}>
 						<span class="tag">No change</span>
-						<span class="names">Alex & Katie · Mule<br />House 3: Chris & Hayley, Oli & Phoebe</span>
+						<span class="names">Chris & Hayley & Theo</span>
 						<small>Shares stay exactly as they are</small>
 					</li>
 				</ol>
@@ -143,7 +144,7 @@
 					{:else if role === 'giver'}
 						<p>Entirely your call. Try amounts in the calculator below, then tell us what you’d be happy with. £0 is a perfectly good answer.</p>
 					{:else if role === 'receiver'}
-						<p>Once both House 2 couples have answered, you’ll see your new share and can say yes to it.</p>
+						<p>Once all three chipping-in couples have answered, you’ll see your new share and can say yes to it.</p>
 					{:else}
 						<p>{group(myGroup as GroupId).house === 'h3' ? 'None of this touches House 3.' : 'This doesn’t change what you pay.'} Your share stays at <strong>{gbp(lineFor(ORIGINAL, myGroup as GroupId).total)}</strong> whatever happens.</p>
 					{/if}
@@ -159,7 +160,7 @@
 				<p>Play with the numbers. <strong>This doesn’t change what anyone owes</strong> — it’s a sketch, not a bill. Amounts are per couple, for the whole trip.</p>
 			</div>
 
-			<div class="sliders">
+			<div class="sliders" class:one={sliderGroups.length === 1}>
 				{#each sliderGroups as id}
 					{@const g = group(id)}
 					<div class="slider" class:mine={myGroup === id}>
@@ -189,12 +190,12 @@
 			</div>
 
 			<div class="flow" class:moving={!untouched} aria-live="polite">
-				<div class="end h2"><span>HOUSE 2</span><b>chips in <Money pence={proposed.pot} /></b></div>
+				<div class="end h2"><span>CHIPPING IN</span><b>together <Money pence={proposed.pot} /></b></div>
 				<div class="pipe" aria-hidden="true">
 					{#each Array(6) as _, i}<i style:animation-delay={`${i * 0.35}s`}>£</i>{/each}
 				</div>
-				<div class="end h1"><span>KIE & ELISA</span><b>save <Money pence={proposed.pot} /></b></div>
-				<p class="per">{untouched ? 'Nothing moving yet. Everyone pays the original costs.' : `That’s ${gbp(proposed.pot)} off Kie & Elisa’s share. Alex & Katie, Mule and House 3 untouched.`}</p>
+				<div class="end h1"><span>HOUSE 1</span><b>saves <Money pence={proposed.pot} /></b></div>
+				<p class="per">{untouched ? 'Nothing moving yet. Everyone pays the original costs.' : `That’s about ${gbp(Math.round(proposed.pot / RELIEF_ADULTS))} off per person in House 1.`}</p>
 			</div>
 
 			<div class="table-wrap">
@@ -217,9 +218,9 @@
 			</div>
 			<p class="fine">
 				{#if seeAll}
-					The whole saving goes to Kie & Elisa. Alex & Katie, Mule and House 3 don’t change: the empty places, the Big House Tax, Alex & Katie’s £79 of gym and bikes, and the £100 gifts all stay as they are.
+					Everyone in House 1 gets the same slice per person: couples get two, Mule one. The empty places, the Big House Tax, Alex & Katie’s £79 of gym and bikes, and the £100 gifts all stay as they are.
 				{:else}
-					This only shows your numbers. Any saving goes to Kie & Elisa, and nobody else’s share moves.
+					This only shows your numbers. Any saving is shared per person across everyone in House 1.
 				{/if}
 				{#if seeAll && proposed.rounding.length}Pennies that don’t split evenly go to {proposed.rounding.map((id) => group(id).label).join(' and ')}, so the total stays exactly {gbp(ORIGINAL.total)}.{/if}
 			</p>
@@ -240,9 +241,9 @@
 				<h3 id="vote-title">{agreedIsOriginal ? 'Right now: the original costs.' : `Agreed: split no. ${agreed.version}`}</h3>
 				<p>
 					{#if agreedIsOriginal}
-						Nobody has agreed to change anything, so everyone pays the original amounts. It only changes if <strong>both House 2 couples say what they’d chip in</strong>, <strong>Kie & Elisa say yes to those exact amounts</strong>, and Alex then publishes it. Saying nothing counts as no.
+						Nobody has agreed to change anything, so everyone pays the original amounts. It only changes if <strong>Chris & Jenn, Adam & Lysanne and Oli & Phoebe each say what they’d chip in</strong>, <strong>everyone in House 1 says yes to those exact amounts</strong>, and Alex then publishes it. Saying nothing counts as no.
 					{:else}
-						{#if seeAll}Chris & Jenn chip in {gbp(agreed.contributions['chris-jenn'])}, Adam & Lysanne {gbp(agreed.contributions['adam-lysanne'])}.
+						{#if seeAll}{CONTRIBUTORS.map((id) => `${group(id).label} ${gbp(agreed.contributions[id])}`).join(', ')}.
 						{:else if role === 'giver'}You agreed to chip in {gbp(agreed.contributions[myGroup as ContributorId])}.
 						{:else if role === 'receiver'}Your share comes down to {gbp(lineFor(breakdown(agreed.contributions), myGroup as GroupId).total)}.
 						{:else if myGroup}Your share doesn’t change.{/if}
@@ -261,7 +262,7 @@
 					{@const p = status.pledges[id]}
 					<li class:ok={p !== null} class:me={myGroup === id}>
 						<span class="dot" aria-hidden="true"></span>
-						<span class="g">{group(id).label}<small>House 2 · their offer</small></span>
+						<span class="g">{group(id).label}<small>House {group(id).house.slice(1)} · their offer</small></span>
 						<span class="s">{p === null ? 'Hasn’t said yet' : !(seeAll || id === myGroup) ? 'Has answered' : p === 0 ? 'Would rather not (£0)' : `Happy to chip in ${gbp(p)}`}</span>
 					</li>
 				{/each}
@@ -276,7 +277,7 @@
 			</ul>
 
 			{#if tableAmounts && seeAll}
-				<p class="table-now">On the table: Chris & Jenn {gbp(tableAmounts['chris-jenn'])} · Adam & Lysanne {gbp(tableAmounts['adam-lysanne'])} <button class="text-btn" type="button" onclick={loadTable}>See it in the calculator</button></p>
+				<p class="table-now">On the table: {CONTRIBUTORS.map((id) => `${group(id).label} ${gbp(tableAmounts[id])}`).join(' · ')} <button class="text-btn" type="button" onclick={loadTable}>See it in the calculator</button></p>
 			{/if}
 
 			{#if myGroup && (isContributor(myGroup) || isReliefGroup(myGroup))}
@@ -291,9 +292,9 @@
 						</button>
 						{#if myPledge !== null}<button class="btn" type="button" disabled={busy} onclick={() => run({ action: 'pledge', group: myGroup, pence: null })}>Take back our answer</button>{/if}
 					</div>
-					<p class="fine">{myPledge === null ? 'You haven’t answered yet.' : `You said ${gbp(myPledge)}.`} Changing it means Kie & Elisa have to say yes again. Nothing is owed until Alex publishes an agreed split.</p>
+					<p class="fine">{myPledge === null ? 'You haven’t answered yet.' : `You said ${gbp(myPledge)}.`} Changing it means House 1 has to say yes again. Nothing is owed until Alex publishes an agreed split.</p>
 				{:else if isReliefGroup(myGroup)}
-					<p><strong>{group(myGroup).label}:</strong> {#if !tableAmounts}nothing to approve yet. Both House 2 couples need to say what they’d be happy with first.{:else}you’d pay <b>{gbp(myProposedTotal ?? 0)}</b> instead of {gbp(lineFor(ORIGINAL, myGroup).total)}.{/if}</p>
+					<p><strong>{group(myGroup).label}:</strong> {#if !tableAmounts}nothing to approve yet. The chipping-in couples need to say what they’d be happy with first.{:else}you’d pay <b>{gbp(myProposedTotal ?? 0)}</b> instead of {gbp(lineFor(ORIGINAL, myGroup).total)}.{/if}</p>
 					{#if tableAmounts}
 						<div class="row">
 							<button class="btn primary" type="button" disabled={busy || status.approvals[myGroup] === 'approved'} onclick={() => run({ action: 'approve', group: myGroup, amounts: tableAmounts })}>
@@ -356,7 +357,8 @@
 	.calc-head { max-width: 560px; padding-right: 120px; }
 	.calc-head h3 { font: 800 30px/1.1 var(--f-display); }
 	.calc-head p { font-size: 14px; color: var(--muted); margin-top: 6px; }
-	.sliders { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 22px; }
+	.sliders { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 22px; } /* 3 couples, or just yours */
+	.sliders.one { grid-template-columns: minmax(0, 560px); }
 	.slider { border: 1px solid var(--line); border-radius: 6px; background: var(--paper-2); padding: 20px; display: grid; gap: 12px; }
 	.slider.mine { border-color: var(--sun); box-shadow: 0 0 0 1px var(--sun); }
 	.who { font-weight: 800; font-size: 15px; display: flex; gap: 8px; align-items: center; }
@@ -427,6 +429,7 @@
 	.mine-box { margin-top: 16px; padding: 18px 20px; border-radius: 6px; border-left: 3px solid var(--sun); background: var(--paper); display: grid; gap: 10px; font-size: 15px; }
 	.mine-box .how-h { color: var(--gold-ink); }
 	@media (max-width: 960px) { .intro { grid-template-columns: 1fr; } }
+	@media (max-width: 1000px) { .sliders { grid-template-columns: 1fr; } .sliders.one { grid-template-columns: minmax(0, 560px); } }
 	@media (max-width: 520px) { .board { grid-template-columns: 1fr; } .letter { padding: 24px 22px 22px; } .lane { grid-template-columns: 1fr; } .lane .tag { grid-row: auto; } .lane small { grid-column: 1; } }
 	.row { display: flex; flex-wrap: wrap; gap: 10px; }
 	.org { margin-top: 14px; padding: 16px 18px; border-radius: 6px; background: var(--ink); color: var(--paper); display: grid; gap: 8px; font-size: 14px; }

@@ -324,6 +324,7 @@ export const cpTripConsents = sqliteTable('cp_trip_consents', {
   pledgePence: integer('pledge_pence'),
   approvedCj: integer('approved_cj'),
   approvedAl: integer('approved_al'),
+  approvedOp: integer('approved_op'),
   updatedAt: integer('updated_at', { mode: 'timestamp' })
 });
 
@@ -332,6 +333,7 @@ export const cpTripAgreements = sqliteTable('cp_trip_agreements', {
   version: integer('version').primaryKey(),
   contributionCj: integer('contribution_cj').notNull(),
   contributionAl: integer('contribution_al').notNull(),
+  contributionOp: integer('contribution_op').notNull().default(0),
   consentsJson: text('consents_json').notNull().default('[]'),
   publishedAt: integer('published_at', { mode: 'timestamp' }).notNull()
 });

@@ -80,65 +80,73 @@ describe('original costs', () => {
 });
 
 describe('the Fancy House Tax', () => {
+	const C = (cj: number, al: number, op = 0): Contributions => ({ 'chris-jenn': cj, 'adam-lysanne': al, 'oliver-phoebe': op });
+
 	it('changes nothing with zero contributions', () => {
-		expect(breakdown({ 'chris-jenn': 0, 'adam-lysanne': 0 }).lines).toEqual(ORIGINAL.lines);
+		expect(breakdown(C(0, 0, 0)).lines).toEqual(ORIGINAL.lines);
 	});
 
-	it('£50 from each House 2 couple gives the worked example', () => {
-		const c = { 'chris-jenn': 5_000, 'adam-lysanne': 5_000 };
-		const b = breakdown(c);
-		expect(b.pot).toBe(10_000);
+	it('£50 from each of the three couples gives the worked example', () => {
+		const b = breakdown(C(5_000, 5_000, 5_000));
+		expect(b.pot).toBe(15_000);
 		expect(Object.fromEntries(b.lines.map((l) => [l.group, l.total]))).toEqual({
-			'kie-elisa': 45_000,
-			'alex-katie': 159_900,
-			mule: 30_000,
+			'kie-elisa': 49_000,
+			'alex-katie': 153_900,
+			mule: 27_000,
 			'chris-jenn': 27_950,
 			'adam-lysanne': 27_950,
 			'chris-hayley': 32_450,
-			'oliver-phoebe': 32_450
+			'oliver-phoebe': 37_450
 		});
 		expect(b.total).toBe(355_700);
 		expect(b.rounding).toEqual([]);
 	});
 
-	it('lets the two couples pick different amounts', () => {
-		const b = breakdown({ 'chris-jenn': 2_000, 'adam-lysanne': 7_500 });
+	it('lets each couple pick a different amount, and shares the saving per person across House 1', () => {
+		const b = breakdown(C(2_000, 7_500, 0));
 		expect(lineFor(b, 'chris-jenn').total).toBe(22_950 + 2_000);
 		expect(lineFor(b, 'adam-lysanne').total).toBe(22_950 + 7_500);
+		expect(lineFor(b, 'oliver-phoebe').total).toBe(32_450);
 		const d = deltas(b);
-		expect(d['kie-elisa']).toBe(-9_500);
-		expect(d['oliver-phoebe']).toBe(0);
-		expect(d['alex-katie']).toBe(0);
-		expect(d.mule).toBe(0);
+		expect(d['kie-elisa']).toBe(-3_800);
+		expect(d['alex-katie']).toBe(-3_800);
+		expect(d.mule).toBe(-1_900);
+		expect(d['chris-hayley']).toBe(0);
 	});
 
-	it('never touches House 3, Alex & Katie, Mule, the extras or the gifts', () => {
+	it('never touches Chris & Hayley, the extras, the gifts or the Big House Tax', () => {
 		for (let cj = 0; cj <= 25_000; cj += 3_337) {
 			for (const al of [0, 1, 999, 12_345, 25_000]) {
-				const b = breakdown({ 'chris-jenn': cj, 'adam-lysanne': al });
-				for (const id of ['chris-hayley', 'oliver-phoebe', 'alex-katie', 'mule'] as const) expect(lineFor(b, id)).toEqual(lineFor(ORIGINAL, id));
-				expect(lineFor(b, 'alex-katie').extras).toBe(7_900);
-				expect(lineFor(b, 'alex-katie').giftsGiven).toBe(20_000);
-				expect(lineFor(b, 'alex-katie').bigHouseTax).toBe(8_000);
+				for (const op of [0, 777, 25_000]) {
+					const b = breakdown(C(cj, al, op));
+					expect(lineFor(b, 'chris-hayley')).toEqual(lineFor(ORIGINAL, 'chris-hayley'));
+					expect(lineFor(b, 'oliver-phoebe').total).toBe(32_450 + op);
+					expect(lineFor(b, 'alex-katie').extras).toBe(7_900);
+					expect(lineFor(b, 'alex-katie').giftsGiven).toBe(20_000);
+					expect(lineFor(b, 'alex-katie').bigHouseTax).toBe(8_000);
+					expect(sum(b)).toBe(355_700);
+				}
 			}
 		}
 	});
 
 	it('always reconciles to the penny, with the rounding spread deterministically', () => {
 		for (let t = 0; t <= 20_000; t += 1) {
-			const b = breakdown({ 'chris-jenn': t, 'adam-lysanne': 0 });
+			const b = breakdown(C(t, 0, 0));
 			expect(sum(b)).toBe(355_700);
-			const relief = b.lines.reduce((s, l) => s + l.relief, 0);
-			expect(relief).toBe(t);
-			// the whole saving goes to Kie & Elisa
-			expect(lineFor(b, 'kie-elisa').relief).toBe(t);
+			expect(b.lines.reduce((s, l) => s + l.relief, 0)).toBe(t);
+			// couples get twice Mule's slice, give or take a penny
+			const mule = lineFor(b, 'mule').relief;
+			for (const id of ['kie-elisa', 'alex-katie'] as const) expect(Math.abs(lineFor(b, id).relief - 2 * mule)).toBeLessThanOrEqual(2);
 		}
-		expect(breakdown({ 'chris-jenn': 1_234, 'adam-lysanne': 0 })).toEqual(breakdown({ 'chris-jenn': 1_234, 'adam-lysanne': 0 }));
+		expect(breakdown(C(1_234, 0, 0))).toEqual(breakdown(C(1_234, 0, 0)));
 	});
 
 	it('rejects invalid contributions', () => {
-		for (const bad of [-1, -500, 1.5, NaN, Infinity, 25_001, '500' as unknown as number])
-			expect(() => breakdown({ 'chris-jenn': bad, 'adam-lysanne': 0 })).toThrow(ContributionError);
+		for (const bad of [-1, -500, 1.5, NaN, Infinity, 25_001, '500' as unknown as number]) {
+			expect(() => breakdown(C(bad, 0, 0))).toThrow(ContributionError);
+			expect(() => breakdown(C(0, 0, bad))).toThrow(ContributionError);
+		}
 		expect(() => assertContribution(null)).toThrow(ContributionError);
 		expect(assertContribution(25_000)).toBe(25_000);
 	});
@@ -158,26 +166,27 @@ describe('the Fancy House Tax', () => {
 
 describe('consensus', () => {
 	const c = (group: GroupId, pledge: number | null, approved: Contributions | null = null): Consent => ({ group, pledge, approved, updatedAt: null });
-	const fifty = { 'chris-jenn': 5_000, 'adam-lysanne': 5_000 };
+	const fifty: Contributions = { 'chris-jenn': 5_000, 'adam-lysanne': 5_000, 'oliver-phoebe': 0 };
 	const allYes = (amounts: Contributions): Consent[] => [
 		c('chris-jenn', amounts['chris-jenn']),
 		c('adam-lysanne', amounts['adam-lysanne']),
-		c('kie-elisa', null, amounts)
+		c('oliver-phoebe', amounts['oliver-phoebe']),
+		...(['kie-elisa', 'alex-katie', 'mule'] as const).map((g) => c(g, null, amounts))
 	];
 
 	it('treats silence as no', () => {
 		const s = proposalStatus([], BASELINE_AGREEMENT);
 		expect(s.ready).toBe(false);
 		expect(s.proposal).toBeNull();
-		expect(s.waitingOn).toEqual(['chris-jenn', 'adam-lysanne', 'kie-elisa']);
+		expect(s.waitingOn).toEqual(['chris-jenn', 'adam-lysanne', 'oliver-phoebe', 'kie-elisa', 'alex-katie', 'mule']);
 	});
 
-	it('needs both pledges and Kie & Elisa to approve those exact amounts', () => {
+	it('needs all three offers and everyone in House 1 to approve those exact amounts', () => {
 		expect(proposalStatus(allYes(fifty), BASELINE_AGREEMENT).ready).toBe(true);
-		const oneMissing = allYes(fifty).filter((x) => x.group !== 'kie-elisa');
-		expect(proposalStatus(oneMissing, BASELINE_AGREEMENT).waitingOn).toEqual(['kie-elisa']);
-		// Alex & Katie and Mule aren't affected, so their say isn't needed
-		expect(proposalStatus([...allYes(fifty), c('mule', null, null)], BASELINE_AGREEMENT).ready).toBe(true);
+		const oneMissing = allYes(fifty).filter((x) => x.group !== 'mule');
+		expect(proposalStatus(oneMissing, BASELINE_AGREEMENT).waitingOn).toEqual(['mule']);
+		// no proposal until Oli & Phoebe answer too (£0 counts as an answer)
+		expect(proposalStatus(allYes(fifty).filter((x) => x.group !== 'oliver-phoebe'), BASELINE_AGREEMENT).proposal).toBeNull();
 		// Chris & Jenn change their pledge: the old approvals no longer count
 		const changed = allYes(fifty).map((x) => (x.group === 'chris-jenn' ? c('chris-jenn', 3_000) : x));
 		const s = proposalStatus(changed, BASELINE_AGREEMENT);
@@ -186,7 +195,7 @@ describe('consensus', () => {
 	});
 
 	it('proposed amounts cannot silently replace agreed amounts', () => {
-		const partial = [c('chris-jenn', 5_000), c('adam-lysanne', 5_000)];
+		const partial = [c('chris-jenn', 5_000), c('adam-lysanne', 5_000), c('oliver-phoebe', 0)];
 		expect(() => publishAgreement(partial, BASELINE_AGREEMENT, new Date())).toThrow();
 		// a pledge on its own doesn't move anything owed
 		const l = ledger([], [], NOW);
@@ -212,9 +221,9 @@ describe('payments', () => {
 	});
 
 	it('keeps Alex & Katie settled whatever the agreed split', () => {
-		const v1: Agreement = { version: 1, contributions: { 'chris-jenn': 5_000, 'adam-lysanne': 5_000 }, publishedAt: '2026-12-01T00:00:00Z' };
+		const v1: Agreement = { version: 1, contributions: { 'chris-jenn': 5_000, 'adam-lysanne': 5_000, 'oliver-phoebe': 0 }, publishedAt: '2026-12-01T00:00:00Z' };
 		const ak = ledger([v1], [], Date.UTC(2027, 0, 9)).accounts.find((a) => a.group === 'alex-katie')!;
-		expect(ak).toMatchObject({ owed: 159_900, status: 'paid', overdue: false, refundDue: 0 });
+		expect(ak).toMatchObject({ owed: 155_900, status: 'paid', overdue: false, refundDue: 0 });
 	});
 
 	it('tracks partial and full payments', () => {
@@ -227,24 +236,24 @@ describe('payments', () => {
 
 	it('keeps partial payments intact after an agreed change, and shows the adjustment', () => {
 		const payments = [pay(1, 'mule', 10_000), pay(2, 'chris-jenn', 22_950)];
-		const v1: Agreement = { version: 1, contributions: { 'chris-jenn': 5_000, 'adam-lysanne': 5_000 }, publishedAt: '2026-12-01T00:00:00Z' };
+		const v1: Agreement = { version: 1, contributions: { 'chris-jenn': 5_000, 'adam-lysanne': 5_000, 'oliver-phoebe': 0 }, publishedAt: '2026-12-01T00:00:00Z' };
 		const l = ledger([v1], payments, NOW);
 		const mule = l.accounts.find((a) => a.group === 'mule')!;
 		expect(mule.payments).toEqual([payments[0]]);
-		expect(mule).toMatchObject({ paid: 10_000, owed: 30_000, outstanding: 20_000, status: 'partial' });
-		expect(mule.history.map((h) => h.owed)).toEqual([30_000]);
+		expect(mule).toMatchObject({ paid: 10_000, owed: 28_000, outstanding: 18_000, status: 'partial' });
+		expect(mule.history.map((h) => h.owed)).toEqual([30_000, 28_000]);
 		const ke = l.accounts.find((a) => a.group === 'kie-elisa')!;
-		expect(ke.history.map((h) => h.owed)).toEqual([55_000, 45_000]);
+		expect(ke.history.map((h) => h.owed)).toEqual([55_000, 51_000]);
 		const cj = l.accounts.find((a) => a.group === 'chris-jenn')!;
 		expect(cj).toMatchObject({ paid: 22_950, owed: 27_950, outstanding: 5_000, status: 'partial' });
 		expect(l.owed).toBe(355_700);
-		expect(l.collected).toBe(32_950 + 159_900);
+		expect(l.collected).toBe(32_950 + 155_900);
 	});
 
 	it('flags refunds when a group paid more than its new agreed amount', () => {
-		const v1: Agreement = { version: 1, contributions: { 'chris-jenn': 5_000, 'adam-lysanne': 5_000 }, publishedAt: '2026-12-01T00:00:00Z' };
+		const v1: Agreement = { version: 1, contributions: { 'chris-jenn': 5_000, 'adam-lysanne': 5_000, 'oliver-phoebe': 0 }, publishedAt: '2026-12-01T00:00:00Z' };
 		const l = ledger([v1], [pay(1, 'kie-elisa', 55_000)], NOW);
-		expect(l.accounts.find((a) => a.group === 'kie-elisa')).toMatchObject({ status: 'overpaid', refundDue: 10_000, outstanding: 0 });
+		expect(l.accounts.find((a) => a.group === 'kie-elisa')).toMatchObject({ status: 'overpaid', refundDue: 4_000, outstanding: 0 });
 	});
 
 	it('marks unpaid balances overdue after 8 January 2027, without forgiving them', () => {

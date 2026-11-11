@@ -152,7 +152,7 @@
 		if (isContributor(myGroup) && trip.status.pledges[myGroup] === null)
 			return { label: 'Answer the Fancy House Tax question', hint: 'Takes a minute. £0 is a fine answer.', target: 'debate' };
 		if (isReliefGroup(myGroup) && trip.status.proposal && trip.status.approvals[myGroup] !== 'approved')
-			return { label: 'Check your new share', hint: 'House 2 have answered. Say yes if you’re happy.', target: 'debate' };
+			return { label: 'Check your new share', hint: 'Everyone chipping in has answered. Say yes if you’re happy.', target: 'debate' };
 		return { label: 'Vote for things to do', hint: 'Help pick the group activity', target: 'do' };
 	});
 	function doNext(e: Event) {
